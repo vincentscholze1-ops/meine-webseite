@@ -884,18 +884,6 @@
                 </div>
             </div>
 
-            <div class="card" style="margin-top: 20px;">
-                <h4>Neuen Junghelfer anlegen</h4>
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="empName" placeholder="Max Mustermann">
-                </div>
-                <div class="form-group">
-                    <label>Geburtsdatum</label>
-                    <input type="date" id="empBirthDate">
-                </div>
-                <button onclick="addEmployee()">Junghelfer hinzufügen</button>
-            </div>
         </div>
     </div>
 
@@ -1006,6 +994,7 @@
         <button class="tab-btn" onclick="switchServiceTab('serviceCreate', event)">➕ Dienst anlegen</button>
         <button class="tab-btn" onclick="switchServiceTab('serviceActivities', event)">🧰 Tätigkeiten</button>
         <button class="tab-btn" onclick="switchServiceTab('serviceMembers', event)">👤 Junghelfer</button>
+        <button class="tab-btn" onclick="switchServiceTab('serviceLog', event)">📓 Logbuch</button>
     </div>
 
     <div id="servicePlan" class="tab-content active">
@@ -1097,6 +1086,19 @@
             <input type="text" id="serviceMemberSearch" oninput="renderServiceMembers()" placeholder="Nach Namen suchen...">
         </div>
         <div id="serviceMemberList" class="employees-cards"></div>
+    </div>
+
+    <div id="serviceLog" class="tab-content">
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                <div>
+                    <h3 style="margin:0 0 5px;">📓 Dienstverwaltungs-Logbuch</h3>
+                    <p style="margin:0;color:#64748b;font-size:13px;">Änderungen und Aktionen innerhalb der Dienstverwaltung.</p>
+                </div>
+                <button type="button" class="btn-danger btn-sm" onclick="clearServiceLog()">🗑️ Logbuch leeren</button>
+            </div>
+            <div id="serviceLogContainer" style="margin-top:16px;"></div>
+        </div>
     </div>
 </div>
 </div>
@@ -2341,11 +2343,39 @@
         { id: 'a4', name: 'Erste Hilfe', description: '' }
     ];
     let services = JSON.parse(localStorage.getItem('services')) || [];
+    let serviceLog = JSON.parse(localStorage.getItem('serviceLog')) || [];
 
     function saveServiceData() {
         localStorage.setItem('serviceActivities', JSON.stringify(serviceActivities));
         localStorage.setItem('services', JSON.stringify(services));
+        localStorage.setItem('serviceLog', JSON.stringify(serviceLog));
     }
+
+    function addServiceLogEntry(text) {
+        const now = new Date();
+        serviceLog.push({ time: now.toLocaleString('de-DE'), text: String(text || '') });
+        if (serviceLog.length > 300) serviceLog = serviceLog.slice(-300);
+        localStorage.setItem('serviceLog', JSON.stringify(serviceLog));
+        renderServiceLog();
+    }
+
+    function renderServiceLog() {
+        const container = document.getElementById('serviceLogContainer');
+        if (!container) return;
+        container.innerHTML = serviceLog.length === 0
+            ? '<p style="color:#64748b;">Keine Einträge vorhanden.</p>'
+            : serviceLog.slice().reverse().map(entry =>
+                `<div class="log-entry"><span class="log-time">${escapeHtml(entry.time || '')}</span> ${escapeHtml(entry.text || '')}</div>`
+              ).join('');
+    }
+
+    window.clearServiceLog = function() {
+        if (!serviceLog.length) return;
+        if (!confirm('Das Dienstverwaltungs-Logbuch wirklich vollständig leeren?')) return;
+        serviceLog = [];
+        saveServiceData();
+        renderServiceLog();
+    };
 
     function selectAppMode(mode) {
         appMode = mode;
@@ -2405,6 +2435,7 @@
         }
         if (tabId === 'serviceActivities') renderActivities();
         if (tabId === 'serviceMembers') renderServiceMembers();
+        if (tabId === 'serviceLog') renderServiceLog();
     }
 
     function renderServiceApp() {
@@ -2415,6 +2446,7 @@
         renderServiceActivityOptions();
         renderServiceLeaderChecks();
         renderServiceMembers();
+        renderServiceLog();
     }
 
     function formatServiceDate(date) {
@@ -2672,8 +2704,10 @@
         const s = services.find(x => x.id === id);
         if (!s) return;
         if (!confirm(`Dienst "${s.title}" am ${formatServiceDate(s.date)} wirklich löschen?`)) return;
+        const removedService = services.find(x => x.id === id);
         services = services.filter(x => x.id !== id);
         saveServiceData();
+        if (removedService) addServiceLogEntry(`Dienst "${removedService.title}" gelöscht`);
         renderServiceApp();
         addLogEntry(`Dienst "${s.title}" gelöscht`);
         showToast('Dienst gelöscht', 'success');
@@ -2785,7 +2819,7 @@
     // ---------- Backup-Erweiterung ----------
     const originalExportData = exportData;
     exportData = function() {
-        const data = { inventory, employees, borrowHistory, actionLog, serviceActivities, services };
+        const data = { inventory, employees, borrowHistory, actionLog, serviceActivities, services, serviceLog };
         const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -2812,6 +2846,7 @@
                 actionLog = data.actionLog || [];
                 serviceActivities = data.serviceActivities || serviceActivities;
                 services = data.services || [];
+                serviceLog = data.serviceLog || serviceLog;
                 employees.forEach(emp => {
                     if (!emp.borrowed) emp.borrowed = [];
                     if (!('birthDate' in emp)) emp.birthDate = '';
@@ -3104,7 +3139,7 @@
         if(checked && !emp.earnedBadges.includes(level)) emp.earnedBadges.push(level);
         if(!checked) emp.earnedBadges=emp.earnedBadges.filter(b=>b!==level);
         emp.earnedBadges.sort((a,b)=>BADGE_LEVELS.indexOf(a)-BADGE_LEVELS.indexOf(b));
-        saveData(); renderEmployees(); renderServiceMembers(); showServiceMemberDetail(empId); addLogEntry(`Leistungsabzeichen ${level} für ${emp.name} ${checked?'zugewiesen':'entfernt'}`); showToast(checked?`${level} zugewiesen`:`${level} entfernt`,'success');
+        saveData(); renderEmployees(); renderServiceMembers(); showServiceMemberDetail(empId); addLogEntry(`Leistungsabzeichen ${level} für ${emp.name} ${checked?'zugewiesen':'entfernt'}`); addServiceLogEntry(`Leistungsabzeichen ${level} für ${emp.name} ${checked?'zugewiesen':'entfernt'}`); showToast(checked?`${level} zugewiesen`:`${level} entfernt`,'success');
     };
 
     // ---------- Tätigkeiten mit Portfolio-Zuordnung ----------
@@ -3116,7 +3151,7 @@
         const badgeLevels=[...document.querySelectorAll('.new-activity-badge:checked')].map(x=>x.value);
         serviceActivities.push({id:'a_'+Date.now(),name,description,badgeLevels});
         document.getElementById('newActivityName').value=''; document.getElementById('newActivityDescription').value=''; document.querySelectorAll('.new-activity-badge').forEach(x=>x.checked=false);
-        saveServiceData(); renderActivities(); renderServiceApp(); addLogEntry(`Tätigkeit "${name}" angelegt`); showToast('Tätigkeit angelegt','success');
+        saveServiceData(); renderActivities(); renderServiceApp(); addLogEntry(`Tätigkeit "${name}" angelegt`); addServiceLogEntry(`Tätigkeit "${name}" angelegt`); showToast('Tätigkeit angelegt','success');
     };
 
     window.renderActivities = function(){
@@ -3133,6 +3168,7 @@
         if(checked&&!a.badgeLevels.includes(level)) a.badgeLevels.push(level);
         if(!checked) a.badgeLevels=a.badgeLevels.filter(x=>x!==level);
         saveServiceData(); renderActivities(); renderServiceMembers();
+        addServiceLogEntry(`Leistungsabzeichen-Zuordnung für Tätigkeit "${a.name}": ${level} ${checked?'zugewiesen':'entfernt'}`);
         if(selectedEmployeeId) showServiceMemberDetail(selectedEmployeeId);
     };
 
@@ -3193,6 +3229,7 @@
                 actionLog=data.actionLog ?? clothing.actionLog ?? [];
                 serviceActivities=data.serviceActivities ?? service.serviceActivities ?? serviceActivities;
                 services=data.services ?? service.services ?? [];
+                serviceLog=data.serviceLog ?? service.serviceLog ?? [];
                 appMode=data.appMode||appMode||'';
                 ensureExtendedData();
                 localStorage.setItem('thw_app_mode',appMode);
@@ -3249,6 +3286,8 @@
             });
             services.forEach(normalizeService);
             serviceActivities.forEach(a=>{if(!Array.isArray(a.badgeLevels))a.badgeLevels=[];});
+            if (!Array.isArray(serviceLog)) serviceLog = [];
+            serviceLog = serviceLog.filter(x => x && typeof x === 'object');
         }
 
         function activityIdsOf(s){ normalizeService(s); return s.activityIds; }
@@ -3333,10 +3372,14 @@
             if(id){
                 const service=services.find(x=>x.id===id); if(!service)return;
                 Object.assign(service,{date,time,endTime,title,location,activityIds,activityId:activityIds[0]||'',leaderIds,leadersExtra,notes});
-                addLogEntry(`Dienst "${title}" bearbeitet`); showToast('Dienst aktualisiert!','success');
+                addLogEntry(`Dienst "${title}" bearbeitet`);
+                addServiceLogEntry(`Dienst "${title}" bearbeitet`);
+                showToast('Dienst aktualisiert!','success');
             }else{
                 services.push({id:'s_'+Date.now(),date,time,endTime,title,location,activityIds,activityId:activityIds[0]||'',leaderIds,leadersExtra,notes,attendeeIds:[]});
-                addLogEntry(`Dienst "${title}" angelegt`); showToast('Dienst angelegt!','success');
+                addLogEntry(`Dienst "${title}" angelegt`);
+                addServiceLogEntry(`Dienst "${title}" angelegt`);
+                showToast('Dienst angelegt!','success');
             }
             normalizeAll(); saveServiceData(); saveData();
             resetServiceForm(); renderServiceApp(); switchServiceTab('servicePlan');
@@ -3528,7 +3571,7 @@
             const list=document.getElementById('masterPeopleList');if(!list)return;
             const term=(masterVal('masterSearch')).toLowerCase().trim(), rf=masterVal('masterRoleFilter');
             const arr=employees.filter(e=>e.name.toLowerCase().includes(term)&&(!rf||(e.role||'youth')===rf)).sort((a,b)=>a.name.localeCompare(b.name));
-            list.innerHTML=arr.map(e=>`<div class="employee-card" style="cursor:default;"><div><strong>${escapeHtml(e.name)}</strong></div><span class="role-badge ${isLeader(e)?'role-leader':'role-youth'}">${escapeHtml(roleLabel(e))}</span><div style="font-size:12px;color:#64748b;margin-top:5px;">Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</div>${e.phone?`<div class="service-meta">☎️ ${escapeHtml(e.phone)}</div>`:''}${e.email?`<div class="service-meta">✉️ ${escapeHtml(e.email)}</div>`:''}<div style="margin-top:8px;"><button class="btn-secondary btn-sm" onclick="editMasterPerson('${e.id}')">✏️ Bearbeiten</button> <button class="btn-danger btn-sm" onclick="deleteMasterPerson('${e.id}')">🗑️ Löschen</button></div></div>`).join('')||'<p style="color:#64748b;">Noch keine Personen angelegt.</p>';
+            list.innerHTML=arr.map(e=>`<div class="employee-card" style="cursor:default;"><div><strong>${escapeHtml(e.name)}</strong></div><span class="role-badge ${isLeader(e)?'role-leader':'role-youth'}">${escapeHtml(roleLabel(e))}</span><div style="font-size:12px;color:#64748b;margin-top:5px;">Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</div>${e.entryDate?`<div class="service-meta">📅 Eintritt: ${escapeHtml(fmtShortDate(e.entryDate))}</div>`:''}${e.phone?`<div class="service-meta">☎️ ${escapeHtml(e.phone)}</div>`:''}${e.email?`<div class="service-meta">✉️ ${escapeHtml(e.email)}</div>`:''}${e.address?`<div class="service-meta">📍 ${escapeHtml(e.address)}</div>`:''}${e.notes?`<div class="service-meta">📝 ${escapeHtml(e.notes)}</div>`:''}<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn-secondary btn-sm" onclick="editMasterPerson('${e.id}')">✏️ Bearbeiten</button> <button class="btn-danger btn-sm" onclick="deleteMasterPerson('${e.id}')">🗑️ Löschen</button></div></div>`).join('')||'<p style="color:#64748b;">Noch keine Personen vorhanden. Lege sie oben an oder prüfe den Filter.</p>';
         };
 
         // Vollständiger Backup: alle lokalen Daten aus beiden Anwendungen + Erweiterungen.
@@ -3537,8 +3580,8 @@
             const data={
                 backupVersion:4, exportedAt:new Date().toISOString(), appMode,
                 clothing:{inventory,employees,borrowHistory,actionLog},
-                service:{serviceActivities,services},
-                inventory,employees,borrowHistory,actionLog,serviceActivities,services,
+                service:{serviceActivities,services,serviceLog},
+                inventory,employees,borrowHistory,actionLog,serviceActivities,services,serviceLog,
                 localStorageData:Object.fromEntries(Object.keys(localStorage).filter(k=>k!=='thw_password_hash').map(k=>[k,localStorage.getItem(k)]))
             };
             const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
@@ -3558,6 +3601,7 @@
                     actionLog=data.actionLog??cl.actionLog??[];
                     serviceActivities=data.serviceActivities??sv.serviceActivities??[];
                     services=data.services??sv.services??[];
+                    serviceLog=data.serviceLog??sv.serviceLog??[];
                     appMode=data.appMode||appMode||'';
                     normalizeAll();
                     if(data.localStorageData && typeof data.localStorageData==='object'){
@@ -3631,6 +3675,7 @@
                 </div>
                 <div style="margin-top:18px;">
                     <div class="filter-bar"><input id="masterSearch" oninput="renderMasterPeople()" placeholder="Person suchen..."><select id="masterRoleFilter" onchange="renderMasterPeople()"><option value="">Alle</option><option value="youth">Junghelfer</option><option value="leader">Betreuer</option></select></div>
+                    <div style="font-size:13px;color:#64748b;margin:8px 0 10px;">Hier werden <strong>alle bereits vorhandenen Personen</strong> aus Kleidung und Dienstverwaltung gemeinsam angezeigt. Änderungen werden in beiden Anwendungen übernommen.</div>
                     <div id="masterPeopleList" class="employees-cards"></div>
                 </div>
             </div>
