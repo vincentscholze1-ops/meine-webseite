@@ -196,6 +196,33 @@
         }
         .inventory-card.active .badge, .employee-card.active .badge { opacity: 0.9; }
 
+        /* Betreuer-Hervorhebung in Kleidungsverwaltung */
+        .employee-card.betreuer-card {
+            background: #fff8e1;
+            border-color: #ffc107;
+            box-shadow: 0 2px 6px rgba(255,193,7,0.15);
+        }
+        .employee-card.betreuer-card:hover {
+            background: #fff3c4;
+            border-color: #ffb300;
+            box-shadow: 0 6px 12px rgba(255,193,7,0.25);
+        }
+        .employee-card.betreuer-card.active {
+            background: #ffc107;
+            color: #4a3500;
+            border-color: #ff9800;
+        }
+        .employee-card .role-badge {
+            display: inline-block;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+            font-weight: 700;
+        }
+        .employee-card .role-badge.junghelfer { background: #cfe2ff; color: #1e40af; }
+        .employee-card .role-badge.betreuer  { background: #ffd970; color: #7a5100; }
+
         /* ==================== TABELLEN ==================== */
         .table-wrapper {
             overflow-x: auto; width: 100%;
@@ -218,6 +245,10 @@
         }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: #f8fafc; }
+
+        /* Klickbare Dienstplan-Zeile */
+        .service-clickable-row { cursor: pointer; transition: background 0.15s; }
+        .service-clickable-row:hover td { background: #eef4fb !important; }
 
         /* ==================== FORMULAR ==================== */
         .form-group { margin-bottom: 16px; }
@@ -378,6 +409,7 @@
         body.force-mobile .global-nav button { width: auto; padding: 6px 10px; font-size: 11px; }
         body.force-mobile .global-nav button.icon-btn { padding: 6px 8px; font-size: 14px; }
         body.force-mobile .app-shell { max-width: 600px; }
+        body.force-mobile .btn-sm { width: auto; }
 
         /* ==================== RESPONSIVE ==================== */
         @media (max-width: 992px) {
@@ -533,6 +565,25 @@
         .achievement-badge.silber { background: #94a3b8; color: #fff; }
         .achievement-badge.gold   { background: #ffd700; color: #4a3500; }
 
+        /* Nächstes Ziel */
+        .goal-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #e0f2fe;
+            color: #075985;
+            border: 1px solid #7dd3fc;
+        }
+        .goal-badge.goal-done {
+            background: #dcfce7;
+            color: #166534;
+            border-color: #86efac;
+        }
+
         /* ==================== SERVICE ==================== */
         .service-content-row {
             display: grid; grid-template-columns: 1fr auto;
@@ -603,6 +654,65 @@
             padding: 14px 16px;
         }
 
+        /* ==================== MODAL ==================== */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15,23,42,0.55);
+            z-index: 1000000;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.15s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-content {
+            background: #fff;
+            max-width: 640px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 26px 24px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-content h2 {
+            margin: 0 0 6px;
+            color: #0056b3;
+            font-size: 22px;
+        }
+        .modal-content .modal-subtitle {
+            color: #64748b;
+            margin: 0 0 18px;
+            font-size: 14px;
+        }
+        .modal-content h3 {
+            margin: 20px 0 8px;
+            font-size: 15px;
+            color: #1e293b;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        .modal-content ul {
+            margin: 0; padding-left: 20px;
+        }
+        .modal-content li {
+            padding: 3px 0;
+        }
+        .modal-content .modal-actions {
+            margin-top: 22px;
+            display: flex; gap: 8px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .modal-content .modal-actions button { width: auto; }
+        .modal-content .info-row {
+            padding: 6px 0;
+            font-size: 14px;
+        }
+        .modal-content .info-row strong { color: #1e293b; }
+        .modal-content .empty-hint {
+            color: #94a3b8; font-style: italic;
+        }
+
         @media(max-width: 900px) {
             .mode-card-grid { grid-template-columns: repeat(2, 1fr); }
         }
@@ -659,7 +769,7 @@
 
   <div class="card" id="masterDataCard">
     <div class="app-header" style="margin-bottom:10px;">
-      <div><h2 style="margin:0;">👥 Stammdatenverwaltung</h2><p style="margin:5px 0 0;color:#64748b;">Diese Personenliste ist die Grundlage für Kleidung und Dienste. Betreuer sind gelb hervorgehoben.</p></div>
+      <div><h2 style="margin:0;">👥 Stammdatenverwaltung</h2></div>
     </div>
     <div class="grid-2">
       <div class="card add-card">
@@ -683,7 +793,6 @@
                     <input type="checkbox" id="masterLevelGold"> <span class="achievement-badge gold">Gold</span>
                 </label>
             </div>
-            <small style="color:#64748b;font-size:12px;display:block;margin-top:6px;">Bereits erreichte Abzeichen werden in der Dienstverwaltung automatisch als erledigt (100%) gewertet.</small>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" class="btn-success" onclick="saveMasterPerson()">Person speichern</button>
@@ -719,7 +828,6 @@
         <h2 style="margin:0;">Dienstplan</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" class="btn-secondary btn-sm" onclick="printFutureServices()">🖨️ Zukünftige Dienste drucken</button>
-          <button type="button" class="btn-secondary btn-sm" onclick="window.print()">🖨️ Aktuelle Ansicht</button>
         </div>
       </div>
       <div id="serviceBirthdays"></div>
@@ -741,7 +849,6 @@
         <div class="form-group full-width"><label>Notizen</label><textarea id="svcNotes" rows="2"></textarea></div>
       </div>
       <h3>📚 Dienstinhalte / Leistungsabzeichen</h3>
-      <p style="color:#64748b;font-size:13px;">Nach jeder Auswahl wird automatisch eine neue Zeile geöffnet.</p>
       <div id="serviceContentRows"></div>
       <button type="button" class="btn-secondary btn-sm" onclick="addServiceContentRow()">➕ weiteren Inhalt hinzufügen</button>
       <hr style="margin:20px 0;border:0;border-top:1px solid #e2e8f0;">
@@ -778,7 +885,6 @@
   <div id="svc-people" class="tab-content">
     <div class="card">
       <h2>👤 Junghelfer & Leistungsabzeichen</h2>
-      <p style="color:#64748b;">Klicke auf einen Junghelfer, um Details einzublenden. Manuell in den Stammdaten zugewiesene Abzeichen werden automatisch als erledigt gewertet.</p>
       <div id="servicePeopleList"></div>
     </div>
   </div>
@@ -793,7 +899,7 @@
   <div class="container">
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('lager', event)">📦 Lagerbestand</button>
-        <button class="tab-btn" onclick="switchTab('junghelfer', event)">👤 Junghelfer</button>
+        <button class="tab-btn" onclick="switchTab('junghelfer', event)">👤 Junghelfer & Betreuer</button>
         <button class="tab-btn" onclick="switchTab('komplett', event)">👕 Komplettausgabe</button>
         <button class="tab-btn" onclick="switchTab('einzel', event)">🔄 Einzelausgabe / Rückgabe</button>
         <button class="tab-btn" onclick="switchTab('umtausch', event)">🔁 Umtausch</button>
@@ -853,13 +959,12 @@
         </div>
     </div>
 
-    <!-- JUNGHELFER -->
+    <!-- JUNGHELFER & BETREUER -->
     <div id="junghelfer" class="tab-content">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
             <h3 style="margin: 0;">👤 Junghelfer & Betreuer</h3>
             <button onclick="printAllLoans()" style="background: #6c757d; width: auto; padding: 8px 18px;">🖨️ Alle Ausleihen drucken</button>
         </div>
-        <p style="color:#64748b;font-size:13px;margin-top:0;">Stammdaten (Name, Geburtsdatum, Abzeichen) werden ausschließlich in der <a href="#" onclick="goHome();return false;" style="color:#0056b3;font-weight:600;">Stammdatenverwaltung</a> bearbeitet.</p>
         <div class="employees-section">
             <div class="filter-bar" style="justify-content: space-between; margin-bottom: 16px; display:flex; gap:10px;">
                 <input type="text" id="searchEmpName" onkeyup="renderEmployees()" placeholder="Nach Namen suchen..." style="width: auto; flex: 1;">
@@ -878,7 +983,6 @@
     <div id="komplett" class="tab-content">
         <div class="card full-width bulk-card">
             <h4 style="color: #0dcaf0; margin-top: 0;">👕 Neueinkleidung (Komplettausstattung ausgeben)</h4>
-            <p style="margin-top: 0; font-size: 14px; color: #555;">Wähle einen Junghelfer und die gewünschten Größen. Felder auf "-- Überspringen --" werden ignoriert.</p>
             <div class="form-group"><label>Junghelfer</label><select id="bulkIssueEmpSelect"></select></div>
             <div class="bulk-grid-row row-3">
                 <div class="form-group"><label>Jacke MEA</label><select id="bulkIssue_JackeMEA"></select></div>
@@ -950,7 +1054,6 @@
 
   <div class="card">
     <h2 style="margin-top:0;">💾 Datensicherung</h2>
-    <p style="color:#64748b;">Sichert alle Daten: Stammdaten, Bekleidung (Lager & Ausleihen), Dienste, Inhalte und das komplette Logbuch.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button onclick="exportData()" style="background: #6c757d; width: auto;">Backup exportieren</button>
         <input type="file" id="importFile" style="display:none" onchange="importData(event)">
@@ -974,7 +1077,7 @@
 
 <script>
     // ======================================================================
-    // 0. KONFIG / KONTAKT
+    // 0. KONFIG
     // ======================================================================
     const CONTACT = {
         org: 'THW-Jugend Döbeln',
@@ -987,6 +1090,7 @@
 
     const FIXED_PASSWORD = 'Jugend2026';
     const AUTH_SESSION_KEY = 'thw_authenticated';
+    const LEVEL_ORDER = ['Bronze', 'Silber', 'Gold'];
 
     // ======================================================================
     // 1. DATEN
@@ -1026,7 +1130,19 @@
     const standardTypes = ['Jacke MEA', 'Jacke Fleece', 'Hose MEA', 'Hoodie', 'Schuhe', 'Helm', 'Handschuhe', 'T-Shirt'];
 
     // ======================================================================
-    // 2. PASSWORT
+    // 2. HILFSFUNKTION: NÄCHSTES ZIEL-ABZEICHEN
+    // ======================================================================
+    function getNextGoalLevel(emp) {
+        if (!emp) return null;
+        const ach = Array.isArray(emp.achievements) ? emp.achievements : [];
+        for (const level of LEVEL_ORDER) {
+            if (!ach.includes(level)) return level;
+        }
+        return null;
+    }
+
+    // ======================================================================
+    // 3. PASSWORT
     // ======================================================================
     function checkPassword() {
         const input = document.getElementById('passwordInput');
@@ -1085,7 +1201,7 @@
     }
 
     // ======================================================================
-    // 3. LOGBUCH
+    // 4. LOGBUCH
     // ======================================================================
     function saveCentralLog() { localStorage.setItem('centralLog', JSON.stringify(centralLog)); }
 
@@ -1123,7 +1239,7 @@
     }
 
     // ======================================================================
-    // 4. HISTORIE
+    // 5. HISTORIE
     // ======================================================================
     function addBorrowHistory(employeeId, itemId, type, size, quantity, action) {
         borrowHistory.push({ date: new Date().toISOString(), employeeId, itemId, type, size, quantity, action });
@@ -1139,7 +1255,7 @@
     }
 
     // ======================================================================
-    // 5. DATEN SICHERN
+    // 6. DATEN SICHERN
     // ======================================================================
     function saveData() {
         localStorage.setItem('inventory', JSON.stringify(inventory));
@@ -1154,7 +1270,7 @@
     }
 
     // ======================================================================
-    // 6. MODE TOGGLE
+    // 7. MODE TOGGLE
     // ======================================================================
     function toggleMode() {
         document.body.classList.toggle('force-mobile');
@@ -1167,7 +1283,7 @@
     }
 
     // ======================================================================
-    // 7. SORTIERUNG
+    // 8. SORTIERUNG
     // ======================================================================
     function sortSizes(sizes, itemType) {
         if (itemType === 'Hoodie') {
@@ -1184,7 +1300,7 @@
     }
 
     // ======================================================================
-    // 8. EXPORT / IMPORT
+    // 9. EXPORT / IMPORT
     // ======================================================================
     function exportData() {
         const data = { version: 3, exportedAt: new Date().toISOString(), inventory, employees, borrowHistory, serviceContents, services, centralLog };
@@ -1252,13 +1368,19 @@
     }
 
     // ======================================================================
-    // 9. TAB SWITCHING (Bekleidung)
+    // 10. TAB SWITCHING (Bekleidung)
     // ======================================================================
     function switchTab(tabId, event) {
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('#clothingApp .tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('#clothingApp .tab-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         if (event && event.target) event.target.classList.add('active');
+        else {
+            const order = { 'lager': 0, 'junghelfer': 1, 'komplett': 2, 'einzel': 3, 'umtausch': 4 };
+            const btns = document.querySelectorAll('#clothingApp .tab-btn');
+            const idx = order[tabId];
+            if (btns[idx]) btns[idx].classList.add('active');
+        }
 
         if (tabId === 'lager') {
             if (!currentInventoryType) currentInventoryType = 'Jacke MEA';
@@ -1278,7 +1400,7 @@
     }
 
     // ======================================================================
-    // 10. KACHELN
+    // 11. KACHELN
     // ======================================================================
     function renderInventoryCards() {
         const container = document.getElementById('inventoryCards');
@@ -1292,16 +1414,25 @@
             card.className = 'inventory-card' + (type === currentInventoryType ? ' active' : '');
             card.dataset.type = type;
             card.innerHTML = `<div>${type}</div><span class="badge">${totalAvailable} verfügbar</span>`;
-            card.onclick = function(e) { e.stopPropagation(); showInventoryType(type, { target: this }); };
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                showInventoryType(type, this);
+            });
             container.appendChild(card);
         });
     }
 
-    function showInventoryType(type, event) {
+    function showInventoryType(type, cardEl) {
         currentInventoryType = type;
         document.querySelectorAll('.inventory-card').forEach(c => c.classList.remove('active'));
-        if (event && event.target) event.target.classList.add('active');
-        else document.querySelectorAll('.inventory-card').forEach(c => { if (c.dataset.type === type) c.classList.add('active'); });
+        if (cardEl && cardEl.classList) {
+            cardEl.classList.add('active');
+        } else {
+            document.querySelectorAll('.inventory-card').forEach(c => {
+                if (c.dataset.type === type) c.classList.add('active');
+            });
+        }
         renderInventory();
         const typeSelect = document.getElementById('itemType');
         if (typeSelect && type) {
@@ -1312,7 +1443,7 @@
     }
 
     // ======================================================================
-    // 11. DROPDOWNS
+    // 12. DROPDOWNS
     // ======================================================================
     function updateDynamicDropdowns() {
         const invTypes = inventory.map(i => i.type);
@@ -1381,7 +1512,7 @@
     }
 
     // ======================================================================
-    // 12. BESTANDSÄNDERUNGEN
+    // 13. BESTANDSÄNDERUNGEN
     // ======================================================================
     function addInventory() {
         let type = document.getElementById('itemType').value;
@@ -1439,7 +1570,7 @@
     }
 
     // ======================================================================
-    // 13. NOTIZ
+    // 14. NOTIZ
     // ======================================================================
     function updateItemNote(itemId) {
         const item = inventory.find(i => i.id === itemId);
@@ -1455,7 +1586,7 @@
     }
 
     // ======================================================================
-    // 14. LAGER ANZEIGEN
+    // 15. LAGER ANZEIGEN
     // ======================================================================
     function getBookedFirstNames(item) {
         if (!item) return [];
@@ -1513,7 +1644,7 @@
     }
 
     // ======================================================================
-    // 15. JUNGHELFER IN KLEIDUNG (nur lesen – Bearbeitung nur in Stammdaten)
+    // 16. JUNGHELFER IN KLEIDUNG (nur lesen)
     // ======================================================================
     function formatBirthDate(dateString) {
         if (!dateString) return 'Nicht hinterlegt';
@@ -1528,14 +1659,24 @@
         const term = document.getElementById('searchEmpName')?.value?.toLowerCase() || '';
         const filtered = employees.filter(e => e.name.toLowerCase().includes(term));
         container.innerHTML = '';
-        filtered.forEach(emp => {
+
+        const sorted = [...filtered].sort((a, b) => {
+            if (a.category !== b.category) return a.category === 'betreuer' ? -1 : 1;
+            return a.name.localeCompare(b.name, 'de');
+        });
+
+        sorted.forEach(emp => {
             const borrowedCount = emp.borrowed.reduce((sum, b) => sum + b.quantity, 0);
+            const isBetreuer = emp.category === 'betreuer';
             const card = document.createElement('div');
-            card.className = 'employee-card' + (selectedEmployeeId === emp.id ? ' active' : '');
+            card.className = 'employee-card'
+                + (isBetreuer ? ' betreuer-card' : '')
+                + (selectedEmployeeId === emp.id ? ' active' : '');
             card.dataset.empId = emp.id;
             card.innerHTML = `
                 <div><strong>${escapeHtml(emp.name)}</strong></div>
                 <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Geb.: ${escapeHtml(formatBirthDate(emp.birthDate))}</div>
+                <span class="role-badge ${isBetreuer ? 'betreuer' : 'junghelfer'}">${isBetreuer ? 'Betreuer' : 'Junghelfer'}</span>
                 <span class="badge">${borrowedCount} Artikel ausgeliehen</span>
                 <div style="margin-top: 8px; display: flex; gap: 6px; justify-content: center;">
                     <button class="btn-secondary btn-sm" onclick="printSingleJunghelfer('${emp.id}', event)">🖨️</button>
@@ -1594,11 +1735,11 @@
         const emp = employees.find(e => e.id === empId);
         if (!emp) { closeEmployeeDetail(); return; }
         document.querySelectorAll('.employee-card').forEach(c => c.classList.toggle('active', c.dataset.empId === empId));
+        const isBetreuer = emp.category === 'betreuer';
         let html = `<div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
             <div>
-                <h4 style="margin: 0 0 4px 0;">${escapeHtml(emp.name)}</h4>
+                <h4 style="margin: 0 0 4px 0;">${escapeHtml(emp.name)} <span class="pill ${isBetreuer ? 'pill-betreuer' : 'pill-junghelfer'}">${isBetreuer ? 'Betreuer' : 'Junghelfer'}</span></h4>
                 <div style="font-size: 13px; color: #64748b;">Geburtsdatum: <strong>${escapeHtml(formatBirthDate(emp.birthDate))}</strong></div>
-                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Stammdaten-Änderungen nur über <a href="#" onclick="goHome();return false;" style="color:#0056b3;">Stammdatenverwaltung</a>.</div>
             </div>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
                 <button class="btn-secondary btn-sm" onclick="printSingleJunghelfer('${emp.id}', event)" style="width:auto;">🖨️ Einzelausleihe drucken</button>
@@ -1628,23 +1769,6 @@
         selectedEmployeeId = null;
         document.querySelectorAll('.employee-card').forEach(c => c.classList.remove('active'));
     }
-
-    // ======================================================================
-    // 16. CLICK OUTSIDE
-    // ======================================================================
-    document.addEventListener('click', function(e) {
-        const lagerArea = document.getElementById('lagerInventoryArea');
-        if (lagerArea && lagerArea.contains(e.target)) {
-            const target = e.target.closest('.inventory-card, button, .btn-icon, .btn-sm, .btn-secondary, .btn-danger');
-            if (!target) {
-                currentInventoryType = null;
-                document.querySelectorAll('.inventory-card').forEach(c => c.classList.remove('active'));
-                renderInventory();
-                const typeSelect = document.getElementById('itemType');
-                if (typeSelect) typeSelect.value = '';
-            }
-        }
-    });
 
     // ======================================================================
     // 17. DRUCK – EINZELJUNGHELFER
@@ -1975,8 +2099,12 @@
         appMode = which;
         localStorage.setItem('thw_app_mode', which);
         updateNavHighlight(which);
-        if (which === 'home') renderMasterPersons();
+
+        if (which === 'home') {
+            renderMasterPersons();
+        }
         if (which === 'service') {
+            serviceTab('plan');
             renderServiceLeaders();
             renderServiceParticipants();
             renderServices();
@@ -1985,6 +2113,7 @@
         }
         if (which === 'clothing') {
             normalizeEmployeesCentral();
+            switchTab('lager');
             renderEmployees();
             renderBorrowReturnOptions();
             renderInventoryCards();
@@ -2028,6 +2157,10 @@
         list.innerHTML = sorted.map(e => {
             const isBetreuer = e.category === 'betreuer';
             const achievementsHtml = renderAchievementBadges(e.achievements);
+            const goal = getNextGoalLevel(e);
+            const goalHtml = (isBetreuer || !goal)
+                ? (goal === null && !isBetreuer ? '<span class="pill" style="background:#dcfce7;color:#166534;">Alle Abzeichen ✓</span>' : '')
+                : `<span class="pill" style="background:#e0f2fe;color:#075985;">Nächstes Ziel: ${goal}</span>`;
             return `
             <div class="person-row ${isBetreuer ? 'betreuer' : ''}">
               <div class="person-meta">
@@ -2036,6 +2169,7 @@
                     ${e.birthDate ? new Date(e.birthDate + 'T00:00:00').toLocaleDateString('de-DE') : 'kein Geburtsdatum'}
                     · <span class="pill ${isBetreuer ? 'pill-betreuer' : 'pill-junghelfer'}">${isBetreuer ? 'Betreuer' : 'Junghelfer'}</span>
                     ${achievementsHtml ? '<span style="margin-left:4px;">' + achievementsHtml + '</span>' : ''}
+                    ${goalHtml ? '<span style="margin-left:4px;">' + goalHtml + '</span>' : ''}
                 </span>
               </div>
               <div class="person-actions">
@@ -2116,7 +2250,14 @@
         document.querySelectorAll('#serviceApp .tab-content').forEach(x => x.classList.remove('active'));
         document.querySelectorAll('#serviceApp .tab-btn').forEach(x => x.classList.remove('active'));
         document.getElementById('svc-' + id).classList.add('active');
-        if (event?.currentTarget) event.currentTarget.classList.add('active');
+        if (event?.currentTarget) {
+            event.currentTarget.classList.add('active');
+        } else {
+            const order = { 'plan': 0, 'new': 1, 'contents': 2, 'people': 3 };
+            const btns = document.querySelectorAll('#serviceTabs .tab-btn');
+            const idx = order[id];
+            if (btns[idx]) btns[idx].classList.add('active');
+        }
         if (id === 'plan') renderServices();
         if (id === 'contents') renderServiceContents();
         if (id === 'people') renderServicePeople();
@@ -2133,10 +2274,23 @@
     function renderServiceParticipants() {
         const c = document.getElementById('svcParticipants');
         if (!c) return;
-        c.innerHTML = junghelfer().map(e => `<label class="service-person-check"><input type="checkbox" name="svcParticipant" value="${e.id}"> ${esc(e.name)}</label>`).join('') || '<p>Keine Junghelfer in den Stammdaten.</p>';
+        c.innerHTML = junghelfer().map(e => {
+            const goal = getNextGoalLevel(e);
+            const goalTxt = goal ? ` <span style="font-size:11px;color:#075985;background:#e0f2fe;padding:1px 6px;border-radius:4px;">Ziel: ${goal}</span>` : ' <span style="font-size:11px;color:#166534;background:#dcfce7;padding:1px 6px;border-radius:4px;">Alle ✓</span>';
+            return `<label class="service-person-check"><input type="checkbox" name="svcParticipant" value="${e.id}"> ${esc(e.name)}${goalTxt}</label>`;
+        }).join('') || '<p>Keine Junghelfer in den Stammdaten.</p>';
     }
     function contentOptions(selected = '') {
-        return '<option value="">-- Inhalt auswählen --</option>' + serviceContents.map(c => `<option value="${c.id}" ${c.id === selected ? 'selected' : ''}>${esc(c.name)}${c.levels?.length ? ' · ' + c.levels.join('/') : ''}</option>`).join('');
+        const sorted = [...serviceContents].sort((a, b) => {
+            const aMin = Math.min(...(a.levels || []).map(l => LEVEL_ORDER.indexOf(l)).filter(i => i >= 0), 999);
+            const bMin = Math.min(...(b.levels || []).map(l => LEVEL_ORDER.indexOf(l)).filter(i => i >= 0), 999);
+            if (aMin !== bMin) return aMin - bMin;
+            return a.name.localeCompare(b.name, 'de');
+        });
+        return '<option value="">-- Inhalt auswählen --</option>' + sorted.map(c => {
+            const lvlInfo = c.levels?.length ? ' · ' + c.levels.join('/') : '';
+            return `<option value="${c.id}" ${c.id === selected ? 'selected' : ''}>${esc(c.name)}${lvlInfo}</option>`;
+        }).join('');
     }
     function addServiceContentRow(selected = '') {
         const wrap = document.getElementById('serviceContentRows');
@@ -2279,7 +2433,7 @@
             } else {
                 countCell = `<span style="color:#94a3b8;" title="Anwesenheit noch nicht erfasst">–</span>`;
             }
-            return `<tr>
+            return `<tr class="service-clickable-row" onclick="if(!event.target.closest('button')) showServiceDetail('${s.id}')">
                 <td data-label="Datum">${new Date(s.date + 'T00:00:00').toLocaleDateString('de-DE')}</td>
                 <td data-label="Zeit">${esc(s.startTime || '')} ${s.endTime ? '– ' + esc(s.endTime) : ''}</td>
                 <td data-label="Dienstart">${esc(s.title)}</td>
@@ -2287,9 +2441,9 @@
                 <td data-label="Inhalte">${esc(contents)}</td>
                 <td data-label="Teilnehmer">${countCell}</td>
                 <td data-label="Aktion">
-                    <button class="btn-sm" onclick="openAttendance('${s.id}')">👤 Anwesenheit</button>
-                    <button class="btn-secondary btn-sm" onclick="editService('${s.id}')">✏️</button>
-                    <button class="btn-danger btn-sm" onclick="deleteService('${s.id}')">🗑️</button>
+                    <button class="btn-sm" onclick="event.stopPropagation(); openAttendance('${s.id}')">👤 Anwesenheit</button>
+                    <button class="btn-secondary btn-sm" onclick="event.stopPropagation(); editService('${s.id}')">✏️</button>
+                    <button class="btn-danger btn-sm" onclick="event.stopPropagation(); deleteService('${s.id}')">🗑️</button>
                 </td>
             </tr>`;
         }).join('') : '<tr><td colspan="7">Noch keine Dienste angelegt.</td></tr>';
@@ -2299,7 +2453,70 @@
     }
 
     // ======================================================================
-    // DRUCK: ZUKÜNFTIGE DIENSTE
+    // MODAL: DIENST-DETAILS
+    // ======================================================================
+    function showServiceDetail(id) {
+        const s = services.find(x => x.id === id);
+        if (!s) return;
+
+        const dateStr = new Date(s.date + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+        const timeStr = (s.startTime || '') + (s.endTime ? ' – ' + s.endTime : '');
+
+        const leaders = (s.leaderIds || []).map(pid => employees.find(e => e.id === pid)).filter(Boolean);
+        const contents = (s.contentIds || []).map(cid => serviceContents.find(c => c.id === cid)).filter(Boolean);
+        const participants = (s.participantIds || []).map(pid => employees.find(e => e.id === pid)).filter(Boolean);
+        const attended = (s.attendance || []).map(pid => employees.find(e => e.id === pid)).filter(Boolean);
+
+        const leadersHtml = leaders.length
+            ? `<ul>${leaders.map(e => `<li>${esc(e.name)}</li>`).join('')}</ul>`
+            : '<p class="empty-hint">Keine Betreuer eingetragen.</p>';
+
+        const contentsHtml = contents.length
+            ? `<ul>${contents.map(c => {
+                const lvlInfo = c.levels?.length ? ` <span style="color:#64748b;font-size:12px;">(${c.levels.join(', ')})</span>` : '';
+                return `<li>${esc(c.name)}${lvlInfo}</li>`;
+            }).join('')}</ul>`
+            : '<p class="empty-hint">Keine Dienstinhalte eingetragen.</p>';
+
+        let attendanceHtml = '';
+        if (attended.length) {
+            attendanceHtml = `<h3>Anwesend (${attended.length})</h3><ul>${attended.map(e => `<li>${esc(e.name)}</li>`).join('')}</ul>`;
+        } else if (participants.length) {
+            attendanceHtml = `<h3>Geplante Teilnehmer (${participants.length})</h3><ul>${participants.map(e => `<li>${esc(e.name)}</li>`).join('')}</ul><p class="empty-hint" style="margin-top:6px;">Anwesenheit noch nicht erfasst.</p>`;
+        } else {
+            attendanceHtml = `<h3>Teilnehmer</h3><p class="empty-hint">Noch keine Teilnehmer erfasst.</p>`;
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        modal.innerHTML = `
+            <div class="modal-content" onclick="event.stopPropagation();">
+                <h2>${esc(s.title)}</h2>
+                <p class="modal-subtitle">${dateStr} · ${timeStr}</p>
+
+                <div class="info-row"><strong>Ort:</strong> ${s.location ? esc(s.location) : '<em style="color:#94a3b8;">nicht angegeben</em>'}</div>
+                ${s.notes ? `<div class="info-row"><strong>Notizen:</strong> ${esc(s.notes)}</div>` : ''}
+
+                <h3>👥 Betreuer / Dienstdurchführende</h3>
+                ${leadersHtml}
+
+                <h3>📚 Dienstinhalte</h3>
+                ${contentsHtml}
+
+                ${attendanceHtml}
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
+                    <button type="button" class="btn-success" onclick="this.closest('.modal-overlay').remove(); editService('${s.id}');">✏️ Bearbeiten</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // ======================================================================
+    // DRUCK: ZUKÜNFTIGE DIENSTE (QUERFORMAT)
     // ======================================================================
     function printFutureServices() {
         const todayIso = new Date().toISOString().slice(0, 10);
@@ -2330,14 +2547,14 @@
 
         const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Zukünftige Dienste</title>
         <style>
-            @page { size: A4 portrait; margin: 15mm; }
-            body { font-family: Arial, sans-serif; font-size: 10.5pt; line-height: 1.4; color: #000; margin: 0; }
+            @page { size: A4 landscape; margin: 15mm; }
+            body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.4; color: #000; margin: 0; }
             .sender-info { float: right; text-align: right; font-size: 10pt; }
             .header-small { font-size: 8pt; text-decoration: underline; color: #555; margin-bottom: 30px; margin-top: 40px; clear: both; }
-            h1 { font-size: 16pt; margin: 20px 0 8px; border-bottom: 2px solid #0056b3; padding-bottom: 5px; color: #0056b3; }
+            h1 { font-size: 18pt; margin: 20px 0 8px; border-bottom: 2px solid #0056b3; padding-bottom: 5px; color: #0056b3; }
             .subtitle { font-size: 10pt; color: #555; margin-bottom: 16px; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { border: 1px solid #999; padding: 7px 8px; vertical-align: top; text-align: left; font-size: 10pt; }
+            th, td { border: 1px solid #999; padding: 8px 10px; vertical-align: top; text-align: left; font-size: 10.5pt; }
             th { background: #e9edf2; font-weight: bold; }
             .footer { margin-top: 30px; font-size: 8.5pt; color: #666; text-align: center; }
         </style></head><body>
@@ -2349,12 +2566,12 @@
         <div class="subtitle">${CONTACT.org} – Stand: ${currentDate} – ${future.length} Dienst(e) geplant</div>
         <table>
             <thead><tr>
-                <th style="width:18%">Datum</th>
-                <th style="width:14%">Uhrzeit</th>
-                <th style="width:20%">Dienstart</th>
-                <th style="width:16%">Ort</th>
-                <th style="width:16%">Betreuer</th>
-                <th style="width:16%">Inhalte</th>
+                <th style="width:16%">Datum</th>
+                <th style="width:12%">Uhrzeit</th>
+                <th style="width:18%">Dienstart</th>
+                <th style="width:14%">Ort</th>
+                <th style="width:20%">Betreuer</th>
+                <th style="width:20%">Inhalte</th>
             </tr></thead>
             <tbody>${rows}</tbody>
         </table>
@@ -2378,11 +2595,12 @@
         const list = junghelfer().map(e => `<label style="display:block;padding:7px;border-bottom:1px solid #eee;"><input type="checkbox" class="attendance-check" value="${e.id}" ${current.includes(e.id) ? 'checked' : ''}> ${esc(e.name)}</label>`).join('');
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000000;display:flex;align-items:center;justify-content:center;padding:15px;';
-        modal.innerHTML = `<div style="background:white;max-width:650px;width:100%;max-height:90vh;overflow:auto;padding:22px;border-radius:14px;">
-            <h2>Anwesenheit: ${esc(s.title)}</h2><p>${new Date(s.date + 'T00:00:00').toLocaleDateString('de-DE')}</p>
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        modal.innerHTML = `<div class="modal-content" onclick="event.stopPropagation();">
+            <h2>Anwesenheit: ${esc(s.title)}</h2>
+            <p class="modal-subtitle">${new Date(s.date + 'T00:00:00').toLocaleDateString('de-DE')}</p>
             <div style="max-height:50vh;overflow:auto;border:1px solid #ddd;border-radius:8px;">${list}</div>
-            <div style="display:flex;gap:8px;margin-top:14px;">
+            <div class="modal-actions">
                 <button type="button" class="btn-success" id="saveAtt">Speichern</button>
                 <button type="button" class="btn-secondary" id="allAtt">Alle auswählen</button>
                 <button type="button" class="btn-danger" id="closeAtt">Schließen</button>
@@ -2477,6 +2695,12 @@
 
         c.innerHTML = list.map(e => {
             const manualAchievements = e.achievements || [];
+            const nextGoal = getNextGoalLevel(e);
+
+            const goalBadge = nextGoal
+                ? `<span class="goal-badge">🎯 Nächstes Ziel: ${nextGoal}</span>`
+                : `<span class="goal-badge goal-done">✓ Alle Abzeichen erreicht</span>`;
+
             const summaryParts = ['Bronze', 'Silber', 'Gold'].map(level => {
                 const req = serviceContents.filter(x => x.levels?.includes(level));
                 const done = req.map(x => ({ x, service: completedForPerson(e.id, x.id) }));
@@ -2495,10 +2719,13 @@
                 const done = req.map(x => ({ x, service: completedForPerson(e.id, x.id) }));
                 const doneCount = done.filter(d => d.service).length;
                 const isComplete = doneCount === req.length;
-                return `<div class="badge-box">
+                const isCurrentGoal = nextGoal === level;
+                const highlight = isCurrentGoal ? ' style="border:2px solid #0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,0.15);"' : '';
+                return `<div class="badge-box"${highlight}>
                     <h4>${level} ${level === 'Bronze' ? '🥉' : level === 'Silber' ? '🥈' : '🥇'}
                         <span style="font-weight:400;font-size:13px;color:#64748b;margin-left:6px;">${doneCount}/${req.length} erledigt</span>
                         ${isComplete ? '<span style="color:#198754;font-weight:700;margin-left:6px;">✓ Vollständig</span>' : ''}
+                        ${isCurrentGoal ? '<span style="color:#0ea5e9;font-weight:700;margin-left:6px;font-size:12px;">← aktuelles Ziel</span>' : ''}
                     </h4>
                     ${done.map(d => {
                         if (!d.service) return `<div class="missing">❌ ${esc(d.x.name)}</div>`;
@@ -2516,6 +2743,7 @@
                 <summary>
                     <div class="person-badge-summary-text">
                         <strong>${esc(e.name)}</strong>
+                        ${goalBadge}
                         ${summaryParts}
                     </div>
                 </summary>
