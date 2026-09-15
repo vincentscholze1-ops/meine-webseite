@@ -602,7 +602,10 @@
     <div id="lager" class="tab-content active">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
             <h3 style="margin: 0;">Aktueller Lagerbestand</h3>
-            <button onclick="printInventory()" style="background: #6c757d; width: auto; padding: 8px 18px;">🖨️ Komplettes Lager drucken</button>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button onclick="printInventoryType()" style="background: #6c757d; width: auto; padding: 8px 18px;">🖨️ Kleidungsart drucken</button>
+                <button onclick="printInventory()" style="background: #6c757d; width: auto; padding: 8px 18px;">🖨️ Komplettes Lager drucken</button>
+            </div>
         </div>
         
         <div id="lagerInventoryArea">
@@ -1683,6 +1686,130 @@
         printWindow.document.write(html);
         printWindow.document.close();
         addLogEntry('Alle Ausleihen gedruckt');
+    }
+
+    function printInventoryType() {
+        if (!currentInventoryType) {
+            alert('Bitte zuerst eine Kleidungsart auswählen.');
+            return;
+        }
+
+        const items = inventory.filter(item =>
+            currentInventoryType === 'Handschuhe'
+                ? item.type.startsWith('Handschuhe')
+                : item.type === currentInventoryType
+        );
+
+        if (items.length === 0) {
+            alert(`Für „${currentInventoryType}“ sind aktuell keine Artikel im Lager vorhanden.`);
+            return;
+        }
+
+        const getBorrowersForItem = (item) => {
+            const borrowers = [];
+            employees.forEach(emp => {
+                const borrowed = (emp.borrowed || []).filter(b =>
+                    ((b.invId && b.invId === item.id) ||
+                    (!b.invId && b.type === item.type && b.size === item.size)) &&
+                    Number(b.quantity) > 0
+                );
+                const quantity = borrowed.reduce((sum, b) => sum + Number(b.quantity || 0), 0);
+                if (quantity > 0) {
+                    borrowers.push({ name: emp.name || '', quantity });
+                }
+            });
+            return borrowers.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+        };
+
+        const sortedItems = [...items].sort((a, b) => {
+            if (a.type !== b.type) return a.type.localeCompare(b.type, 'de');
+            const sa = String(a.size || '');
+            const sb = String(b.size || '');
+            return sortSizes([sa, sb], a.type)[0] === sa ? -1 : 1;
+        });
+
+        const currentDate = new Date().toLocaleDateString('de-DE', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert('Das Druckfenster konnte nicht geöffnet werden. Bitte Pop-ups für diese Seite erlauben.');
+            return;
+        }
+
+        const title = currentInventoryType === 'Handschuhe'
+            ? 'Handschuhe'
+            : currentInventoryType;
+
+        let html = `
+        <!DOCTYPE html>
+        <html lang="de">
+        <head>
+            <meta charset="UTF-8">
+            <title>Lagerbestand – ${escapeHtml(title)}</title>
+            <style>
+                @page { size: A4 portrait; margin: 15mm; }
+                body { font-family: Arial, sans-serif; font-size: 10.5pt; color: #000; margin: 0; }
+                h1 { font-size: 18pt; color: #0056b3; margin: 0 0 5px; border-bottom: 2px solid #0056b3; padding-bottom: 6px; }
+                h2 { font-size: 13pt; margin: 22px 0 8px; color: #222; }
+                .header { margin-bottom: 18px; }
+                .meta { font-size: 9pt; color: #555; margin-top: 5px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+                th, td { border: 1px solid #999; padding: 7px 8px; vertical-align: top; text-align: left; }
+                th { background: #e9edf2; font-weight: bold; }
+                .size { width: 15%; font-weight: bold; }
+                .stock { width: 18%; text-align: center; }
+                .borrowed { width: 67%; }
+                .none { color: #777; font-style: italic; }
+                .type-block { page-break-inside: avoid; }
+                .footer { margin-top: 25px; font-size: 8.5pt; color: #666; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Lagerbestand: ${escapeHtml(title)}</h1>
+                <div class="meta">${escapeHtml(CONTACT.org)} – Stand: ${currentDate}</div>
+            </div>`;
+
+        let lastType = null;
+        sortedItems.forEach(item => {
+            if (item.type !== lastType) {
+                html += `<div class="type-block"><h2>${escapeHtml(item.type)}</h2>`;
+                html += `<table><thead><tr><th class="size">Größe</th><th class="stock">Verfügbar</th><th class="borrowed">Aktuell an Junghelfer ausgeliehen</th></tr></thead><tbody>`;
+                lastType = item.type;
+            }
+
+            const borrowers = getBorrowersForItem(item);
+            const borrowerHtml = borrowers.length
+                ? borrowers.map(b => `${escapeHtml((b.name || '').trim().split(/\s+/)[0] || b.name)} (${b.quantity}x)`).join('<br>')
+                : '<span class="none">Niemand</span>';
+
+            html += `<tr>
+                <td class="size">${escapeHtml(item.size)}</td>
+                <td class="stock">${item.available}</td>
+                <td class="borrowed">${borrowerHtml}</td>
+            </tr>`;
+
+            const next = sortedItems[sortedItems.indexOf(item) + 1];
+            if (!next || next.type !== item.type) {
+                html += `</tbody></table></div>`;
+            }
+        });
+
+        html += `
+            <div class="footer">Ausgedruckt am ${new Date().toLocaleString('de-DE')}</div>
+            <script>
+                window.onload = function() {
+                    setTimeout(function() { window.print(); }, 300);
+                };
+            <\/script>
+        </body>
+        </html>`;
+
+        printWindow.document.open();
+        printWindow.document.write(html);
+        printWindow.document.close();
+        addLogEntry(`Lagerbestand für ${title} gedruckt`);
     }
 
     function printInventory() { window.print(); addLogEntry('Lagerbestand gedruckt'); }
