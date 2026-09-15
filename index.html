@@ -372,6 +372,17 @@
             font-size: 12px;
         }
 
+        .equipment-category {
+            margin-top: 14px;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #d1d9e6;
+            color: #0056b3;
+            font-weight: 700;
+        }
+        .equipment-category:first-child { margin-top: 8px; }
+        .equipment-item { padding: 4px 0; }
+
         /* ==================== MODE-TOGGLE ==================== */
         .top-bar {
             display: flex;
@@ -510,6 +521,7 @@
             }
             td:last-child { border-bottom: none; }
             td[data-label="Notiz"] { word-break: break-word; white-space: normal; }
+            td[data-label="Auf Junghelfer gebucht"] { word-break: break-word; white-space: normal; }
             td[data-label="Aktion"] {
                 text-align: right;
                 margin-top: 8px;
@@ -598,7 +610,7 @@
             <div class="table-wrapper">
                 <table id="inventoryTable">
                     <thead>
-                        <tr><th>Artikeltyp</th><th>Größe</th><th>Gesamtbestand</th><th>Verfügbar</th><th>Notiz</th><th>Aktion</th></tr>
+                        <tr><th>Artikeltyp</th><th>Größe</th><th>Gesamtbestand</th><th>Verfügbar</th><th>Notiz</th><th>Auf Junghelfer gebucht</th><th>Aktion</th></tr>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -790,10 +802,11 @@
     };
 
     // ======================================================================
-    // 0b. PASSWORD STORAGE KEYS
+    // 0b. FESTES PASSWORT
     // ======================================================================
-    const PASSWORD_HASH_KEY = 'thw_password_hash';
-    // sessionStorage flag to remember successful login for this tab/session
+    // Das Passwort ist fest vorgegeben und kann nicht über die Oberfläche
+    // geändert werden.
+    const FIXED_PASSWORD = 'Jugend2026';
     const AUTH_SESSION_KEY = 'thw_authenticated';
 
     // ======================================================================
@@ -812,74 +825,25 @@
     const standardTypes = ['Jacke MEA', 'Jacke Fleece', 'Hose MEA', 'Hoodie', 'Schuhe', 'Helm', 'Handschuhe', 'T-Shirt'];
 
     // ======================================================================
-    // Helper: SHA-256 Hash (SubtleCrypto)
+    // 2. PASSWORT-FUNKTIONEN
     // ======================================================================
-    async function hashStringSHA256(str) {
-        const enc = new TextEncoder();
-        const data = enc.encode(str);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    // ======================================================================
-    // 2. PASSWORT-FUNKTIONEN (setzen, prüfen, init)
-    // ======================================================================
-    async function checkPassword() {
+    function checkPassword() {
         const input = document.getElementById('passwordInput');
         const errorDiv = document.getElementById('loginError');
         const overlay = document.getElementById('passwordOverlay');
-        const mode = overlay.dataset.mode;
-        if (mode === 'set') {
-            // set initial password
-            return setInitialPassword();
-        }
-        const storedHash = localStorage.getItem(PASSWORD_HASH_KEY);
-        if (!storedHash) {
-            // fallback: switch to set mode
-            switchToSetMode();
-            return;
-        }
         const entered = input.value || '';
-        const enteredHash = await hashStringSHA256(entered);
-        if (enteredHash === storedHash) {
+
+        if (entered === FIXED_PASSWORD) {
             sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
             overlay.style.display = 'none';
             errorDiv.style.display = 'none';
             input.value = '';
         } else {
+            errorDiv.textContent = 'Falsches Passwort! Bitte erneut versuchen.';
             errorDiv.style.display = 'block';
             input.value = '';
             input.focus();
         }
-    }
-
-    async function setInitialPassword() {
-        const input = document.getElementById('passwordInput');
-        const confirm = document.getElementById('passwordConfirm');
-        const errorDiv = document.getElementById('loginError');
-        const p1 = input.value || '';
-        const p2 = confirm.value || '';
-        if (p1.length < 4) { // minimal einfache validation
-            errorDiv.textContent = 'Passwort zu kurz (min. 4 Zeichen).';
-            errorDiv.style.display = 'block';
-            return;
-        }
-        if (p1 !== p2) {
-            errorDiv.textContent = 'Passwörter stimmen nicht überein.';
-            errorDiv.style.display = 'block';
-            return;
-        }
-        const hash = await hashStringSHA256(p1);
-        localStorage.setItem(PASSWORD_HASH_KEY, hash);
-        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-        // clear fields
-        input.value = '';
-        confirm.value = '';
-        errorDiv.style.display = 'none';
-        document.getElementById('passwordOverlay').style.display = 'none';
-        addLogEntry('Initiales Passwort gesetzt');
-        showToast('Passwort gesetzt', 'success');
     }
 
     function handlePasswordKeyPress(event) {
@@ -897,44 +861,31 @@
         setTimeout(() => input.focus(), 100);
     }
 
-    function switchToSetMode() {
-        const overlay = document.getElementById('passwordOverlay');
-        overlay.dataset.mode = 'set';
-        document.getElementById('loginTitle').textContent = 'Initiales Passwort setzen';
-        document.getElementById('loginSubtitle').textContent = 'Bitte ein neues Passwort setzen (wird als Hash lokal gespeichert).';
-        document.getElementById('passwordConfirm').style.display = 'block';
-        const btn = document.getElementById('loginBtn');
-        btn.textContent = 'Passwort setzen';
-        document.getElementById('passwordInput').focus();
-    }
-
     function initPasswordProtection() {
         const isAuthenticated = sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
         const overlay = document.getElementById('passwordOverlay');
-        const storedHash = localStorage.getItem(PASSWORD_HASH_KEY);
+        const input = document.getElementById('passwordInput');
+
+        // Altes, eventuell gespeichertes Passwort wird bewusst ignoriert.
+        // Gültig ist ausschließlich FIXED_PASSWORD.
+        localStorage.removeItem('thw_password_hash');
+
         if (isAuthenticated) {
             overlay.style.display = 'none';
             return;
         }
+
+        overlay.dataset.mode = 'login';
         overlay.style.display = 'flex';
-        if (!storedHash) {
-            // no password set yet -> prompt to set
-            overlay.dataset.mode = 'set';
-            document.getElementById('loginTitle').textContent = 'Initiales Passwort setzen';
-            document.getElementById('loginSubtitle').textContent = 'Bitte ein neues Passwort setzen (wird als Hash lokal gespeichert).';
-            document.getElementById('passwordConfirm').style.display = 'block';
-            document.getElementById('loginBtn').textContent = 'Passwort setzen';
-        } else {
-            overlay.dataset.mode = 'login';
-            document.getElementById('loginTitle').textContent = 'THW Lagerverwaltung';
-            document.getElementById('loginSubtitle').textContent = 'Bitte geben Sie das Passwort ein, um Zugriff auf die Bekleidungsverwaltung zu erhalten.';
-            document.getElementById('passwordConfirm').style.display = 'none';
-            document.getElementById('loginBtn').textContent = 'Anmelden';
+        document.getElementById('loginTitle').textContent = 'THW Lagerverwaltung';
+        document.getElementById('loginSubtitle').textContent = 'Bitte geben Sie das Passwort ein, um Zugriff auf die Bekleidungsverwaltung zu erhalten.';
+        document.getElementById('passwordConfirm').style.display = 'none';
+        document.getElementById('loginBtn').textContent = 'Anmelden';
+
+        if (input) {
+            input.value = '';
+            setTimeout(() => input.focus(), 100);
         }
-        setTimeout(() => {
-            const input = document.getElementById('passwordInput');
-            if (input) input.focus();
-        }, 100);
     }
 
     // ======================================================================
@@ -1309,13 +1260,38 @@
     // ======================================================================
     // 14. LAGERBESTAND ANZEIGEN
     // ======================================================================
+    function getBookedFirstNames(item) {
+        if (!item) return [];
+        const names = [];
+        employees.forEach(emp => {
+            const borrowed = (emp.borrowed || []).find(b =>
+                (b.invId && b.invId === item.id) ||
+                (!b.invId && b.type === item.type && b.size === item.size)
+            );
+            if (borrowed && borrowed.quantity > 0) {
+                const firstName = (emp.name || '').trim().split(/\s+/)[0];
+                if (firstName && !names.includes(firstName)) names.push(firstName);
+            }
+        });
+        return names.sort((a, b) => a.localeCompare(b, 'de'));
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     function renderInventory() {
         const tbody = document.querySelector('#inventoryTable tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
         
         if (!currentInventoryType) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px 0; color:#6c757d;">Bitte wähle einen Bekleidungstyp aus.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px 0; color:#6c757d;">Bitte wähle einen Bekleidungstyp aus.</td></tr>`;
             return;
         }
 
@@ -1324,18 +1300,23 @@
             return i.type === currentInventoryType;
         });
         if (filteredInv.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px 0; color:#6c757d;">Keine Artikel dieses Typs im Lager.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px 0; color:#6c757d;">Keine Artikel dieses Typs im Lager.</td></tr>`;
             return;
         }
         filteredInv.sort((a, b) => sortSizes([a.size, b.size], currentInventoryType)[0] === a.size ? -1 : 1).forEach(item => {
             const rowClass = item.available === 0 ? 'out-of-stock-row' : '';
+            const bookedNames = getBookedFirstNames(item);
+            const bookedNamesHtml = bookedNames.length
+                ? bookedNames.map(name => escapeHtml(name)).join(', ')
+                : '<span style="color:#94a3b8;">—</span>';
             tbody.innerHTML += `
                 <tr class="${rowClass}">
-                    <td data-label="Artikeltyp">${item.type}</td>
-                    <td data-label="Größe">${item.size}</td>
+                    <td data-label="Artikeltyp">${escapeHtml(item.type)}</td>
+                    <td data-label="Größe">${escapeHtml(item.size)}</td>
                     <td data-label="Gesamtbestand">${item.total}</td>
                     <td data-label="Verfügbar"><strong>${item.available}</strong></td>
-                    <td data-label="Notiz">${item.note || ''}</td>
+                    <td data-label="Notiz">${escapeHtml(item.note || '')}</td>
+                    <td data-label="Auf Junghelfer gebucht">${bookedNamesHtml}</td>
                     <td data-label="Aktion"><button class="btn-icon" title="Notiz bearbeiten" onclick="updateItemNote('${item.id}')">✏️</button></td>
                 </tr>
             `;
@@ -1409,6 +1390,58 @@
         if (selectedEmployeeId) showEmployeeDetail(selectedEmployeeId, true);
     }
 
+    function getEmployeeEquipmentGroups(emp) {
+        const meaOrder = ['Jacke MEA', 'Jacke Fleece', 'Hose MEA', 'T-Shirt', 'Schuhe', 'Helm', 'Handschuhe'];
+        const helfervereinOrder = ['Hoodie'];
+
+        const getOrderIndex = (type, order) => {
+            if (type.startsWith('Handschuhe')) return order.indexOf('Handschuhe');
+            return order.indexOf(type);
+        };
+
+        const mea = [];
+        const helferverein = [];
+
+        (emp.borrowed || []).forEach(item => {
+            if (!item || item.quantity <= 0) return;
+            if (item.type === 'Hoodie') helferverein.push(item);
+            else if (meaOrder.includes(item.type) || item.type.startsWith('Handschuhe')) mea.push(item);
+        });
+
+        const compareItems = (a, b, order) => {
+            const oa = getOrderIndex(a.type, order);
+            const ob = getOrderIndex(b.type, order);
+            if (oa !== ob) return oa - ob;
+            if (a.type !== b.type) return a.type.localeCompare(b.type, 'de');
+            return sortSizes([a.size, b.size], a.type)[0] === a.size ? -1 : 1;
+        };
+
+        mea.sort((a, b) => compareItems(a, b, meaOrder));
+        helferverein.sort((a, b) => compareItems(a, b, helfervereinOrder));
+        return { mea, helferverein };
+    }
+
+    function renderEmployeeEquipmentGroups(emp) {
+        const groups = getEmployeeEquipmentGroups(emp);
+        let html = '';
+
+        if (groups.mea.length) {
+            html += '<div class="equipment-category">MEA</div>';
+            html += groups.mea.map(b =>
+                `<div class="equipment-item">${b.quantity}x ${escapeHtml(b.type)} (Gr. ${escapeHtml(b.size)})</div>`
+            ).join('');
+        }
+
+        if (groups.helferverein.length) {
+            html += '<div class="equipment-category">Helferverein</div>';
+            html += groups.helferverein.map(b =>
+                `<div class="equipment-item">${b.quantity}x ${escapeHtml(b.type)} (Gr. ${escapeHtml(b.size)})</div>`
+            ).join('');
+        }
+
+        return html || '<em>Keine Ausrüstung.</em>';
+    }
+
     function showEmployeeDetail(empId, silent = false) {
         selectedEmployeeId = empId;
         const area = document.getElementById('employeeDetailArea');
@@ -1424,12 +1457,8 @@
                 <button class="btn-secondary btn-sm" onclick="printSingleJunghelfer('${emp.id}', event)" style="width:auto;">🖨️ Einzelausleihe drucken</button>
             </div>
         </div>`;
-        html += '<strong>Aktuelle Ausrüstung:</strong><br>';
-        if (emp.borrowed.length) {
-            html += emp.borrowed.map(b => `<div>${b.quantity}x ${b.type} (Gr. ${b.size})</div>`).join('');
-        } else {
-            html += '<em>Keine Ausrüstung.</em>';
-        }
+        html += '<strong>Aktuelle Ausrüstung:</strong>';
+        html += renderEmployeeEquipmentGroups(emp);
         const history = getHistoryForEmployee(emp.id, 3);
         html += '<div class="history-section"><strong>Historie (letzte 3 Jahre):</strong><br>';
         if (history.length) {
