@@ -2926,6 +2926,8 @@
             if (!emp.role) emp.role = 'youth';
             if (!Array.isArray(emp.earnedBadges)) emp.earnedBadges = [];
             emp.earnedBadges = emp.earnedBadges.filter(b => BADGE_LEVELS.includes(b));
+            if (!Array.isArray(emp.assignedActivities)) emp.assignedActivities = [];
+            emp.assignedActivities = [...new Set(emp.assignedActivities.map(String).filter(Boolean))];
         });
         serviceActivities.forEach(a => {
             if (!Array.isArray(a.badgeLevels)) a.badgeLevels = [];
@@ -3280,6 +3282,8 @@
             employees.forEach(e=>{
                 if(!Array.isArray(e.borrowed)) e.borrowed=[];
                 if(!Array.isArray(e.earnedBadges)) e.earnedBadges=[];
+                if(!Array.isArray(e.assignedActivities)) e.assignedActivities=[];
+                e.assignedActivities=[...new Set(e.assignedActivities.map(String).filter(Boolean))];
                 if(!e.role) e.role='youth';
                 if(e.entryDate===undefined)e.entryDate='';
                 if(e.phone===undefined)e.phone='';
@@ -3597,7 +3601,7 @@
         };
 
         window.resetMasterForm=function(){
-            ['masterEditId','masterName','masterBirthDate','masterEntryDate','masterPhone','masterEmail','masterAddress','masterNotes'].forEach(id=>setMaster(id,''));
+            ['masterEditId','masterName','masterBirthDate'].forEach(id=>setMaster(id,''));
             setMaster('masterRole','youth');
             const status=document.getElementById('masterEditStatus');
             if(status) status.style.display='none';
@@ -3620,14 +3624,9 @@
                 emp={id:'e_'+Date.now()+Math.random().toString(36).slice(2,7),name:'',birthDate:'',role:'youth',borrowed:[],earnedBadges:[]};
                 employees.push(emp);
             }
-            Object.assign(emp,{
-                name,birthDate,role,
-                entryDate:masterVal('masterEntryDate'),
-                phone:masterVal('masterPhone').trim(),
-                email:masterVal('masterEmail').trim(),
-                address:masterVal('masterAddress').trim(),
-                notes:masterVal('masterNotes').trim()
-            });
+            Object.assign(emp,{ name,birthDate,role });
+            // Die übrigen Anwendungsdaten bleiben absichtlich unangetastet.
+            // Stammdaten verwaltet ausschließlich Name, Geburtsdatum und Rolle.
             if(!Array.isArray(emp.borrowed))emp.borrowed=[];
             if(!Array.isArray(emp.earnedBadges))emp.earnedBadges=[];
             employees.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'de'));
@@ -3654,11 +3653,6 @@
             setMaster('masterName',e.name);
             setMaster('masterBirthDate',e.birthDate);
             setMaster('masterRole',e.role||'youth');
-            setMaster('masterEntryDate',e.entryDate);
-            setMaster('masterPhone',e.phone);
-            setMaster('masterEmail',e.email);
-            setMaster('masterAddress',e.address);
-            setMaster('masterNotes',e.notes);
             const status=document.getElementById('masterEditStatus');
             if(status){status.style.display='block';status.textContent=`✏️ Bearbeitungsmodus: ${e.name} wird geändert.`;}
             const saveBtn=document.querySelector('#masterDataPanel button[onclick="saveMasterPerson()"]');
@@ -3701,11 +3695,6 @@
                         <span class="role-badge ${isLeader(e)?'role-leader':'role-youth'}">${escapeHtml(roleLabel(e))}</span>
                     </div>
                     <div style="font-size:12px;color:#64748b;margin-top:5px;">Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</div>
-                    ${e.entryDate?`<div class="service-meta">📅 Eintritt: ${escapeHtml(fmtShortDate(e.entryDate))}</div>`:''}
-                    ${e.phone?`<div class="service-meta">☎️ ${escapeHtml(e.phone)}</div>`:''}
-                    ${e.email?`<div class="service-meta">✉️ ${escapeHtml(e.email)}</div>`:''}
-                    ${e.address?`<div class="service-meta">📍 ${escapeHtml(e.address)}</div>`:''}
-                    ${e.notes?`<div class="service-meta">📝 ${escapeHtml(e.notes)}</div>`:''}
                     <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
                         <button type="button" class="btn-secondary btn-sm" onclick="editMasterPerson('${escapeHtml(String(e.id))}')">✏️ Bearbeiten</button>
                         <button type="button" class="btn-danger btn-sm" onclick="deleteMasterPerson('${escapeHtml(String(e.id))}')">🗑️ Löschen</button>
@@ -3762,6 +3751,159 @@
         // Geburtstagshinweise sofort für bestehende und neue Dienste neu darstellen.
         if(document.getElementById('serviceList')) renderServices();
     })();
+/* ======================================================================
+   ABSCHLUSS-FIX 2026: ZENTRALE STAMMDATEN + AUSBILDUNGSZUWEISUNG
+   ====================================================================== */
+(function(){
+    function ensurePersonData(){
+        if(!Array.isArray(employees)) employees=[];
+        employees.forEach(e=>{
+            if(!e.id) e.id='e_'+Date.now()+Math.random().toString(36).slice(2,8);
+            if(!e.name) e.name='Unbenannte Person';
+            if(e.birthDate===undefined) e.birthDate='';
+            if(!e.role) e.role='youth';
+            if(!Array.isArray(e.borrowed)) e.borrowed=[];
+            if(!Array.isArray(e.earnedBadges)) e.earnedBadges=[];
+            if(!Array.isArray(e.assignedActivities)) e.assignedActivities=[];
+            e.assignedActivities=[...new Set(e.assignedActivities.map(String).filter(Boolean))];
+        });
+        employees.sort((a,b)=>String(a.name).localeCompare(String(b.name),'de'));
+        localStorage.setItem('employees',JSON.stringify(employees));
+    }
+
+    function savePeopleEverywhere(){
+        ensurePersonData();
+        if(typeof saveData==='function') saveData();
+        localStorage.setItem('employees',JSON.stringify(employees));
+    }
+
+    // Stammdaten: wirklich nur Name, Geburtsdatum und Rolle.
+    window.resetMasterForm=function(){
+        ['masterEditId','masterName','masterBirthDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+        const role=document.getElementById('masterRole'); if(role)role.value='youth';
+        const status=document.getElementById('masterEditStatus'); if(status)status.style.display='none';
+        const btn=document.querySelector('#masterDataPanel button[onclick="saveMasterPerson()"]'); if(btn)btn.textContent='Person speichern';
+    };
+
+    window.openMasterData=function(){
+        ensurePersonData();
+        const panel=document.getElementById('masterDataPanel'), options=document.querySelector('#appModeOverlay .app-mode-options');
+        if(!panel)return;
+        if(options)options.style.display='none';
+        panel.style.display='block';
+        const overlay=document.getElementById('appModeOverlay');
+        if(overlay){overlay.style.display='flex';overlay.style.overflowY='auto';overlay.style.overflowX='hidden';}
+        window.resetMasterForm();
+        window.renderMasterPeople();
+    };
+
+    window.saveMasterPerson=function(){
+        ensurePersonData();
+        const id=(document.getElementById('masterEditId')?.value||'').trim();
+        const name=(document.getElementById('masterName')?.value||'').trim();
+        const birthDate=document.getElementById('masterBirthDate')?.value||'';
+        const role=document.getElementById('masterRole')?.value||'youth';
+        if(!name)return alert('Bitte einen Namen eingeben.');
+        if(!birthDate)return alert('Bitte ein Geburtsdatum eingeben.');
+        let emp=id?employees.find(e=>String(e.id)===id):null;
+        const isNew=!emp;
+        if(!emp){
+            emp={id:'e_'+Date.now()+Math.random().toString(36).slice(2,8),name:'',birthDate:'',role:'youth',borrowed:[],earnedBadges:[],assignedActivities:[]};
+            employees.push(emp);
+        }
+        emp.name=name; emp.birthDate=birthDate; emp.role=role;
+        savePeopleEverywhere();
+        try{renderEmployees();renderBorrowReturnOptions();}catch(e){console.warn(e);}
+        try{renderServiceApp();}catch(e){console.warn(e);}
+        window.renderMasterPeople();
+        if(typeof addLogEntry==='function')addLogEntry(`${role==='leader'?'Betreuer':'Junghelfer'} "${name}" ${isNew?'angelegt':'bearbeitet'}`);
+        showToast(isNew?'Person angelegt':'Stammdaten gespeichert','success');
+        window.resetMasterForm();
+        window.renderMasterPeople();
+    };
+
+    window.editMasterPerson=function(id){
+        ensurePersonData();
+        const e=employees.find(x=>String(x.id)===String(id)); if(!e)return;
+        const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
+        set('masterEditId',e.id); set('masterName',e.name); set('masterBirthDate',e.birthDate); set('masterRole',e.role||'youth');
+        const status=document.getElementById('masterEditStatus');
+        if(status){status.style.display='block';status.textContent=`✏️ Bearbeitungsmodus: ${e.name}`;}
+        const btn=document.querySelector('#masterDataPanel button[onclick="saveMasterPerson()"]'); if(btn)btn.textContent='Änderungen speichern';
+        document.getElementById('masterDataPanel')?.scrollIntoView({behavior:'smooth',block:'start'});
+    };
+
+    window.renderMasterPeople=function(){
+        ensurePersonData();
+        const list=document.getElementById('masterPeopleList'); if(!list)return;
+        const term=(document.getElementById('masterSearch')?.value||'').toLowerCase().trim();
+        const rf=document.getElementById('masterRoleFilter')?.value||'';
+        const arr=employees.filter(e=>String(e.name).toLowerCase().includes(term)&&(!rf||(e.role||'youth')===rf));
+        list.innerHTML=`<div style="font-size:13px;color:#64748b;margin-bottom:10px;"><strong>${arr.length}</strong> Personen gefunden</div>`+
+            (arr.length?arr.map(e=>`<div class="employee-card" style="cursor:default;">
+                <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+                    <strong>${escapeHtml(e.name)}</strong>
+                    <span class="role-badge ${e.role==='leader'?'role-leader':'role-youth'}">${e.role==='leader'?'Betreuer / Dienstdurchführender':'Junghelfer'}</span>
+                </div>
+                <div style="font-size:12px;color:#64748b;margin-top:6px;">Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;">
+                    <button type="button" class="btn-secondary btn-sm" onclick="editMasterPerson('${escapeHtml(String(e.id))}')">✏️ Bearbeiten</button>
+                    <button type="button" class="btn-danger btn-sm" onclick="deleteMasterPerson('${escapeHtml(String(e.id))}')">🗑️ Löschen</button>
+                </div>
+            </div>`).join(''):'<p style="color:#64748b;">Keine Personen gefunden.</p>');
+    };
+
+    window.setEmployeeTraining=function(empId,activityId,checked){
+        ensurePersonData();
+        const e=employees.find(x=>String(x.id)===String(empId)); if(!e)return;
+        if(e.role==='leader')return;
+        if(!Array.isArray(e.assignedActivities))e.assignedActivities=[];
+        activityId=String(activityId);
+        if(checked&&!e.assignedActivities.includes(activityId))e.assignedActivities.push(activityId);
+        if(!checked)e.assignedActivities=e.assignedActivities.filter(x=>String(x)!==activityId);
+        savePeopleEverywhere();
+        try{renderServiceMembers();}catch(err){}
+        showServiceMemberDetail(empId);
+        const a=serviceActivities.find(x=>String(x.id)===activityId);
+        if(typeof addServiceLogEntry==='function')addServiceLogEntry(`Ausbildung/Inhalt "${a?.name||activityId}" für ${e.name} ${checked?'zugewiesen':'entfernt'}`);
+        showToast(checked?'Ausbildung/Inhalt zugewiesen':'Ausbildung/Inhalt entfernt','success');
+    };
+
+    // Detailansicht vollständig neu aufbauen: Leistungsabzeichen + persönliche Ausbildungen.
+    window.showServiceMemberDetail=function(empId){
+        ensurePersonData();
+        const emp=employees.find(e=>String(e.id)===String(empId)); if(!emp)return;
+        document.getElementById('serviceMemberDetail')?.remove();
+        const host=document.getElementById('serviceMemberList'); if(!host)return;
+        const detail=document.createElement('div'); detail.id='serviceMemberDetail'; detail.className='member-detail-card';
+        if(emp.role==='leader'){
+            detail.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><div><h4 style="margin:0;">${escapeHtml(emp.name)}</h4><span class="role-badge role-leader">Betreuer / Dienstdurchführender</span></div><button class="btn-secondary btn-sm" onclick="this.closest('#serviceMemberDetail').remove()">✖ Schließen</button></div><p class="portfolio-muted" style="margin-bottom:0;">Betreuer können Kleidung erhalten und als Dienstdurchführende verwendet werden. Leistungsabzeichen und Junghelfer-Ausbildungen werden nur für Junghelfer geführt.</p>`;
+            host.appendChild(detail); return;
+        }
+        const assigned=Array.isArray(emp.assignedActivities)?emp.assignedActivities:[];
+        const levels=['Bronze','Silber','Gold'];
+        const next=typeof nextBadge==='function'?nextBadge(emp):'Bronze';
+        const trainingHtml=serviceActivities.length?serviceActivities.map(a=>{
+            const done=typeof activityCompletionDate==='function'?activityCompletionDate(emp.id,a.id):'';
+            const isAssigned=assigned.includes(String(a.id));
+            return `<label style="display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #eef2f6;cursor:pointer;"><input type="checkbox" ${isAssigned?'checked':''} onchange="setEmployeeTraining('${emp.id}','${escapeHtml(String(a.id))}',this.checked)"><span style="flex:1;"><strong>${escapeHtml(a.name)}</strong>${a.description?`<div class="portfolio-muted">${escapeHtml(a.description)}</div>`:''}<div class="portfolio-muted">${done?`✅ erledigt am ${escapeHtml(fmtShortDate(done))}`:'Noch nicht erledigt'}${(a.badgeLevels||[]).length?` · Portfolio: ${escapeHtml(a.badgeLevels.join(', '))}`:''}</div></span></label>`;
+        }).join(''):'<div class="portfolio-muted">Noch keine Ausbildungen/Tätigkeiten angelegt.</div>';
+        const sections=levels.map(level=>{
+            const req=requirementsForLevel(level); const done=req.filter(a=>activityCompletionDate(emp.id,a.id)); const pending=req.filter(a=>!activityCompletionDate(emp.id,a.id));
+            return `<details class="portfolio-section" ${level===next?'open':''}><summary>${level} – ${done.length}/${req.length} Inhalte erledigt ${emp.earnedBadges?.includes(level)?'🏅':''}</summary><div class="portfolio-columns"><div class="portfolio-box done"><strong>✅ Erledigt</strong>${done.length?done.map(a=>`<div class="portfolio-item"><span class="portfolio-icon">✓</span><div><strong>${escapeHtml(a.name)}</strong> <span class="portfolio-muted">— ${escapeHtml(fmtShortDate(activityCompletionDate(emp.id,a.id)))}</span></div></div>`).join(''):'<div class="portfolio-muted">Noch nichts erledigt.</div>'}</div><div class="portfolio-box pending"><strong>❌ Offen</strong>${pending.length?pending.map(a=>`<div class="portfolio-item"><span class="portfolio-icon">✕</span><div><strong>${escapeHtml(a.name)}</strong></div></div>`).join(''):'<div class="portfolio-muted">Alle Inhalte erledigt.</div>'}</div></div></details>`;
+        }).join('');
+        detail.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><div><h4 style="margin:0 0 4px;">${escapeHtml(emp.name)}</h4><div class="portfolio-muted">Geb.: ${escapeHtml(formatBirthDate(emp.birthDate))} · Nächste Stufe: <strong>${escapeHtml(next||'Gold erreicht')}</strong></div></div><button class="btn-secondary btn-sm" onclick="this.closest('#serviceMemberDetail').remove()">✖ Schließen</button></div>
+        <div style="margin-top:14px;"><strong>🎓 Ausbildungen / Inhalte diesem Junghelfer zuweisen</strong><div style="margin-top:6px;border:1px solid #e2e8f0;border-radius:10px;padding:0 12px;max-height:360px;overflow:auto;">${trainingHtml}</div></div>
+        <div style="margin-top:14px;"><strong>🏅 Leistungsabzeichen</strong><div class="badge-assignment-grid">${levels.map(level=>`<div class="badge-assignment"><label><input type="checkbox" ${emp.earnedBadges?.includes(level)?'checked':''} onchange="setEmployeeBadge('${emp.id}','${level}',this.checked)"><span class="badge-level-badge ${levelClass(level)}">${level}</span></label></div>`).join('')}</div></div>
+        <div style="margin-top:14px;">${sections}</div>`;
+        host.appendChild(detail); detail.scrollIntoView({behavior:'smooth',block:'nearest'});
+    };
+
+    ensurePersonData();
+    try{renderMasterPeople();}catch(e){}
+    try{renderServiceMembers();}catch(e){}
+})();
+
 </script>
 
 
@@ -3793,7 +3935,7 @@
                 <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
                     <div>
                         <h3 style="margin:0;">👥 Stammdatenverwaltung</h3>
-                        <div style="font-size:13px;color:#64748b;">Gemeinsame Personenbasis für Kleidung und Dienstverwaltung</div>
+                        <div style="font-size:13px;color:#64748b;">Gemeinsame Personenbasis für Kleidung und Dienstverwaltung · Stammdaten: Name, Geburtsdatum und Rolle</div>
                     </div>
                     <button type="button" class="btn-secondary btn-sm" onclick="closeMasterData()">← Zurück</button>
                 </div>
@@ -3803,11 +3945,6 @@
                     <div class="form-group"><label>Name *</label><input id="masterName" type="text" placeholder="Vor- und Nachname"></div>
                     <div class="form-group"><label>Geburtsdatum *</label><input id="masterBirthDate" type="date"></div>
                     <div class="form-group"><label>Kategorie *</label><select id="masterRole"><option value="youth">Junghelfer</option><option value="leader">Betreuer / Dienstdurchführender</option></select></div>
-                    <div class="form-group"><label>Eintrittsdatum</label><input id="masterEntryDate" type="date"></div>
-                    <div class="form-group"><label>Telefon</label><input id="masterPhone" type="text" placeholder="optional"></div>
-                    <div class="form-group"><label>E-Mail</label><input id="masterEmail" type="email" placeholder="optional"></div>
-                    <div class="form-group"><label>Adresse</label><input id="masterAddress" type="text" placeholder="optional"></div>
-                    <div class="form-group"><label>Notizen</label><input id="masterNotes" type="text" placeholder="optional"></div>
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button type="button" class="btn-success" style="width:auto;" onclick="saveMasterPerson()">Person speichern</button>
@@ -3815,7 +3952,7 @@
                 </div>
                 <div style="margin-top:18px;">
                     <div class="filter-bar"><input id="masterSearch" oninput="renderMasterPeople()" placeholder="Person suchen..."><select id="masterRoleFilter" onchange="renderMasterPeople()"><option value="">Alle</option><option value="youth">Junghelfer</option><option value="leader">Betreuer</option></select></div>
-                    <div style="font-size:13px;color:#64748b;margin:8px 0 10px;">Hier werden <strong>alle bereits vorhandenen Personen</strong> aus Kleidung und Dienstverwaltung gemeinsam angezeigt. Änderungen werden in beiden Anwendungen übernommen.</div>
+                    <div style="font-size:13px;color:#64748b;margin:8px 0 10px;">Hier werden <strong>alle Personen aus der gemeinsamen Personenbasis</strong> angezeigt – Junghelfer und Betreuer. Änderungen an Name, Geburtsdatum oder Rolle wirken sofort in beiden Anwendungen. Ausbildungs-, Leistungsabzeichen- und Kleidungsdaten werden ausschließlich in den jeweiligen Anwendungen verwaltet.</div>
                     <div id="masterPeopleList" class="employees-cards"></div>
                 </div>
             </div>
