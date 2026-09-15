@@ -6,7 +6,7 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lagerverwaltung</title>
+    <title>THW-Jugend Verwaltung</title>
     <style>
         /* ==================== BASIS ==================== */
         * { box-sizing: border-box; }
@@ -552,6 +552,189 @@
             .container { box-shadow: none; border: none; }
             table { min-width: 100%; }
         }
+
+        /* ==================== APP-AUSWAHL ==================== */
+        #appModeOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(240, 242, 245, 0.98);
+            backdrop-filter: blur(8px);
+            z-index: 999998;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+        }
+        .app-mode-card {
+            width: 100%;
+            max-width: 900px;
+            max-height: calc(100vh - 40px);
+            margin: 0 auto;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 22px;
+            box-shadow: 0 16px 45px rgba(0,0,0,.12);
+            padding: 32px;
+            text-align: center;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-sizing: border-box;
+            -webkit-overflow-scrolling: touch;
+        }
+        #masterDataPanel {
+            max-height: none;
+            overflow: visible;
+        }
+        #masterPeopleList {
+            max-height: 42vh;
+            overflow-y: auto;
+            padding: 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .app-mode-card h2 { margin: 0 0 8px; color: #0056b3; }
+        .app-mode-card p { color: #64748b; margin: 0 0 24px; }
+        .app-mode-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+        .app-mode-option {
+            min-height: 190px;
+            border: 2px solid #dce2e9;
+            border-radius: 18px;
+            background: #f8fafc;
+            color: #1e293b;
+            padding: 24px 18px;
+            cursor: pointer;
+            transition: .2s;
+        }
+        .app-mode-option:hover {
+            transform: translateY(-3px);
+            border-color: #0056b3;
+            box-shadow: 0 8px 22px rgba(0,86,179,.14);
+        }
+        .app-mode-option .mode-icon { font-size: 52px; display:block; margin-bottom: 10px; }
+        .app-mode-option strong { display:block; font-size: 19px; margin-bottom: 8px; }
+        .app-mode-option span { display:block; font-size: 13px; color:#64748b; line-height:1.45; }
+        .app-mode-badge {
+            display:inline-block;
+            padding:5px 10px;
+            border-radius:999px;
+            background:#e9edf2;
+            color:#475569;
+            font-size:12px;
+            font-weight:600;
+            margin-bottom:12px;
+        }
+        .service-toolbar {
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:16px;
+        }
+        .service-filter {
+            display:grid;
+            grid-template-columns: 1.1fr .8fr .8fr;
+            gap:10px;
+            margin-bottom:16px;
+        }
+        .service-list { display:grid; gap:14px; }
+        .service-card {
+            border:1px solid #e2e8f0;
+            border-left:5px solid #0056b3;
+            border-radius:12px;
+            padding:16px;
+            background:#fff;
+            box-shadow:0 2px 8px rgba(0,0,0,.04);
+        }
+        .service-card.past { border-left-color:#64748b; }
+        .service-card h4 { margin:0 0 5px; }
+        .service-meta { color:#64748b; font-size:13px; line-height:1.55; }
+        .service-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+        .service-tag {
+            background:#eef4fb; color:#0056b3; border-radius:999px;
+            padding:4px 9px; font-size:12px; font-weight:600;
+        }
+        .service-actions { display:flex; gap:7px; flex-wrap:wrap; margin-top:12px; }
+        .service-actions button { width:auto; }
+        .attendee-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+            gap:8px;
+            margin-top:8px;
+        }
+        .attendee-check {
+            display:flex;
+            align-items:center;
+            gap:8px;
+            padding:9px 10px;
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            border-radius:9px;
+            font-size:13px;
+        }
+        .attendee-check input { width:auto; }
+        .attendee-check small { color:#64748b; display:block; }
+        .service-summary {
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:10px;
+            margin-bottom:18px;
+        }
+        .service-stat {
+            padding:14px;
+            border:1px solid #e2e8f0;
+            border-radius:12px;
+            background:#f8fafc;
+        }
+        .service-stat strong { display:block; font-size:22px; color:#0056b3; }
+        .service-stat span { font-size:12px; color:#64748b; }
+        .mode-back-btn { background:#eef2f6 !important; color:#1e293b !important; }
+        @media (max-width: 650px) {
+            .app-mode-card { padding:22px 16px; }
+            .app-mode-options, .service-filter, .service-summary { grid-template-columns:1fr; }
+        }
+
+    
+        /* ==================== LEISTUNGSABZEICHEN / PERSONENKATEGORIEN ==================== */
+        .role-badge { display:inline-block; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; margin-top:5px; }
+        .role-youth { background:#e8f2ff; color:#0056b3; }
+        .role-leader { background:#fff3cd; color:#8a6100; }
+        .badge-level-badge { display:inline-block; padding:4px 9px; border-radius:999px; font-size:11px; font-weight:700; margin:2px; background:#eef2f6; color:#334155; }
+        .badge-level-bronze { background:#f4dfc8; color:#7a4b20; }
+        .badge-level-silver { background:#e5e7eb; color:#475569; }
+        .badge-level-gold { background:#fff0b3; color:#7a5a00; }
+        .portfolio-section { margin-top:16px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; }
+        .portfolio-section > summary { cursor:pointer; list-style:none; padding:12px 14px; font-weight:700; background:#f8fafc; }
+        .portfolio-section > summary::-webkit-details-marker { display:none; }
+        .portfolio-columns { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:12px; }
+        .portfolio-box { border:1px solid #e2e8f0; border-radius:10px; padding:10px; }
+        .portfolio-box.done { border-left:4px solid #198754; }
+        .portfolio-box.pending { border-left:4px solid #dc3545; }
+        .portfolio-item { display:flex; gap:9px; align-items:flex-start; padding:8px 0; border-bottom:1px solid #eef2f6; font-size:13px; }
+        .portfolio-item:last-child { border-bottom:0; }
+        .portfolio-icon { width:22px; flex:0 0 22px; font-size:16px; }
+        .portfolio-muted { color:#64748b; font-size:12px; }
+        .member-detail-card { margin-top:14px; padding:16px; border:1px solid #dbe3ec; border-radius:14px; background:#fff; }
+        .member-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+        .badge-assignment-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+        .badge-assignment { border:1px solid #e2e8f0; border-radius:10px; padding:10px; background:#f8fafc; }
+        .badge-assignment label { display:flex; align-items:center; gap:8px; font-weight:700; cursor:pointer; }
+        .activity-badge-grid { display:flex; gap:7px; flex-wrap:wrap; margin-top:9px; }
+        .activity-badge-grid label { display:flex; align-items:center; gap:5px; font-size:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 8px; cursor:pointer; }
+        .service-member-filter { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+        .service-member-filter select { max-width:220px; }
+        .badge-overview-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+        .badge-overview-card { border:1px solid #e2e8f0; border-radius:12px; padding:14px; background:#fff; }
+        @media (max-width:650px) {
+            .portfolio-columns, .badge-assignment-grid, .badge-overview-grid { grid-template-columns:1fr; }
+        }
+
     </style>
 </head>
 <body>
@@ -561,7 +744,7 @@
     <div class="login-card">
         <div class="icon">🔒</div>
         <h2 id="loginTitle">THW Lagerverwaltung</h2>
-        <p id="loginSubtitle">Bitte geben Sie das Passwort ein, um Zugriff auf die Bekleidungsverwaltung zu erhalten.</p>
+        <p id="loginSubtitle">Bitte geben Sie das Passwort ein, um Zugriff auf die Jugendverwaltung zu erhalten.</p>
         <div class="form-group">
             <input type="password" id="passwordInput" placeholder="Passwort eingeben" onkeypress="handlePasswordKeyPress(event)" autofocus>
             <!-- Wird nur im "set"-Modus sichtbar -->
@@ -579,9 +762,13 @@
     </div>
 </div>
 
-<div class="container">
-    <h2>🧥 Bekleidungsverwaltung THW Jugend Döbeln</h2>
+<div class="container" id="mainContainer">
+    <div id="appHeader" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+        <h2 id="appTitle" style="margin:0;">🧥 Bekleidungsverwaltung THW Jugend Döbeln</h2>
+        <button type="button" class="mode-back-btn btn-sm" onclick="openAppModeSelector(); return false;">🔀 Anwendung wechseln</button>
+    </div>
     
+<div id="clothingApp">
     <div style="margin-bottom: 24px; padding: 16px 20px; background: #f1f6fe; border: 1px solid #b3d7ff; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
         <strong style="margin-right: 6px;">💾 Datensicherung:</strong>
         <button onclick="exportData()" style="background: #6c757d; width: auto;">Backup exportieren</button>
@@ -794,6 +981,126 @@
     </div>
 </div>
 
+<!-- ==================== DIENSTVERWALTUNG ==================== -->
+<div id="serviceApp" style="display:none;">
+    <div class="service-toolbar">
+        <div>
+            <h3 style="margin:0 0 4px;">📅 Dienstverwaltung</h3>
+            <div style="font-size:13px;color:#64748b;">Dienstplan und Anwesenheit der Jugendgruppe</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-secondary btn-sm" onclick="printServicePlan()">🖨️ Dienstplan drucken</button>
+            <button class="btn-secondary btn-sm" onclick="exportData()">💾 Backup</button>
+        </div>
+    </div>
+
+    <div class="service-summary">
+        <div class="service-stat"><strong id="serviceStatTotal">0</strong><span>Termine insgesamt</span></div>
+        <div class="service-stat"><strong id="serviceStatFuture">0</strong><span>Kommende Dienste</span></div>
+        <div class="service-stat"><strong id="serviceStatActivities">0</strong><span>Tätigkeiten</span></div>
+        <div class="service-stat"><strong id="serviceStatMembers">0</strong><span>Junghelfer</span></div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchServiceTab('servicePlan', event)">📅 Dienstplan</button>
+        <button class="tab-btn" onclick="switchServiceTab('serviceCreate', event)">➕ Dienst anlegen</button>
+        <button class="tab-btn" onclick="switchServiceTab('serviceActivities', event)">🧰 Tätigkeiten</button>
+        <button class="tab-btn" onclick="switchServiceTab('serviceMembers', event)">👤 Junghelfer</button>
+    </div>
+
+    <div id="servicePlan" class="tab-content active">
+        <div class="service-filter">
+            <input type="text" id="serviceSearch" oninput="renderServices()" placeholder="Nach Dienst, Ort oder Tätigkeit suchen...">
+            <select id="serviceMonthFilter" onchange="renderServices()">
+                <option value="">Alle Monate</option>
+            </select>
+            <select id="serviceStatusFilter" onchange="renderServices()">
+                <option value="">Alle Termine</option>
+                <option value="future">Kommend</option>
+                <option value="past">Vergangen</option>
+            </select>
+        </div>
+        <div id="serviceList" class="service-list"></div>
+    </div>
+
+    <div id="serviceCreate" class="tab-content">
+        <div class="card add-card">
+            <h4 id="serviceFormTitle" style="color:#198754;margin-top:0;">➕ Neuen Dienst anlegen</h4>
+            <input type="hidden" id="serviceEditId">
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Datum</label>
+                    <input type="date" id="serviceDate">
+                </div>
+                <div class="form-group">
+                    <label>Beginn</label>
+                    <input type="time" id="serviceTime">
+                </div>
+                <div class="form-group">
+                    <label>Ende</label>
+                    <input type="time" id="serviceEndTime">
+                </div>
+                <div class="form-group">
+                    <label>Bezeichnung des Dienstes</label>
+                    <input type="text" id="serviceTitle" placeholder="z.B. Dienstabend Feuerwehrtechnik">
+                </div>
+                <div class="form-group">
+                    <label>Ort</label>
+                    <input type="text" id="serviceLocation" placeholder="z.B. THW-Ortsverband Döbeln">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Dienstinhalte / Themen</label>
+                <div id="serviceActivityRows"></div>
+                <button type="button" class="btn-secondary btn-sm" onclick="addServiceActivityRow()">➕ weiteren Inhalt hinzufügen</button>
+                <div class="service-meta" style="margin-top:6px;">Nach Auswahl eines Inhalts wird automatisch eine weitere Zeile geöffnet. Mehrere Inhalte können demselben Dienst zugewiesen werden.</div>
+            </div>
+            <div class="form-group">
+                <label>Dienstdurchführende</label>
+                <div id="serviceLeaderChecks" class="attendee-grid"></div>
+                <input type="text" id="serviceLeadersExtra" style="margin-top:8px;" placeholder="Weitere Dienstdurchführende (optional, durch Komma trennen)">
+            </div>
+            <div class="form-group">
+                <label>Notizen</label>
+                <textarea id="serviceNotes" rows="3" placeholder="Material, Hinweise, Treffpunkt, Besonderheiten..."></textarea>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button onclick="saveService()" class="btn-success" style="width:auto;">Dienst speichern</button>
+                <button onclick="resetServiceForm()" class="btn-secondary" style="width:auto;">Formular leeren</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="serviceActivities" class="tab-content">
+        <div class="grid-2">
+            <div class="card add-card">
+                <h4 style="color:#198754;margin-top:0;">➕ Tätigkeit hinzufügen</h4>
+                <div class="form-group">
+                    <label>Bezeichnung</label>
+                    <input type="text" id="newActivityName" placeholder="z.B. Erste Hilfe">
+                </div>
+                <div class="form-group">
+                    <label>Beschreibung (optional)</label>
+                    <textarea id="newActivityDescription" rows="3" placeholder="Kurze Beschreibung oder Lernziel"></textarea>
+                </div>
+                <button onclick="addActivity()" class="btn-success">Tätigkeit anlegen</button>
+            </div>
+            <div class="card">
+                <h4 style="margin-top:0;">🧰 Vorhandene Tätigkeiten</h4>
+                <div id="activityList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="serviceMembers" class="tab-content">
+        <div class="filter-bar" style="margin-bottom:16px;">
+            <input type="text" id="serviceMemberSearch" oninput="renderServiceMembers()" placeholder="Nach Namen suchen...">
+        </div>
+        <div id="serviceMemberList" class="employees-cards"></div>
+    </div>
+</div>
+</div>
+
 <script>
     // ======================================================================
     // 0. KONFIG / KONTAKT (leicht anpassbar; entfernt keine sensiblen Geheimnisse)
@@ -886,7 +1193,7 @@
         overlay.dataset.mode = 'login';
         overlay.style.display = 'flex';
         document.getElementById('loginTitle').textContent = 'THW Lagerverwaltung';
-        document.getElementById('loginSubtitle').textContent = 'Bitte geben Sie das Passwort ein, um Zugriff auf die Bekleidungsverwaltung zu erhalten.';
+        document.getElementById('loginSubtitle').textContent = 'Bitte geben Sie das Passwort ein, um Zugriff auf die Jugendverwaltung zu erhalten.';
         document.getElementById('passwordConfirm').style.display = 'none';
         document.getElementById('loginBtn').textContent = 'Anmelden';
 
@@ -1618,7 +1925,8 @@
             </div>
             <div class="note">Hinweis: Bitte bei Verlust oder Beschädigung umgehend melden.</div>
             <script>window.onload = function() { setTimeout(() => { window.print(); window.close(); }, 300); }<\/script>
-        </body>
+        
+</body>
         </html>`;
         printWindow.document.open();
         printWindow.document.write(html);
@@ -2019,6 +2327,1315 @@
     renderEmployees(); 
     renderBorrowReturnOptions();
     renderLog(); 
+
+    // ======================================================================
+    // 24. ANWENDUNGSMODUS – KLEIDUNG / DIENSTE
+    // ======================================================================
+    const APP_MODE_KEY = 'thw_app_mode';
+    let appMode = localStorage.getItem(APP_MODE_KEY) || '';
+
+    let serviceActivities = JSON.parse(localStorage.getItem('serviceActivities')) || [
+        { id: 'a1', name: 'Ausbildung', description: 'Allgemeine Ausbildung' },
+        { id: 'a2', name: 'Technische Hilfeleistung', description: '' },
+        { id: 'a3', name: 'Beleuchtung', description: '' },
+        { id: 'a4', name: 'Erste Hilfe', description: '' }
+    ];
+    let services = JSON.parse(localStorage.getItem('services')) || [];
+
+    function saveServiceData() {
+        localStorage.setItem('serviceActivities', JSON.stringify(serviceActivities));
+        localStorage.setItem('services', JSON.stringify(services));
+    }
+
+    function selectAppMode(mode) {
+        appMode = mode;
+        localStorage.setItem(APP_MODE_KEY, mode);
+        applyAppMode();
+    }
+
+    function openAppModeSelector() {
+        const overlay = document.getElementById('appModeOverlay');
+        if (!overlay) {
+            alert('Die Anwendungsauswahl konnte nicht geladen werden.');
+            return false;
+        }
+        overlay.style.display = 'flex';
+        overlay.style.zIndex = '2147483647';
+        return false;
+    }
+
+    function applyAppMode() {
+        const overlay = document.getElementById('appModeOverlay');
+        const clothing = document.getElementById('clothingApp');
+        const service = document.getElementById('serviceApp');
+        const title = document.getElementById('appTitle');
+
+        if (!appMode) {
+            overlay.style.display = 'flex';
+            clothing.style.display = 'none';
+            service.style.display = 'none';
+            title.textContent = 'THW-Jugend Döbeln';
+            return;
+        }
+
+        overlay.style.display = 'none';
+        if (appMode === 'service') {
+            clothing.style.display = 'none';
+            service.style.display = 'block';
+            title.textContent = '📅 Dienstverwaltung THW Jugend Döbeln';
+            renderServiceApp();
+        } else {
+            clothing.style.display = 'block';
+            service.style.display = 'none';
+            title.textContent = '🧥 Bekleidungsverwaltung THW Jugend Döbeln';
+        }
+    }
+
+    function switchServiceTab(tabId, event) {
+        document.querySelectorAll('#serviceApp .tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('#serviceApp .tab-btn').forEach(btn => btn.classList.remove('active'));
+        const tab = document.getElementById(tabId);
+        if (tab) tab.classList.add('active');
+        if (event && event.currentTarget) event.currentTarget.classList.add('active');
+
+        if (tabId === 'servicePlan') renderServices();
+        if (tabId === 'serviceCreate') {
+            renderServiceActivityOptions();
+            renderServiceLeaderChecks();
+        }
+        if (tabId === 'serviceActivities') renderActivities();
+        if (tabId === 'serviceMembers') renderServiceMembers();
+    }
+
+    function renderServiceApp() {
+        renderServiceStats();
+        renderServiceFilters();
+        renderServices();
+        renderActivities();
+        renderServiceActivityOptions();
+        renderServiceLeaderChecks();
+        renderServiceMembers();
+    }
+
+    function formatServiceDate(date) {
+        if (!date) return '—';
+        const d = new Date(date + 'T00:00:00');
+        return Number.isNaN(d.getTime()) ? date : d.toLocaleDateString('de-DE', {
+            weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+    }
+
+    function serviceDateTime(service) {
+        return new Date(`${service.date}T${service.time || '00:00'}`);
+    }
+
+    function getActivityName(id) {
+        const a = serviceActivities.find(x => x.id === id);
+        return a ? a.name : 'Keine Tätigkeit ausgewählt';
+    }
+
+    function getEmployeeName(id) {
+        const e = employees.find(x => x.id === id);
+        return e ? e.name : 'Unbekannter Junghelfer';
+    }
+
+    function serviceLeaders(service) {
+        const selected = (service.leaderIds || []).map(getEmployeeName);
+        const extra = service.leadersExtra || [];
+        return [...selected, ...extra].filter(Boolean);
+    }
+
+    function attendeeCount(service) {
+        return (service.attendeeIds || []).length;
+    }
+
+    function renderServiceStats() {
+        const now = new Date();
+        const future = services.filter(s => serviceDateTime(s) >= now).length;
+        document.getElementById('serviceStatTotal').textContent = services.length;
+        document.getElementById('serviceStatFuture').textContent = future;
+        document.getElementById('serviceStatActivities').textContent = serviceActivities.length;
+        document.getElementById('serviceStatMembers').textContent = employees.length;
+    }
+
+    function renderServiceFilters() {
+        const select = document.getElementById('serviceMonthFilter');
+        if (!select) return;
+        const current = select.value;
+        const months = [...new Set(services.map(s => String(s.date || '').slice(0, 7)).filter(Boolean))].sort().reverse();
+        select.innerHTML = '<option value="">Alle Monate</option>' +
+            months.map(m => {
+                const d = new Date(m + '-01T00:00:00');
+                const label = d.toLocaleDateString('de-DE', {month:'long', year:'numeric'});
+                return `<option value="${escapeHtml(m)}">${escapeHtml(label)}</option>`;
+            }).join('');
+        if (months.includes(current)) select.value = current;
+    }
+
+    function renderServices() {
+        const list = document.getElementById('serviceList');
+        if (!list) return;
+
+        const search = (document.getElementById('serviceSearch')?.value || '').toLowerCase().trim();
+        const month = document.getElementById('serviceMonthFilter')?.value || '';
+        const status = document.getElementById('serviceStatusFilter')?.value || '';
+        const now = new Date();
+
+        const filtered = services.filter(s => {
+            const haystack = [s.title, s.location, getActivityName(s.activityId), s.notes, ...serviceLeaders(s)]
+                .join(' ').toLowerCase();
+            const matchesSearch = !search || haystack.includes(search);
+            const matchesMonth = !month || String(s.date).startsWith(month);
+            const dt = serviceDateTime(s);
+            const matchesStatus = !status || (status === 'future' ? dt >= now : dt < now);
+            return matchesSearch && matchesMonth && matchesStatus;
+        }).sort((a,b) => serviceDateTime(a) - serviceDateTime(b));
+
+        if (!filtered.length) {
+            list.innerHTML = '<div class="card"><p style="margin:0;color:#64748b;">Keine passenden Dienste vorhanden.</p></div>';
+            return;
+        }
+
+        list.innerHTML = filtered.map(service => {
+            const past = serviceDateTime(service) < now;
+            const leaders = serviceLeaders(service);
+            const attendees = service.attendeeIds || [];
+            return `
+                <div class="service-card ${past ? 'past' : ''}">
+                    <h4>${escapeHtml(service.title || 'Dienst')}</h4>
+                    <div class="service-meta">
+                        📅 <strong>${escapeHtml(formatServiceDate(service.date))}</strong>
+                        ${service.time ? ' · ⏰ ' + escapeHtml(service.time) + ' Uhr' : ''}
+                        ${service.location ? ' · 📍 ' + escapeHtml(service.location) : ''}
+                    </div>
+                    <div class="service-tags">
+                        <span class="service-tag">🧰 ${escapeHtml(getActivityName(service.activityId))}</span>
+                        <span class="service-tag">👥 ${attendees.length} anwesend</span>
+                        <span class="service-tag">🎓 ${leaders.length} Durchführende</span>
+                    </div>
+                    ${leaders.length ? `<div class="service-meta" style="margin-top:8px;"><strong>Dienstdurchführende:</strong> ${leaders.map(escapeHtml).join(', ')}</div>` : ''}
+                    ${service.notes ? `<div style="margin-top:8px;"><strong>Notiz:</strong> ${escapeHtml(service.notes)}</div>` : ''}
+                    ${attendees.length ? `<div class="service-meta" style="margin-top:6px;"><strong>Anwesend:</strong> ${attendees.map(getEmployeeName).map(escapeHtml).join(', ')}</div>` : '<div class="service-meta" style="margin-top:6px;">Noch keine Anwesenheit eingetragen.</div>'}
+                    <div class="service-actions">
+                        <button class="btn-success btn-sm" onclick="openAttendance('${service.id}')">👥 Anwesenheit</button>
+                        <button class="btn-secondary btn-sm" onclick="editService('${service.id}')">✏️ Bearbeiten</button>
+                        <button class="btn-danger btn-sm" onclick="deleteService('${service.id}')">🗑️ Löschen</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderServiceActivityOptions(selected = '') {
+        const select = document.getElementById('serviceActivitySelect');
+        if (!select) return;
+        select.innerHTML = '<option value="">-- Tätigkeit auswählen --</option>' +
+            serviceActivities.map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('');
+        if (selected) select.value = selected;
+    }
+
+    function renderServiceLeaderChecks(selectedIds = []) {
+        const box = document.getElementById('serviceLeaderChecks');
+        if (!box) return;
+        if (!employees.length) {
+            box.innerHTML = '<div style="color:#64748b;">Noch keine Junghelfer angelegt.</div>';
+            return;
+        }
+        box.innerHTML = employees.map(e => `
+            <label class="attendee-check">
+                <input type="checkbox" class="service-leader-check" value="${e.id}" ${selectedIds.includes(e.id) ? 'checked' : ''}>
+                <span><strong>${escapeHtml(e.name)}</strong><small>Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</small></span>
+            </label>
+        `).join('');
+    }
+
+    function addActivity() {
+        const name = document.getElementById('newActivityName').value.trim();
+        const description = document.getElementById('newActivityDescription').value.trim();
+        if (!name) return alert('Bitte eine Tätigkeit eingeben.');
+        if (serviceActivities.some(a => a.name.toLowerCase() === name.toLowerCase())) {
+            return alert('Diese Tätigkeit gibt es bereits.');
+        }
+        serviceActivities.push({id:'a_' + Date.now(), name, description});
+        saveServiceData();
+        document.getElementById('newActivityName').value = '';
+        document.getElementById('newActivityDescription').value = '';
+        renderActivities();
+        renderServiceActivityOptions();
+        renderServiceStats();
+        addLogEntry(`Tätigkeit "${name}" angelegt`);
+        showToast('Tätigkeit hinzugefügt!', 'success');
+    }
+
+    function renderActivities() {
+        const list = document.getElementById('activityList');
+        if (!list) return;
+        if (!serviceActivities.length) {
+            list.innerHTML = '<p style="color:#64748b;">Noch keine Tätigkeiten angelegt.</p>';
+            return;
+        }
+        list.innerHTML = serviceActivities.map(a => `
+            <div style="padding:11px 0;border-bottom:1px solid #e9edf2;">
+                <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+                    <div><strong>${escapeHtml(a.name)}</strong>${a.description ? `<div style="font-size:13px;color:#64748b;margin-top:3px;">${escapeHtml(a.description)}</div>` : ''}</div>
+                    <button class="btn-danger btn-sm" onclick="deleteActivity('${a.id}')">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function deleteActivity(id) {
+        const activity = serviceActivities.find(a => a.id === id);
+        if (!activity) return;
+        if (services.some(s => s.activityId === id)) {
+            return alert('Diese Tätigkeit wird noch von einem Dienst verwendet und kann deshalb nicht gelöscht werden.');
+        }
+        if (!confirm(`Tätigkeit "${activity.name}" wirklich löschen?`)) return;
+        serviceActivities = serviceActivities.filter(a => a.id !== id);
+        saveServiceData();
+        renderActivities();
+        renderServiceActivityOptions();
+        renderServiceStats();
+        addLogEntry(`Tätigkeit "${activity.name}" gelöscht`);
+    }
+
+    function collectServiceLeaderIds() {
+        return [...document.querySelectorAll('.service-leader-check:checked')].map(x => x.value);
+    }
+
+    function saveService() {
+        const id = document.getElementById('serviceEditId').value;
+        const date = document.getElementById('serviceDate').value;
+        const time = document.getElementById('serviceTime').value;
+        const title = document.getElementById('serviceTitle').value.trim();
+        const location = document.getElementById('serviceLocation').value.trim();
+        const activityId = document.getElementById('serviceActivitySelect').value;
+        const leaderIds = collectServiceLeaderIds();
+        const leadersExtra = document.getElementById('serviceLeadersExtra').value.split(',').map(x => x.trim()).filter(Boolean);
+        const notes = document.getElementById('serviceNotes').value.trim();
+
+        if (!date || !title) return alert('Bitte mindestens Datum und Bezeichnung eingeben.');
+
+        if (id) {
+            const service = services.find(s => s.id === id);
+            if (!service) return;
+            Object.assign(service, {date,time,title,location,activityId,leaderIds,leadersExtra,notes});
+            addLogEntry(`Dienst "${title}" bearbeitet`);
+            showToast('Dienst aktualisiert!', 'success');
+        } else {
+            services.push({
+                id:'s_' + Date.now(),
+                date,time,title,location,activityId,leaderIds,leadersExtra,notes,
+                attendeeIds:[]
+            });
+            addLogEntry(`Dienst "${title}" angelegt`);
+            showToast('Dienst angelegt!', 'success');
+        }
+
+        saveServiceData();
+        resetServiceForm();
+        renderServiceApp();
+        switchServiceTab('servicePlan');
+    }
+
+    function resetServiceForm() {
+        document.getElementById('serviceEditId').value = '';
+        document.getElementById('serviceDate').value = '';
+        document.getElementById('serviceTime').value = '';
+        document.getElementById('serviceTitle').value = '';
+        document.getElementById('serviceLocation').value = '';
+        document.getElementById('serviceActivitySelect').value = '';
+        document.getElementById('serviceLeadersExtra').value = '';
+        document.getElementById('serviceNotes').value = '';
+        document.getElementById('serviceFormTitle').textContent = '➕ Neuen Dienst anlegen';
+        renderServiceLeaderChecks();
+    }
+
+    function editService(id) {
+        const s = services.find(x => x.id === id);
+        if (!s) return;
+        document.getElementById('serviceEditId').value = s.id;
+        document.getElementById('serviceDate').value = s.date || '';
+        document.getElementById('serviceTime').value = s.time || '';
+        document.getElementById('serviceTitle').value = s.title || '';
+        document.getElementById('serviceLocation').value = s.location || '';
+        renderServiceActivityOptions(s.activityId || '');
+        document.getElementById('serviceLeadersExtra').value = (s.leadersExtra || []).join(', ');
+        document.getElementById('serviceNotes').value = s.notes || '';
+        document.getElementById('serviceFormTitle').textContent = '✏️ Dienst bearbeiten';
+        renderServiceLeaderChecks(s.leaderIds || []);
+        switchServiceTab('serviceCreate');
+        document.getElementById('serviceCreate').scrollIntoView({behavior:'smooth',block:'start'});
+    }
+
+    function deleteService(id) {
+        const s = services.find(x => x.id === id);
+        if (!s) return;
+        if (!confirm(`Dienst "${s.title}" am ${formatServiceDate(s.date)} wirklich löschen?`)) return;
+        services = services.filter(x => x.id !== id);
+        saveServiceData();
+        renderServiceApp();
+        addLogEntry(`Dienst "${s.title}" gelöscht`);
+        showToast('Dienst gelöscht', 'success');
+    }
+
+    function openAttendance(id) {
+        const s = services.find(x => x.id === id);
+        if (!s) return;
+        const checks = employees.map(e => `
+            <label class="attendee-check">
+                <input type="checkbox" class="attendance-check" value="${e.id}" ${(s.attendeeIds || []).includes(e.id) ? 'checked' : ''}>
+                <span><strong>${escapeHtml(e.name)}</strong><small>Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</small></span>
+            </label>
+        `).join('');
+
+        const html = `
+            <div id="attendanceModal" class="modal-overlay" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:999997;display:flex;align-items:center;justify-content:center;padding:18px;">
+                <div style="background:#fff;max-width:850px;width:100%;max-height:90vh;overflow:auto;border-radius:18px;padding:22px;box-shadow:0 16px 45px rgba(0,0,0,.2);">
+                    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+                        <div>
+                            <h3 style="margin:0 0 5px;">👥 Anwesenheit</h3>
+                            <div style="font-size:13px;color:#64748b;">${escapeHtml(s.title)} · ${escapeHtml(formatServiceDate(s.date))}</div>
+                        </div>
+                        <button class="btn-secondary btn-sm" onclick="closeAttendance()">✖</button>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;">
+                        <button class="btn-secondary btn-sm" onclick="setAllAttendance(true)">☑️ Alle anwesend</button>
+                        <button class="btn-secondary btn-sm" onclick="setAllAttendance(false)">⬜ Alle abwählen</button>
+                    </div>
+                    <div class="attendee-grid">${checks || '<p style="color:#64748b;">Keine Junghelfer angelegt.</p>'}</div>
+                    <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;">
+                        <button class="btn-secondary btn-sm" onclick="closeAttendance()">Abbrechen</button>
+                        <button class="btn-success btn-sm" onclick="saveAttendance('${s.id}')">Anwesenheit speichern</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+    }
+
+    function setAllAttendance(value) {
+        document.querySelectorAll('#attendanceModal .attendance-check').forEach(x => x.checked = value);
+    }
+
+    function saveAttendance(id) {
+        const s = services.find(x => x.id === id);
+        if (!s) return;
+        s.attendeeIds = [...document.querySelectorAll('#attendanceModal .attendance-check:checked')].map(x => x.value);
+        saveServiceData();
+        closeAttendance();
+        renderServices();
+        renderServiceStats();
+        addLogEntry(`Anwesenheit für "${s.title}" aktualisiert (${s.attendeeIds.length} anwesend)`);
+        showToast('Anwesenheit gespeichert!', 'success');
+    }
+
+    function closeAttendance() {
+        document.getElementById('attendanceModal')?.remove();
+    }
+
+    function renderServiceMembers() {
+        const container = document.getElementById('serviceMemberList');
+        if (!container) return;
+        const term = (document.getElementById('serviceMemberSearch')?.value || '').toLowerCase().trim();
+        const filtered = employees.filter(e => e.name.toLowerCase().includes(term));
+
+        container.innerHTML = filtered.map(e => {
+            const attended = services.filter(s => (s.attendeeIds || []).includes(e.id)).length;
+            const led = services.filter(s => (s.leaderIds || []).includes(e.id)).length;
+            return `
+                <div class="employee-card">
+                    <div><strong>${escapeHtml(e.name)}</strong></div>
+                    <div style="font-size:12px;color:#64748b;margin-top:4px;">Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</div>
+                    <span class="badge">${attended} Dienste anwesend · ${led} durchgeführt</span>
+                </div>`;
+        }).join('') || '<p style="color:#64748b;">Keine Junghelfer gefunden.</p>';
+    }
+
+    function printServicePlan() {
+        const sorted = [...services].sort((a,b) => serviceDateTime(a) - serviceDateTime(b));
+        const win = window.open('', '_blank');
+        if (!win) return alert('Das Druckfenster konnte nicht geöffnet werden. Bitte Pop-ups erlauben.');
+        const rows = sorted.map(s => `
+            <tr>
+                <td>${escapeHtml(formatServiceDate(s.date))}${s.time ? '<br>' + escapeHtml(s.time) + ' Uhr' : ''}</td>
+                <td>${escapeHtml(s.title || '')}</td>
+                <td>${escapeHtml(getActivityName(s.activityId))}</td>
+                <td>${escapeHtml(s.location || '')}</td>
+                <td>${escapeHtml(serviceLeaders(s).join(', '))}</td>
+                <td>${(s.attendeeIds || []).map(getEmployeeName).map(escapeHtml).join(', ')}</td>
+            </tr>`).join('');
+        win.document.write(`<!doctype html><html lang="de"><head><meta charset="UTF-8">
+            <title>Dienstplan – THW-Jugend Döbeln</title>
+            <style>
+                @page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;color:#111;font-size:9pt}
+                h1{color:#0056b3;margin:0 0 4px}p{color:#555;margin:0 0 14px}
+                table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:6px;vertical-align:top;text-align:left}
+                th{background:#e9edf2}tr{page-break-inside:avoid}
+            </style></head><body>
+            <h1>Dienstplan – THW-Jugend Döbeln</h1>
+            <p>Stand: ${escapeHtml(new Date().toLocaleString('de-DE'))}</p>
+            <table><thead><tr><th>Datum</th><th>Dienst</th><th>Tätigkeit</th><th>Ort</th><th>Dienstdurchführende</th><th>Anwesend</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="6">Keine Dienste vorhanden.</td></tr>'}</tbody></table>
+            <script>window.onload=function(){setTimeout(()=>window.print(),300)}<\/script>
+            </body></html>`);
+        win.document.close();
+        addLogEntry('Dienstplan gedruckt');
+    }
+
+    // ---------- Backup-Erweiterung ----------
+    const originalExportData = exportData;
+    exportData = function() {
+        const data = { inventory, employees, borrowHistory, actionLog, serviceActivities, services };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        addLogEntry('Backup exportiert (Kleidung + Dienste)');
+        showToast('Backup erfolgreich exportiert', 'success');
+    };
+
+    // Import-Funktion erweitern, ohne ältere Backups inkompatibel zu machen.
+    const originalImportData = importData;
+    importData = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                inventory = data.inventory || [];
+                employees = data.employees || [];
+                borrowHistory = data.borrowHistory || [];
+                actionLog = data.actionLog || [];
+                serviceActivities = data.serviceActivities || serviceActivities;
+                services = data.services || [];
+                employees.forEach(emp => {
+                    if (!emp.borrowed) emp.borrowed = [];
+                    if (!('birthDate' in emp)) emp.birthDate = '';
+                });
+                employees.sort((a,b) => a.name.localeCompare(b.name));
+                inventory.forEach(item => { if (!item.note) item.note = ''; });
+                saveData();
+                saveServiceData();
+                updateDynamicDropdowns();
+                renderInventoryCards();
+                renderInventory();
+                renderEmployees();
+                renderBorrowReturnOptions();
+                renderLog();
+                renderServiceApp();
+                addLogEntry('Daten aus Backup importiert');
+                showToast('Daten erfolgreich importiert!', 'success');
+            } catch (err) {
+                alert('Fehler beim Laden der Datei: Ungültiges Format.');
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    };
+
+    // ---------- Gemeinsame Junghelfer: Serviceansicht aktualisieren ----------
+    const originalAddEmployee = addEmployee;
+    addEmployee = function() {
+        originalAddEmployee();
+        renderServiceStats();
+        renderServiceLeaderChecks();
+        renderServiceMembers();
+    };
+
+    // Beim Löschen/Bearbeiten sorgt renderEmployees bereits für den Kleidungsbereich;
+    // zusätzlich wird die Dienstverwaltung bei geöffneter App aktualisiert.
+    const originalEditEmployee = editEmployee;
+    editEmployee = function(id, event) {
+        originalEditEmployee(id, event);
+        renderServiceStats();
+        renderServiceLeaderChecks();
+        renderServiceMembers();
+        renderServices();
+    };
+
+    // ======================================================================
+    // 25. START – App-Auswahl nach erfolgreichem Login
+    // ======================================================================
+    window.selectAppMode = selectAppMode;
+    window.openAppModeSelector = openAppModeSelector;
+    window.applyAppMode = applyAppMode;
+
+    // Die Auswahl wird erst nach dem Laden des DOM angewendet.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyAppMode);
+    } else {
+        applyAppMode();
+    }
+
+
+
+/* ======================================================================
+   ERWEITERUNG: PERSONENKATEGORIEN + LEISTUNGSABZEICHEN / PORTFOLIO
+   ====================================================================== */
+(function(){
+    const BADGE_LEVELS = ['Bronze','Silber','Gold'];
+    const BADGE_KEY = 'thw_badge_extension_version';
+    let badgeExtensionInitialized = false;
+
+    function ensureExtendedData() {
+        employees.forEach(emp => {
+            if (!emp.borrowed) emp.borrowed = [];
+            if (!('birthDate' in emp)) emp.birthDate = '';
+            if (!emp.role) emp.role = 'youth';
+            if (!Array.isArray(emp.earnedBadges)) emp.earnedBadges = [];
+            emp.earnedBadges = emp.earnedBadges.filter(b => BADGE_LEVELS.includes(b));
+        });
+        serviceActivities.forEach(a => {
+            if (!Array.isArray(a.badgeLevels)) a.badgeLevels = [];
+            a.badgeLevels = a.badgeLevels.filter(b => BADGE_LEVELS.includes(b));
+        });
+        localStorage.setItem(BADGE_KEY, '1');
+        saveData();
+        saveServiceData();
+    }
+
+    function roleLabel(emp) { return emp.role === 'leader' ? 'Betreuer / Dienstdurchführender' : 'Junghelfer'; }
+    function isYouth(emp) { return emp.role !== 'leader'; }
+    function isLeader(emp) { return emp.role === 'leader'; }
+    function levelClass(level) { return 'badge-level-' + level.toLowerCase(); }
+    function badgePills(emp) {
+        const earned = Array.isArray(emp.earnedBadges) ? emp.earnedBadges : [];
+        return earned.length ? earned.map(b => `<span class="badge-level-badge ${levelClass(b)}">🏅 ${escapeHtml(b)}</span>`).join('') : '<span class="portfolio-muted">Noch kein Leistungsabzeichen zugewiesen</span>';
+    }
+    function highestEarnedIndex(emp) {
+        const earned = Array.isArray(emp.earnedBadges) ? emp.earnedBadges : [];
+        let idx = -1;
+        earned.forEach(b => idx = Math.max(idx, BADGE_LEVELS.indexOf(b)));
+        return idx;
+    }
+    function nextBadge(emp) {
+        const idx = highestEarnedIndex(emp);
+        return idx >= BADGE_LEVELS.length - 1 ? null : BADGE_LEVELS[idx + 1];
+    }
+    function activityBadgeLevels(activity) {
+        return Array.isArray(activity.badgeLevels) ? activity.badgeLevels : [];
+    }
+    function serviceWasAttended(empId, activityId) {
+        return services.some(s => s.activityId === activityId && (s.attendeeIds || []).includes(empId));
+    }
+    function requirementsForLevel(level) {
+        return serviceActivities.filter(a => activityBadgeLevels(a).includes(level));
+    }
+    function requirementStatus(emp, level) {
+        return requirementsForLevel(level).map(a => ({ activity:a, done:serviceWasAttended(emp.id,a.id) }));
+    }
+
+    function ensureRoleControls() {
+        const form = document.getElementById('empBirthDate');
+        if (form && !document.getElementById('empRole')) {
+            const group = document.createElement('div');
+            group.className='form-group';
+            group.innerHTML = `<label>Personenkategorie</label><select id="empRole"><option value="youth">Junghelfer</option><option value="leader">Betreuer / Dienstdurchführender</option></select>`;
+            form.closest('.form-group')?.insertAdjacentElement('afterend', group);
+        }
+        const search = document.getElementById('searchEmpName');
+        if (search && !document.getElementById('employeeRoleFilter')) {
+            const select = document.createElement('select');
+            select.id='employeeRoleFilter';
+            select.style.width='auto';
+            select.innerHTML='<option value="">Alle Kategorien</option><option value="youth">Junghelfer</option><option value="leader">Betreuer</option>';
+            select.onchange=renderEmployees;
+            search.insertAdjacentElement('afterend', select);
+        }
+    }
+
+    function createBadgeTab() {
+        const tabs = document.querySelector('#serviceApp .tabs');
+        if (tabs && !document.getElementById('serviceBadgesTabBtn')) {
+            const btn=document.createElement('button');
+            btn.id='serviceBadgesTabBtn'; btn.className='tab-btn';
+            btn.type='button'; btn.textContent='🏅 Leistungsabzeichen';
+            btn.onclick=function(e){ switchServiceTab('serviceBadges',e); };
+            tabs.appendChild(btn);
+        }
+        const serviceApp=document.getElementById('serviceApp');
+        if (serviceApp && !document.getElementById('serviceBadges')) {
+            const div=document.createElement('div');
+            div.id='serviceBadges'; div.className='tab-content';
+            div.innerHTML=`<div class="card">
+                <h4 style="margin-top:0;">🏅 Leistungsabzeichen – Portfolio</h4>
+                <p style="color:#64748b;margin-top:0;">Verknüpfe deine Tätigkeiten mit Bronze, Silber oder Gold. Ein Inhalt gilt bei einem Junghelfer als erledigt, sobald er an einem Dienst mit dieser Tätigkeit teilgenommen hat.</p>
+                <div id="badgeOverview"></div>
+            </div>`;
+            serviceApp.appendChild(div);
+        }
+    }
+
+    // ---------- Personen / Kleidung: Betreuer bleiben vollständig bekleidungsfähig ----------
+    window.renderEmployees = function(){
+        ensureExtendedData(); ensureRoleControls();
+        const container=document.getElementById('employeeCards'); if(!container) return;
+        const term=(document.getElementById('searchEmpName')?.value||'').toLowerCase().trim();
+        const roleFilter=document.getElementById('employeeRoleFilter')?.value||'';
+        const filtered=employees.filter(e=>e.name.toLowerCase().includes(term) && (!roleFilter || (e.role||'youth')===roleFilter));
+        container.innerHTML='';
+        filtered.forEach(emp=>{
+            const borrowedCount=(emp.borrowed||[]).reduce((sum,b)=>sum+(Number(b.quantity)||0),0);
+            const card=document.createElement('div');
+            card.className='employee-card'+(selectedEmployeeId===emp.id?' active':'');
+            card.dataset.empId=emp.id;
+            card.innerHTML=`<div><strong>${escapeHtml(emp.name)}</strong></div>
+                <div style="font-size:12px;color:#64748b;margin-top:4px;">Geb.: ${escapeHtml(formatBirthDate(emp.birthDate))}</div>
+                <span class="role-badge ${isLeader(emp)?'role-leader':'role-youth'}">${escapeHtml(roleLabel(emp))}</span>
+                <span class="badge">${borrowedCount} Artikel ausgeliehen</span>
+                ${isYouth(emp)?`<div style="margin-top:5px;">${badgePills(emp)}</div>`:''}
+                <div style="margin-top:8px;display:flex;gap:6px;justify-content:center;">
+                    <button class="btn-secondary btn-sm" onclick="editEmployee('${emp.id}',event)">✏️</button>
+                    <button class="btn-secondary btn-sm" onclick="printSingleJunghelfer('${emp.id}',event)">🖨️</button>
+                    <button class="btn-danger btn-sm" onclick="deleteEmployee('${emp.id}',event)">✕</button>
+                </div>`;
+            card.onclick=function(e){ if(e.target.closest('button')) return; e.stopPropagation(); showEmployeeDetail(emp.id,selectedEmployeeId===emp.id); };
+            container.appendChild(card);
+        });
+        if(selectedEmployeeId && !employees.some(e=>e.id===selectedEmployeeId)) closeEmployeeDetail();
+        if(selectedEmployeeId && employees.some(e=>e.id===selectedEmployeeId)) showEmployeeDetail(selectedEmployeeId,true);
+    };
+
+    window.addEmployee = function(){
+        ensureExtendedData(); ensureRoleControls();
+        const name=document.getElementById('empName').value.trim();
+        const birthDate=document.getElementById('empBirthDate').value;
+        const role=document.getElementById('empRole')?.value||'youth';
+        if(!name) return alert('Namen eingeben.');
+        if(!birthDate) return alert('Geburtsdatum eingeben.');
+        const id='e_'+Date.now();
+        employees.push({id,name,birthDate,role,borrowed:[],earnedBadges:[]});
+        employees.sort((a,b)=>a.name.localeCompare(b.name));
+        document.getElementById('empName').value=''; document.getElementById('empBirthDate').value='';
+        if(document.getElementById('empRole')) document.getElementById('empRole').value='youth';
+        saveData(); renderEmployees(); renderBorrowReturnOptions(); renderServiceApp();
+        addLogEntry(`${role==='leader'?'Betreuer':'Junghelfer'} "${name}" angelegt`);
+        showToast(`${role==='leader'?'Betreuer':'Junghelfer'} hinzugefügt!`,'success');
+    };
+
+    window.editEmployee = function(id,event){
+        if(event) event.stopPropagation();
+        const emp=employees.find(e=>e.id===id); if(!emp) return;
+        const newName=prompt('Name:',emp.name||''); if(newName===null) return;
+        const trimmed=newName.trim(); if(!trimmed) return alert('Der Name darf nicht leer sein.');
+        const shown=emp.birthDate?formatBirthDate(emp.birthDate):'';
+        const bd=prompt('Geburtsdatum (TT.MM.JJJJ oder JJJJ-MM-TT):',shown); if(bd===null) return;
+        let normalized=''; const value=bd.trim();
+        if(/^\d{2}\.\d{2}\.\d{4}$/.test(value)){const [d,m,y]=value.split('.'); normalized=`${y}-${m}-${d}`;}
+        else if(/^\d{4}-\d{2}-\d{2}$/.test(value)) normalized=value;
+        else return alert('Bitte ein gültiges Datum eingeben.');
+        const roleInput=prompt('Kategorie: J = Junghelfer, B = Betreuer/Dienstdurchführender', emp.role==='leader'?'B':'J');
+        if(roleInput===null) return;
+        const role=/^b/i.test(roleInput.trim())?'leader':'youth';
+        const old=emp.name; emp.name=trimmed; emp.birthDate=normalized; emp.role=role;
+        if(!Array.isArray(emp.earnedBadges)) emp.earnedBadges=[];
+        employees.sort((a,b)=>a.name.localeCompare(b.name)); saveData();
+        renderEmployees(); renderBorrowReturnOptions(); renderServiceApp(); showEmployeeDetail(emp.id,true);
+        addLogEntry(`${roleLabel(emp)} "${old}" bearbeitet`); showToast('Personendaten aktualisiert','success');
+    };
+
+    // ---------- Dienste: nur Betreuer als Dienstdurchführende, nur Junghelfer für Leistungsabzeichen ----------
+    const baseLeaderRenderer = window.renderServiceLeaderChecks;
+    window.renderServiceLeaderChecks = function(selectedIds=[]){
+        const box=document.getElementById('serviceLeaderChecks'); if(!box) return;
+        const leaders=employees.filter(isLeader);
+        if(!leaders.length){ box.innerHTML='<div style="color:#64748b;">Noch keine Betreuer angelegt. Betreuer können im Bereich Kleidung/Junghelfer angelegt oder umkategorisiert werden.</div>'; return; }
+        box.innerHTML=leaders.map(e=>`<label class="attendee-check"><input type="checkbox" class="service-leader-check" value="${e.id}" ${(selectedIds||[]).includes(e.id)?'checked':''}><span><strong>${escapeHtml(e.name)}</strong><small>Betreuer / Dienstdurchführender</small></span></label>`).join('');
+    };
+
+    window.openAttendance = function(id){
+        const s=services.find(x=>x.id===id); if(!s) return;
+        const youths=employees.filter(isYouth);
+        const checks=youths.map(e=>`<label class="attendee-check"><input type="checkbox" class="attendance-check" value="${e.id}" ${(s.attendeeIds||[]).includes(e.id)?'checked':''}><span><strong>${escapeHtml(e.name)}</strong><small>Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</small></span></label>`).join('');
+        const html=`<div id="attendanceModal" class="modal-overlay" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:999997;display:flex;align-items:center;justify-content:center;padding:18px;"><div style="background:#fff;max-width:850px;width:100%;max-height:90vh;overflow:auto;border-radius:18px;padding:22px;box-shadow:0 16px 45px rgba(0,0,0,.2);"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;"><div><h3 style="margin:0 0 5px;">👥 Anwesenheit</h3><div style="font-size:13px;color:#64748b;">${escapeHtml(s.title)} · ${escapeHtml(formatServiceDate(s.date))}</div></div><button class="btn-secondary btn-sm" onclick="closeAttendance()">✖</button></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;"><button class="btn-secondary btn-sm" onclick="setAllAttendance(true)">☑️ Alle anwesend</button><button class="btn-secondary btn-sm" onclick="setAllAttendance(false)">⬜ Alle abwählen</button></div><div class="attendee-grid">${checks||'<p style="color:#64748b;">Keine Junghelfer angelegt.</p>'}</div><div style="margin-top:18px;display:flex;justify-content:flex-end;gap:8px;"><button class="btn-secondary btn-sm" onclick="closeAttendance()">Abbrechen</button><button class="btn-success btn-sm" onclick="saveAttendance('${s.id}')">Anwesenheit speichern</button></div></div></div>`;
+        document.body.insertAdjacentHTML('beforeend',html);
+    };
+
+    window.renderServiceMembers = function(){
+        ensureExtendedData();
+        const container=document.getElementById('serviceMemberList'); if(!container) return;
+        const term=(document.getElementById('serviceMemberSearch')?.value||'').toLowerCase().trim();
+        const roleFilter=document.getElementById('serviceMemberRoleFilter')?.value||'youth';
+        const filtered=employees.filter(e=>e.name.toLowerCase().includes(term) && (roleFilter==='all'||(e.role||'youth')===roleFilter));
+        container.innerHTML=filtered.map(e=>{
+            const attended=services.filter(s=>(s.attendeeIds||[]).includes(e.id)).length;
+            const led=services.filter(s=>(s.leaderIds||[]).includes(e.id)).length;
+            const next=isYouth(e)?nextBadge(e):null;
+            return `<div class="employee-card" data-service-member-id="${e.id}" onclick="showServiceMemberDetail('${e.id}')"><div><strong>${escapeHtml(e.name)}</strong></div><span class="role-badge ${isLeader(e)?'role-leader':'role-youth'}">${escapeHtml(roleLabel(e))}</span><div style="font-size:12px;color:#64748b;margin-top:5px;">Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</div><span class="badge">${attended} Dienste anwesend · ${led} durchgeführt</span>${isYouth(e)?`<div style="margin-top:6px;">${badgePills(e)}</div><div class="portfolio-muted" style="margin-top:5px;">${next?`Nächste Stufe: <strong>${escapeHtml(next)}</strong>`:'Gold bereits erreicht'}</div>`:''}</div>`;
+        }).join('')||'<p style="color:#64748b;">Keine Personen gefunden.</p>';
+    };
+
+    function renderMemberFilter(){
+        const search=document.getElementById('serviceMemberSearch'); if(search && !document.getElementById('serviceMemberRoleFilter')){
+            const sel=document.createElement('select'); sel.id='serviceMemberRoleFilter'; sel.innerHTML='<option value="youth">Nur Junghelfer</option><option value="leader">Nur Betreuer</option><option value="all">Alle Personen</option>'; sel.onchange=renderServiceMembers; search.insertAdjacentElement('afterend',sel);
+        }
+    }
+
+    window.showServiceMemberDetail = function(id){
+        const emp=employees.find(e=>e.id===id); if(!emp) return;
+        const old=document.getElementById('serviceMemberDetail'); if(old) old.remove();
+        const host=document.getElementById('serviceMemberList'); if(!host) return;
+        const detail=document.createElement('div'); detail.id='serviceMemberDetail'; detail.className='member-detail-card';
+        if(isLeader(emp)){
+            detail.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><div><h4 style="margin:0 0 4px;">${escapeHtml(emp.name)}</h4><span class="role-badge role-leader">Betreuer / Dienstdurchführender</span></div><button class="btn-secondary btn-sm" onclick="document.getElementById('serviceMemberDetail')?.remove()">✖ Schließen</button></div><p style="color:#64748b;">Betreuer erhalten ebenfalls gemeinsame Kleidung und können als Dienstdurchführende ausgewählt werden. Leistungsabzeichen werden nur für Junghelfer geführt.</p>`;
+        } else {
+            const next=nextBadge(emp);
+            const assigned=Array.isArray(emp.earnedBadges)?emp.earnedBadges:[];
+            const statuses=next?requirementStatus(emp,next):[];
+            const done=statuses.filter(x=>x.done), pending=statuses.filter(x=>!x.done);
+            const portfolio=(next===null)?`<div class="portfolio-section"><summary style="display:block;">🏆 Gold erreicht</summary><div style="padding:12px;">Für diesen Junghelfer ist keine höhere Stufe mehr offen.</div></div>`:`<details class="portfolio-section" open><summary>🎯 Ziel: Leistungsabzeichen ${escapeHtml(next)} · ${done.length}/${statuses.length} Inhalte erledigt</summary><div class="portfolio-columns"><div class="portfolio-box done"><strong>✅ Bereits erledigt</strong>${done.length?done.map(x=>`<div class="portfolio-item"><span class="portfolio-icon">✓</span><div><strong>${escapeHtml(x.activity.name)}</strong>${x.activity.description?`<div class="portfolio-muted">${escapeHtml(x.activity.description)}</div>`:''}</div></div>`).join(''):'<div class="portfolio-muted" style="margin-top:8px;">Noch kein Inhalt dieser Stufe erledigt.</div>'}</div><div class="portfolio-box pending"><strong>❌ Noch nicht erledigt</strong>${pending.length?pending.map(x=>`<div class="portfolio-item"><span class="portfolio-icon">✕</span><div><strong>${escapeHtml(x.activity.name)}</strong>${x.activity.description?`<div class="portfolio-muted">${escapeHtml(x.activity.description)}</div>`:''}</div></div>`).join(''):'<div class="portfolio-muted" style="margin-top:8px;">Alle zugewiesenen Inhalte dieser Stufe wurden bereits besucht.</div>'}</div></div></details>`;
+            const levelHistory=BADGE_LEVELS.map(level=>{const req=requirementStatus(emp,level); const count=req.filter(x=>x.done).length; return `<div style="margin-top:7px;"><strong>${escapeHtml(level)}:</strong> ${count}/${req.length} Inhalte · ${assigned.includes(level)?'<span style="color:#198754;">Abzeichen zugewiesen</span>':'nicht zugewiesen'}</div>`;}).join('');
+            detail.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><div><h4 style="margin:0 0 4px;">${escapeHtml(emp.name)}</h4><div style="font-size:13px;color:#64748b;">Geb.: ${escapeHtml(formatBirthDate(emp.birthDate))}</div>${badgePills(emp)}</div><button class="btn-secondary btn-sm" onclick="document.getElementById('serviceMemberDetail')?.remove()">✖ Schließen</button></div>
+                <div style="margin-top:12px;"><strong>🏅 Leistungsabzeichen zuweisen</strong><div class="badge-assignment-grid">${BADGE_LEVELS.map(level=>`<div class="badge-assignment"><label><input type="checkbox" ${assigned.includes(level)?'checked':''} onchange="setEmployeeBadge('${emp.id}','${level}',this.checked)"><span class="badge-level-badge ${levelClass(level)}">${level}</span></label></div>`).join('')}</div></div>
+                <div style="margin-top:15px;padding:11px;border-radius:10px;background:#f8fafc;"><strong>${next?`Nächste Stufe: ${escapeHtml(next)}`:'🏆 Gold ist die höchste Stufe und bereits erreicht.'}</strong><div class="portfolio-muted" style="margin-top:4px;">Die nächste Stufe ergibt sich aus dem höchsten zugewiesenen Abzeichen.</div></div>
+                ${portfolio}<div class="portfolio-section" style="padding:12px 14px;"><strong>📊 Gesamtübersicht</strong>${levelHistory}</div>`;
+        }
+        host.insertAdjacentElement('afterend',detail);
+        detail.scrollIntoView({behavior:'smooth',block:'nearest'});
+    };
+
+    window.setEmployeeBadge = function(empId,level,checked){
+        const emp=employees.find(e=>e.id===empId); if(!emp) return;
+        if(!Array.isArray(emp.earnedBadges)) emp.earnedBadges=[];
+        if(checked && !emp.earnedBadges.includes(level)) emp.earnedBadges.push(level);
+        if(!checked) emp.earnedBadges=emp.earnedBadges.filter(b=>b!==level);
+        emp.earnedBadges.sort((a,b)=>BADGE_LEVELS.indexOf(a)-BADGE_LEVELS.indexOf(b));
+        saveData(); renderEmployees(); renderServiceMembers(); showServiceMemberDetail(empId); addLogEntry(`Leistungsabzeichen ${level} für ${emp.name} ${checked?'zugewiesen':'entfernt'}`); showToast(checked?`${level} zugewiesen`:`${level} entfernt`,'success');
+    };
+
+    // ---------- Tätigkeiten mit Portfolio-Zuordnung ----------
+    window.addActivity = function(){
+        const name=document.getElementById('newActivityName').value.trim();
+        const description=document.getElementById('newActivityDescription').value.trim();
+        if(!name) return alert('Bezeichnung eingeben.');
+        if(serviceActivities.some(a=>a.name.toLowerCase()===name.toLowerCase())) return alert('Diese Tätigkeit existiert bereits.');
+        const badgeLevels=[...document.querySelectorAll('.new-activity-badge:checked')].map(x=>x.value);
+        serviceActivities.push({id:'a_'+Date.now(),name,description,badgeLevels});
+        document.getElementById('newActivityName').value=''; document.getElementById('newActivityDescription').value=''; document.querySelectorAll('.new-activity-badge').forEach(x=>x.checked=false);
+        saveServiceData(); renderActivities(); renderServiceApp(); addLogEntry(`Tätigkeit "${name}" angelegt`); showToast('Tätigkeit angelegt','success');
+    };
+
+    window.renderActivities = function(){
+        const list=document.getElementById('activityList'); if(!list) return;
+        list.innerHTML=serviceActivities.map(a=>`<div class="service-card" style="padding:12px;margin-bottom:9px;"><strong>${escapeHtml(a.name)}</strong>${a.description?`<div class="service-meta">${escapeHtml(a.description)}</div>`:''}<div class="activity-badge-grid">${BADGE_LEVELS.map(level=>`<label><input type="checkbox" ${activityBadgeLevels(a).includes(level)?'checked':''} onchange="toggleActivityBadge('${a.id}','${level}',this.checked)"><span class="badge-level-badge ${levelClass(level)}">${level}</span></label>`).join('')}</div><div class="service-actions"><button class="btn-danger btn-sm" onclick="deleteActivity('${a.id}')">🗑️ Löschen</button></div></div>`).join('')||'<p style="color:#64748b;">Noch keine Tätigkeiten angelegt.</p>';
+        const form=document.getElementById('newActivityDescription');
+        if(form && !document.getElementById('newActivityBadgeLevels')){
+            const wrap=document.createElement('div'); wrap.id='newActivityBadgeLevels'; wrap.className='form-group'; wrap.innerHTML=`<label>Für Leistungsabzeichen-Portfolio zuweisen</label><div class="activity-badge-grid">${BADGE_LEVELS.map(level=>`<label><input class="new-activity-badge" type="checkbox" value="${level}"><span class="badge-level-badge ${levelClass(level)}">${level}</span></label>`).join('')}</div>`; form.closest('.form-group').insertAdjacentElement('afterend',wrap);
+        }
+    };
+    window.toggleActivityBadge=function(activityId,level,checked){
+        const a=serviceActivities.find(x=>x.id===activityId); if(!a) return;
+        if(!Array.isArray(a.badgeLevels)) a.badgeLevels=[];
+        if(checked&&!a.badgeLevels.includes(level)) a.badgeLevels.push(level);
+        if(!checked) a.badgeLevels=a.badgeLevels.filter(x=>x!==level);
+        saveServiceData(); renderActivities(); renderServiceMembers();
+        if(selectedEmployeeId) showServiceMemberDetail(selectedEmployeeId);
+    };
+
+    window.renderBadgeOverview=function(){
+        const box=document.getElementById('badgeOverview'); if(!box) return;
+        box.innerHTML='<div class="badge-overview-grid">'+BADGE_LEVELS.map(level=>{const req=requirementsForLevel(level); return `<div class="badge-overview-card"><span class="badge-level-badge ${levelClass(level)}">${level}</span><h4 style="margin:9px 0 6px;">Portfolio-Inhalte</h4>${req.length?req.map(a=>`<div class="portfolio-item"><span class="portfolio-icon">🧰</span><div><strong>${escapeHtml(a.name)}</strong>${a.description?`<div class="portfolio-muted">${escapeHtml(a.description)}</div>`:''}</div></div>`).join(''):'<div class="portfolio-muted">Noch keine Tätigkeit zugewiesen.</div>'}</div>`;}).join('')+'</div>';
+    };
+
+    // ---------- Service Member UI ----------
+    const oldRenderServiceApp=window.renderServiceApp;
+    window.renderServiceApp=function(){
+        ensureExtendedData(); ensureRoleControls(); createBadgeTab(); renderMemberFilter();
+        if(typeof oldRenderServiceApp==='function') oldRenderServiceApp();
+        renderServiceLeaderChecks(); renderServiceMembers(); renderBadgeOverview();
+    };
+
+    // switchServiceTab kennt den neuen Tab zusätzlich
+    const oldSwitchServiceTab=window.switchServiceTab;
+    window.switchServiceTab=function(tabId,event){
+        if(tabId==='serviceBadges'){
+            document.querySelectorAll('#serviceApp .tab-content').forEach(t=>t.classList.remove('active'));
+            document.querySelectorAll('#serviceApp .tab-btn').forEach(b=>b.classList.remove('active'));
+            document.getElementById('serviceBadges')?.classList.add('active');
+            if(event?.currentTarget) event.currentTarget.classList.add('active');
+            renderBadgeOverview();
+            return;
+        }
+        oldSwitchServiceTab(tabId,event);
+        if(tabId==='serviceMembers'){renderMemberFilter();renderServiceMembers();}
+        if(tabId==='serviceActivities') renderActivities();
+    };
+
+    // ---------- Vollständiger Backup-Export/Import: Kleidung + Dienste + Erweiterungen ----------
+    window.exportData=function(){
+        ensureExtendedData();
+        const data={
+            backupVersion:3,
+            exportedAt:new Date().toISOString(),
+            appMode,
+            clothing:{inventory,employees,borrowHistory,actionLog},
+            service:{serviceActivities,services},
+            // flach zusätzlich für ältere/neuere Versionen
+            inventory,employees,borrowHistory,actionLog,serviceActivities,services
+        };
+        const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+        const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`THW_Jugendverwaltung_Backup_${new Date().toISOString().slice(0,10)}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+        addLogEntry('Vollständiges Backup exportiert (Kleidung + Dienste + Leistungsabzeichen)'); showToast('Vollständiges Backup erfolgreich exportiert','success');
+    };
+    window.importData=function(event){
+        const file=event.target.files?.[0]; if(!file) return;
+        const reader=new FileReader(); reader.onload=function(e){
+            try{
+                const data=JSON.parse(e.target.result);
+                const clothing=data.clothing||{}; const service=data.service||{};
+                inventory=data.inventory ?? clothing.inventory ?? [];
+                employees=data.employees ?? clothing.employees ?? [];
+                borrowHistory=data.borrowHistory ?? clothing.borrowHistory ?? [];
+                actionLog=data.actionLog ?? clothing.actionLog ?? [];
+                serviceActivities=data.serviceActivities ?? service.serviceActivities ?? serviceActivities;
+                services=data.services ?? service.services ?? [];
+                appMode=data.appMode||appMode||'';
+                ensureExtendedData();
+                localStorage.setItem('thw_app_mode',appMode);
+                saveData(); saveServiceData();
+                updateDynamicDropdowns(); renderInventoryCards(); renderInventory(); renderEmployees(); renderBorrowReturnOptions(); renderLog(); renderServiceApp(); applyAppMode();
+                addLogEntry('Vollständiges Backup importiert'); showToast('Kleidung, Dienste und Leistungsabzeichen vollständig importiert','success');
+            }catch(err){ console.error(err); alert('Fehler beim Laden der Datei: Ungültiges oder beschädigtes Backup.'); }
+        }; reader.readAsText(file); event.target.value='';
+    };
+
+    // Auch saveServiceData / saveData schreiben die Erweiterungsdaten zuverlässig lokal.
+    const oldSaveData=window.saveData;
+    window.saveData=function(){ ensureExtendedDataLocalOnly(); oldSaveData(); };
+    function ensureExtendedDataLocalOnly(){
+        employees.forEach(emp=>{if(!emp.borrowed)emp.borrowed=[];if(!Array.isArray(emp.earnedBadges))emp.earnedBadges=[];if(!emp.role)emp.role='youth';});
+        serviceActivities.forEach(a=>{if(!Array.isArray(a.badgeLevels))a.badgeLevels=[];});
+    }
+
+    // Initialisierung nach vorhandenen App-Funktionen.
+    ensureExtendedDataLocalOnly();
+    ensureRoleControls();
+    createBadgeTab();
+    renderMemberFilter();
+    renderEmployees();
+    renderServiceApp();
+    localStorage.setItem(BADGE_KEY,'1');
+})();
+
+    /* ==================================================================
+       ERWEITERUNG 2026: MEHRERE DIENSTINHALTE + STAMMDATEN + ENDZEIT +
+       GEBURTSTAGE + PORTFOLIO-DATEN + VOLLSTÄNDIGER BACKUP
+       ================================================================== */
+    (function(){
+        function normalizeService(s){
+            s.activityIds = Array.isArray(s.activityIds) ? s.activityIds.filter(Boolean) : (s.activityId ? [s.activityId] : []);
+            s.activityIds = [...new Set(s.activityIds)];
+            s.activityId = s.activityIds[0] || '';
+            s.endTime = s.endTime || '';
+            s.attendeeIds = Array.isArray(s.attendeeIds) ? s.attendeeIds : [];
+            s.leaderIds = Array.isArray(s.leaderIds) ? s.leaderIds : [];
+            s.leadersExtra = Array.isArray(s.leadersExtra) ? s.leadersExtra : [];
+            return s;
+        }
+        function normalizeAll(){
+            employees.forEach(e=>{
+                if(!Array.isArray(e.borrowed)) e.borrowed=[];
+                if(!Array.isArray(e.earnedBadges)) e.earnedBadges=[];
+                if(!e.role) e.role='youth';
+                if(e.entryDate===undefined)e.entryDate='';
+                if(e.phone===undefined)e.phone='';
+                if(e.email===undefined)e.email='';
+                if(e.address===undefined)e.address='';
+                if(e.notes===undefined)e.notes='';
+            });
+            services.forEach(normalizeService);
+            serviceActivities.forEach(a=>{if(!Array.isArray(a.badgeLevels))a.badgeLevels=[];});
+        }
+
+        function activityIdsOf(s){ normalizeService(s); return s.activityIds; }
+        function activityNamesOf(s){
+            return activityIdsOf(s).map(id=>getActivityName(id)).filter(Boolean);
+        }
+        function activityDateForEmployee(empId, activityId){
+            const matches=services
+                .filter(s=>activityIdsOf(s).includes(activityId) && (s.attendeeIds||[]).includes(empId))
+                .sort((a,b)=>serviceDateTime(a)-serviceDateTime(b));
+            return matches.length ? matches[0].date : '';
+        }
+        function fmtShortDate(v){ return v ? new Date(v+'T00:00:00').toLocaleDateString('de-DE') : ''; }
+
+        // Ein Inhalt gilt als erledigt, wenn der Junghelfer bei einem Dienst
+        // anwesend war, dem dieser Inhalt zugewiesen wurde. Dabei werden auch
+        // die neuen Mehrfach-Inhalte (activityIds) und alte Backups (activityId) berücksichtigt.
+        function activityCompletionDate(empId, activityId){
+            const matches=services
+                .filter(s=>activityIdsOf(s).includes(activityId) && (s.attendeeIds||[]).includes(empId))
+                .sort((a,b)=>serviceDateTime(a)-serviceDateTime(b));
+            return matches[0]?.date || '';
+        }
+
+        window.ensureServiceActivityRows=function(selectedIds=[]){
+            const host=document.getElementById('serviceActivityRows'); if(!host)return;
+            selectedIds=[...new Set(selectedIds.filter(Boolean))];
+            if(!selectedIds.length) selectedIds=[''];
+            host.innerHTML=selectedIds.map((id,i)=>`
+                <div class="service-activity-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+                    <select class="service-activity-input" onchange="serviceActivityChanged(this)" style="flex:1;">
+                        <option value="">-- Dienstinhalt auswählen --</option>
+                        ${serviceActivities.map(a=>`<option value="${escapeHtml(a.id)}" ${a.id===id?'selected':''}>${escapeHtml(a.name)}</option>`).join('')}
+                    </select>
+                    <button type="button" class="btn-danger btn-sm" onclick="removeServiceActivityRow(this)" title="Inhalt entfernen">✖</button>
+                </div>`).join('');
+            serviceActivityChanged();
+        };
+        window.serviceActivityChanged=function(){
+            const host=document.getElementById('serviceActivityRows'); if(!host)return;
+            const rows=[...host.querySelectorAll('.service-activity-input')];
+            const last=rows[rows.length-1];
+            if(last && last.value){
+                const div=document.createElement('div');
+                div.className='service-activity-row';
+                div.style.cssText='display:flex;gap:8px;margin-bottom:8px;align-items:center;';
+                div.innerHTML=`<select class="service-activity-input" onchange="serviceActivityChanged(this)" style="flex:1;"><option value="">-- Dienstinhalt auswählen --</option>${serviceActivities.map(a=>`<option value="${escapeHtml(a.id)}">${escapeHtml(a.name)}</option>`).join('')}</select><button type="button" class="btn-danger btn-sm" onclick="removeServiceActivityRow(this)" title="Inhalt entfernen">✖</button>`;
+                host.appendChild(div);
+            }
+        };
+        window.addServiceActivityRow=function(){ 
+            const host=document.getElementById('serviceActivityRows'); if(!host)return;
+            const div=document.createElement('div'); div.className='service-activity-row'; div.style.cssText='display:flex;gap:8px;margin-bottom:8px;align-items:center;';
+            div.innerHTML=`<select class="service-activity-input" onchange="serviceActivityChanged(this)" style="flex:1;"><option value="">-- Dienstinhalt auswählen --</option>${serviceActivities.map(a=>`<option value="${escapeHtml(a.id)}">${escapeHtml(a.name)}</option>`).join('')}</select><button type="button" class="btn-danger btn-sm" onclick="removeServiceActivityRow(this)">✖</button>`;
+            host.appendChild(div);
+        };
+        window.removeServiceActivityRow=function(btn){
+            const host=document.getElementById('serviceActivityRows'); if(!host)return;
+            btn.closest('.service-activity-row')?.remove();
+            if(!host.querySelector('.service-activity-row')) ensureServiceActivityRows([]);
+            else serviceActivityChanged();
+        };
+        function collectActivityIds(){
+            return [...document.querySelectorAll('.service-activity-input')].map(x=>x.value).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+        }
+
+        window.saveService=function(){
+            normalizeAll();
+            const id=document.getElementById('serviceEditId').value;
+            const date=document.getElementById('serviceDate').value;
+            const time=document.getElementById('serviceTime').value;
+            const endTime=document.getElementById('serviceEndTime').value;
+            const title=document.getElementById('serviceTitle').value.trim();
+            const location=document.getElementById('serviceLocation').value.trim();
+            const activityIds=collectActivityIds();
+            const leaderIds=collectServiceLeaderIds();
+            const leadersExtra=document.getElementById('serviceLeadersExtra').value.split(',').map(x=>x.trim()).filter(Boolean);
+            const notes=document.getElementById('serviceNotes').value.trim();
+            if(!date||!title)return alert('Bitte mindestens Datum und Bezeichnung eingeben.');
+            if(time&&endTime&&endTime<time)return alert('Die Endzeit darf nicht vor der Beginnzeit liegen.');
+            if(!activityIds.length)return alert('Bitte mindestens einen Dienstinhalt auswählen.');
+            if(id){
+                const service=services.find(x=>x.id===id); if(!service)return;
+                Object.assign(service,{date,time,endTime,title,location,activityIds,activityId:activityIds[0]||'',leaderIds,leadersExtra,notes});
+                addLogEntry(`Dienst "${title}" bearbeitet`); showToast('Dienst aktualisiert!','success');
+            }else{
+                services.push({id:'s_'+Date.now(),date,time,endTime,title,location,activityIds,activityId:activityIds[0]||'',leaderIds,leadersExtra,notes,attendeeIds:[]});
+                addLogEntry(`Dienst "${title}" angelegt`); showToast('Dienst angelegt!','success');
+            }
+            normalizeAll(); saveServiceData(); saveData();
+            resetServiceForm(); renderServiceApp(); switchServiceTab('servicePlan');
+        };
+
+        window.resetServiceForm=function(){
+            ['serviceEditId','serviceDate','serviceTime','serviceEndTime','serviceTitle','serviceLocation','serviceLeadersExtra','serviceNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+            const t=document.getElementById('serviceFormTitle'); if(t)t.textContent='➕ Neuen Dienst anlegen';
+            ensureServiceActivityRows([]);
+            renderServiceLeaderChecks([]);
+        };
+        window.editService=function(id){
+            const s=services.find(x=>x.id===id); if(!s)return; normalizeService(s);
+            document.getElementById('serviceEditId').value=s.id;
+            document.getElementById('serviceDate').value=s.date||'';
+            document.getElementById('serviceTime').value=s.time||'';
+            document.getElementById('serviceEndTime').value=s.endTime||'';
+            document.getElementById('serviceTitle').value=s.title||'';
+            document.getElementById('serviceLocation').value=s.location||'';
+            document.getElementById('serviceLeadersExtra').value=(s.leadersExtra||[]).join(', ');
+            document.getElementById('serviceNotes').value=s.notes||'';
+            ensureServiceActivityRows(s.activityIds);
+            renderServiceLeaderChecks(s.leaderIds||[]);
+            document.getElementById('serviceFormTitle').textContent='✏️ Dienst bearbeiten';
+            switchServiceTab('serviceCreate');
+            document.getElementById('serviceCreate').scrollIntoView({behavior:'smooth',block:'start'});
+        };
+
+        window.renderServices=function(){
+            const list=document.getElementById('serviceList'); if(!list)return;
+            normalizeAll();
+            const search=(document.getElementById('serviceSearch')?.value||'').toLowerCase().trim();
+            const month=document.getElementById('serviceMonthFilter')?.value||'';
+            const status=document.getElementById('serviceStatusFilter')?.value||'';
+            const now=new Date();
+            const filtered=services.filter(s=>{
+                const hay=[s.title,s.location,s.notes,...activityNamesOf(s),...serviceLeaders(s)].join(' ').toLowerCase();
+                const dt=serviceDateTime(s);
+                return (!search||hay.includes(search))&&(!month||String(s.date).startsWith(month))&&(!status||(status==='future'?dt>=now:dt<now));
+            }).sort((a,b)=>serviceDateTime(a)-serviceDateTime(b));
+            if(!filtered.length){list.innerHTML='<div class="card"><p style="margin:0;color:#64748b;">Keine passenden Dienste vorhanden.</p></div>';return;}
+            list.innerHTML=filtered.map((service,index)=>{
+                const past=serviceDateTime(service)<now, leaders=serviceLeaders(service), attendees=service.attendeeIds||[];
+                const names=activityNamesOf(service);
+                const prev=[...services].filter(x=>serviceDateTime(x)<serviceDateTime(service)).sort((a,b)=>serviceDateTime(b)-serviceDateTime(a))[0];
+                const birthdayNames=getBirthdaysBetween(prev?.date||'',service.date||'');
+                return `<div class="service-card ${past?'past':''}">
+                    <h4>${escapeHtml(service.title||'Dienst')}</h4>
+                    <div class="service-meta">📅 <strong>${escapeHtml(formatServiceDate(service.date))}</strong>${service.time?' · ⏰ '+escapeHtml(service.time)+' Uhr':''}${service.endTime?' – '+escapeHtml(service.endTime)+' Uhr':''}${service.location?' · 📍 '+escapeHtml(service.location):''}</div>
+                    <div class="service-tags">${names.map(n=>`<span class="service-tag">🧰 ${escapeHtml(n)}</span>`).join('')}<span class="service-tag">👥 ${attendees.length} anwesend</span><span class="service-tag">🎓 ${leaders.length} Durchführende</span></div>
+                    ${leaders.length?`<div class="service-meta" style="margin-top:8px;"><strong>Dienstdurchführende:</strong> ${leaders.map(escapeHtml).join(', ')}</div>`:''}
+                    ${birthdayNames.length?`<div style="margin-top:9px;padding:10px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;"><strong>🎂 Geburtstagsgrüße bei diesem Dienst</strong><div style="margin-top:5px;">${birthdayNames.map(x=>`<div>🎉 <strong>${escapeHtml(x.name)}</strong> – ${escapeHtml(x.dateLabel)}${x.age!==null?' ('+x.age+' Jahre)':''}</div>`).join('')}</div></div>`:''}
+                    ${service.notes?`<div style="margin-top:8px;"><strong>Notiz:</strong> ${escapeHtml(service.notes)}</div>`:''}
+                    ${attendees.length?`<div class="service-meta" style="margin-top:6px;"><strong>Anwesend:</strong> ${attendees.map(getEmployeeName).map(escapeHtml).join(', ')}</div>`:'<div class="service-meta" style="margin-top:6px;">Noch keine Anwesenheit eingetragen.</div>'}
+                    <div class="service-actions"><button class="btn-success btn-sm" onclick="openAttendance('${service.id}')">👥 Anwesenheit</button><button class="btn-secondary btn-sm" onclick="editService('${service.id}')">✏️ Bearbeiten</button><button class="btn-danger btn-sm" onclick="deleteService('${service.id}')">🗑️ Löschen</button></div>
+                </div>`;
+            }).join('');
+        };
+
+        function getBirthdaysBetween(prevDate,currentDate){
+            if(!currentDate)return [];
+            const end=new Date(currentDate+'T00:00:00');
+            // Beim ersten Dienst gibt es keinen vorherigen Dienst. In diesem Fall
+            // werden die Geburtstage der letzten 30 Tage berücksichtigt.
+            const start=prevDate?new Date(prevDate+'T00:00:00'):new Date(end);
+            if(!prevDate) start.setDate(start.getDate()-30);
+            if(start>end)return [];
+            const out=[];
+            employees.filter(isYouth).forEach(emp=>{
+                if(!emp.birthDate)return;
+                const b0=new Date(emp.birthDate+'T00:00:00');
+                for(let y=start.getFullYear();y<=end.getFullYear();y++){
+                    // Monat/Tag des Geburtstags im jeweiligen Jahr. 29.02.
+                    // wird nur in Schaltjahren als regulärer Geburtstag gewertet.
+                    if(b0.getMonth()===1 && b0.getDate()===29 && !((y%4===0&&y%100!==0)||y%400===0)) continue;
+                    const occ=new Date(y,b0.getMonth(),b0.getDate());
+                    if(occ>start && occ<=end){
+                        const age=y-b0.getFullYear();
+                        out.push({name:emp.name,dateLabel:occ.toLocaleDateString('de-DE'),age,sortDate:occ.getTime()});
+                    }
+                }
+            });
+            return out.sort((a,b)=>a.sortDate-b.sortDate);
+        }
+        window.getBirthdaysBetween=getBirthdaysBetween;
+
+        window.openAttendance=function(id){
+            const s=services.find(x=>x.id===id); if(!s)return;
+            const youth=employees.filter(isYouth);
+            const checks=youth.map(e=>`<label class="attendee-check"><input type="checkbox" class="attendance-check" value="${e.id}" ${(s.attendeeIds||[]).includes(e.id)?'checked':''}><span><strong>${escapeHtml(e.name)}</strong><small>Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</small></span></label>`).join('');
+            const html=`<div id="attendanceModal" class="modal-overlay" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:999997;display:flex;align-items:center;justify-content:center;padding:18px;"><div style="background:#fff;max-width:850px;width:100%;max-height:90vh;overflow:auto;border-radius:18px;padding:22px;box-shadow:0 16px 45px rgba(0,0,0,.2);"><div style="display:flex;justify-content:space-between;align-items:flex-start;"><div><h3 style="margin:0 0 5px;">👥 Anwesenheit</h3><div style="font-size:13px;color:#64748b;">${escapeHtml(s.title)} · ${escapeHtml(formatServiceDate(s.date))}</div></div><button class="btn-secondary btn-sm" onclick="closeAttendance()">✖</button></div><div style="margin:14px 0;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn-secondary btn-sm" onclick="document.querySelectorAll('.attendance-check').forEach(x=>x.checked=true)">Alle anwesend</button><button class="btn-secondary btn-sm" onclick="document.querySelectorAll('.attendance-check').forEach(x=>x.checked=false)">Alle abwählen</button></div><div class="attendee-grid">${checks||'<p style="color:#64748b;">Keine Junghelfer angelegt.</p>'}</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;"><button class="btn-secondary" onclick="closeAttendance()">Abbrechen</button><button class="btn-success" onclick="saveAttendance('${s.id}')">Anwesenheit speichern</button></div></div></div>`;
+            document.body.insertAdjacentHTML('beforeend',html);
+        };
+        window.saveAttendance=function(id){
+            const s=services.find(x=>x.id===id); if(!s)return;
+            s.attendeeIds=[...document.querySelectorAll('.attendance-check:checked')].map(x=>x.value);
+            saveServiceData(); renderServices(); renderServiceMembers(); closeAttendance();
+            addLogEntry(`Anwesenheit für "${s.title}" gespeichert`); showToast('Anwesenheit gespeichert','success');
+        };
+
+        window.renderServiceMembers=function(){
+            const container=document.getElementById('serviceMemberList'); if(!container)return;
+            const term=(document.getElementById('serviceMemberSearch')?.value||'').toLowerCase().trim();
+            const roleFilter=document.getElementById('serviceMemberRoleFilter')?.value||'youth';
+            const filtered=employees.filter(e=>e.name.toLowerCase().includes(term)&&((roleFilter==='all')||(e.role||'youth')===roleFilter));
+            container.innerHTML=filtered.map(e=>{
+                const attended=services.filter(s=>(s.attendeeIds||[]).includes(e.id)).length;
+                const led=services.filter(s=>(s.leaderIds||[]).includes(e.id)).length;
+                const earned=Array.isArray(e.earnedBadges)?e.earnedBadges:[];
+                const next=nextBadge(e);
+                return `<div class="employee-card" onclick="showServiceMemberDetail('${e.id}')"><div><strong>${escapeHtml(e.name)}</strong></div><span class="role-badge ${isLeader(e)?'role-leader':'role-youth'}">${escapeHtml(roleLabel(e))}</span><div style="font-size:12px;color:#64748b;margin-top:5px;">Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</div><span class="badge">${attended} Dienste anwesend · ${led} durchgeführt</span>${isYouth(e)?`<div style="margin-top:6px;">${badgePills(e)}</div><div class="portfolio-muted" style="margin-top:5px;">${next?`Nächste Stufe: <strong>${escapeHtml(next)}</strong>`:'Gold bereits erreicht'}</div>`:''}</div>`;
+            }).join('')||'<p style="color:#64748b;">Keine Personen gefunden.</p>';
+        };
+
+        window.showServiceMemberDetail=function(empId){
+            const emp=employees.find(e=>e.id===empId); if(!emp)return;
+            document.getElementById('serviceMemberDetail')?.remove();
+            const host=document.querySelector(`[data-service-member-id="${empId}"]`)||[...document.querySelectorAll('#serviceMemberList .employee-card')].find(x=>x.getAttribute('onclick')?.includes(empId));
+            if(!host)return;
+            if(isLeader(emp)){
+                const d=document.createElement('div'); d.id='serviceMemberDetail'; d.className='card'; d.style.marginTop='12px'; d.innerHTML=`<h4 style="margin-top:0;">${escapeHtml(emp.name)}</h4><p class="portfolio-muted">Betreuer / Dienstdurchführender. Kleidung wird weiterhin gemeinsam über die Bekleidungsverwaltung verwaltet.</p>`; host.insertAdjacentElement('afterend',d); return;
+            }
+            const current=nextBadge(emp)||'Gold';
+            const levels=['Bronze','Silber','Gold'];
+            const sections=levels.map(level=>{
+                const req=serviceActivities.filter(a=>(a.badgeLevels||[]).includes(level));
+                const items=req.map(a=>{
+                    const date=activityCompletionDate(emp.id,a.id);
+                    return `<div class="portfolio-item"><span class="portfolio-icon">${date?'✅':'❌'}</span><div style="flex:1;"><strong>${escapeHtml(a.name)}</strong>${date?` <span class="portfolio-muted">— erledigt am ${escapeHtml(fmtShortDate(date))}</span>`:''}${a.description?`<div class="portfolio-muted">${escapeHtml(a.description)}</div>`:''}</div></div>`;
+                }).join('')||'<div class="portfolio-muted">Keine Inhalte zugewiesen.</div>';
+                return `<div class="portfolio-section" style="margin-top:10px;"><div style="display:flex;justify-content:space-between;align-items:center;"><strong>${level}</strong><span class="badge-level-badge ${levelClass(level)}">${level===current?'➡ nächste Stufe':(Array.isArray(emp.earnedBadges)&&emp.earnedBadges.includes(level)?'🏅 zugewiesen':'')}</span></div>${items}</div>`;
+            }).join('');
+            const detail=document.createElement('div'); detail.id='serviceMemberDetail'; detail.className='card'; detail.style.marginTop='12px';
+            detail.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><div><h4 style="margin:0 0 5px;">${escapeHtml(emp.name)}</h4><div class="portfolio-muted">Nächste Stufe: <strong>${escapeHtml(current)}</strong></div></div><button class="btn-secondary btn-sm" onclick="document.getElementById('serviceMemberDetail')?.remove()">✖ Schließen</button></div><div style="margin-top:12px;"><strong>🏅 Bereits zugewiesene Abzeichen</strong><div class="activity-badge-grid" style="margin-top:7px;">${levels.map(level=>`<label><input type="checkbox" ${Array.isArray(emp.earnedBadges)&&emp.earnedBadges.includes(level)?'checked':''} onchange="setEmployeeBadge('${emp.id}','${level}',this.checked)"><span class="badge-level-badge ${levelClass(level)}">${level}</span></label>`).join('')}</div></div>${sections}`;
+            host.insertAdjacentElement('afterend',detail);
+        };
+
+        // ---------------- STAMMDATEN ----------------
+        function masterVal(id){return document.getElementById(id)?.value||'';}
+        function setMaster(id,val){const e=document.getElementById(id);if(e)e.value=val||'';}
+        window.openMasterData=function(){
+            const panel=document.getElementById('masterDataPanel'); if(!panel)return;
+            panel.style.display='block';
+            document.querySelector('#appModeOverlay .app-mode-options').style.display='none';
+            resetMasterForm(); renderMasterPeople();
+        };
+        window.closeMasterData=function(){
+            const panel=document.getElementById('masterDataPanel'); if(!panel)return;
+            panel.style.display='none';
+            document.querySelector('#appModeOverlay .app-mode-options').style.display='grid';
+        };
+        window.resetMasterForm=function(){
+            ['masterEditId','masterName','masterBirthDate','masterEntryDate','masterPhone','masterEmail','masterAddress','masterNotes'].forEach(id=>setMaster(id,''));
+            setMaster('masterRole','youth');
+            const status=document.getElementById('masterEditStatus');
+            if(status) status.style.display='none';
+            const saveBtn=document.querySelector('#masterDataPanel button[onclick=\"saveMasterPerson()\"]');
+            if(saveBtn) saveBtn.textContent='Person speichern';
+        };
+        window.saveMasterPerson=function(){
+            const id=masterVal('masterEditId'), name=masterVal('masterName').trim(), birthDate=masterVal('masterBirthDate'), role=masterVal('masterRole')||'youth';
+            if(!name)return alert('Bitte einen Namen eingeben.');
+            if(!birthDate)return alert('Bitte ein Geburtsdatum eingeben.');
+            let emp=id?employees.find(e=>e.id===id):null;
+            if(!emp){emp={id:'e_'+Date.now(),name,birthDate,borrowed:[],earnedBadges:[]};employees.push(emp);}
+            Object.assign(emp,{name,birthDate,role,entryDate:masterVal('masterEntryDate'),phone:masterVal('masterPhone').trim(),email:masterVal('masterEmail').trim(),address:masterVal('masterAddress').trim(),notes:masterVal('masterNotes').trim()});
+            normalizeAll(); employees.sort((a,b)=>a.name.localeCompare(b.name));
+            saveData(); renderEmployees(); renderBorrowReturnOptions(); renderServiceApp(); renderMasterPeople(); resetMasterForm();
+            addLogEntry(`${role==='leader'?'Betreuer':'Junghelfer'} "${name}" ${id?'bearbeitet':'angelegt'}`); showToast('Stammdaten gespeichert','success');
+        };
+        window.editMasterPerson=function(id){
+            const e=employees.find(x=>x.id===id);if(!e)return;
+            setMaster('masterEditId',e.id);setMaster('masterName',e.name);setMaster('masterBirthDate',e.birthDate);setMaster('masterRole',e.role||'youth');setMaster('masterEntryDate',e.entryDate);setMaster('masterPhone',e.phone);setMaster('masterEmail',e.email);setMaster('masterAddress',e.address);setMaster('masterNotes',e.notes);
+            const status=document.getElementById('masterEditStatus');
+            if(status) { status.style.display='block'; status.textContent=`✏️ Bearbeitungsmodus: ${e.name} wird geändert.`; }
+            const saveBtn=document.querySelector('#masterDataPanel button[onclick=\"saveMasterPerson()\"]');
+            if(saveBtn) saveBtn.textContent='Änderungen speichern';
+            const panel=document.getElementById('masterDataPanel');
+            panel?.scrollIntoView({behavior:'smooth',block:'start'});
+            setTimeout(()=>document.getElementById('masterName')?.focus(),250);
+        };
+        window.deleteMasterPerson=function(id){
+            const e=employees.find(x=>x.id===id);if(!e)return;
+            if((e.borrowed||[]).length)return alert('Erst alle ausgegebenen Kleidungsstücke zurückgeben.');
+            if(!confirm(`"${e.name}" wirklich löschen?`))return;
+            employees=employees.filter(x=>x.id!==id);saveData();renderEmployees();renderBorrowReturnOptions();renderServiceApp();renderMasterPeople();showToast('Person gelöscht','success');
+        };
+        window.renderMasterPeople=function(){
+            const list=document.getElementById('masterPeopleList');if(!list)return;
+            const term=(masterVal('masterSearch')).toLowerCase().trim(), rf=masterVal('masterRoleFilter');
+            const arr=employees.filter(e=>e.name.toLowerCase().includes(term)&&(!rf||(e.role||'youth')===rf)).sort((a,b)=>a.name.localeCompare(b.name));
+            list.innerHTML=arr.map(e=>`<div class="employee-card" style="cursor:default;"><div><strong>${escapeHtml(e.name)}</strong></div><span class="role-badge ${isLeader(e)?'role-leader':'role-youth'}">${escapeHtml(roleLabel(e))}</span><div style="font-size:12px;color:#64748b;margin-top:5px;">Geb.: ${escapeHtml(formatBirthDate(e.birthDate))}</div>${e.phone?`<div class="service-meta">☎️ ${escapeHtml(e.phone)}</div>`:''}${e.email?`<div class="service-meta">✉️ ${escapeHtml(e.email)}</div>`:''}<div style="margin-top:8px;"><button class="btn-secondary btn-sm" onclick="editMasterPerson('${e.id}')">✏️ Bearbeiten</button> <button class="btn-danger btn-sm" onclick="deleteMasterPerson('${e.id}')">🗑️ Löschen</button></div></div>`).join('')||'<p style="color:#64748b;">Noch keine Personen angelegt.</p>';
+        };
+
+        // Vollständiger Backup: alle lokalen Daten aus beiden Anwendungen + Erweiterungen.
+        window.exportData=function(){
+            normalizeAll();
+            const data={
+                backupVersion:4, exportedAt:new Date().toISOString(), appMode,
+                clothing:{inventory,employees,borrowHistory,actionLog},
+                service:{serviceActivities,services},
+                inventory,employees,borrowHistory,actionLog,serviceActivities,services,
+                localStorageData:Object.fromEntries(Object.keys(localStorage).filter(k=>k!=='thw_password_hash').map(k=>[k,localStorage.getItem(k)]))
+            };
+            const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+            const url=URL.createObjectURL(blob),a=document.createElement('a');
+            a.href=url;a.download=`THW_Jugendverwaltung_Backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
+            setTimeout(()=>URL.revokeObjectURL(url),1000);
+            showToast('Vollständiges Backup (Kleidung + Dienste + Stammdaten + Portfolios) exportiert','success');
+        };
+        window.importData=function(event){
+            const file=event.target.files?.[0];if(!file)return;
+            const reader=new FileReader();reader.onload=function(e){
+                try{
+                    const data=JSON.parse(e.target.result),cl=data.clothing||{},sv=data.service||{};
+                    inventory=data.inventory??cl.inventory??[];
+                    employees=data.employees??cl.employees??[];
+                    borrowHistory=data.borrowHistory??cl.borrowHistory??[];
+                    actionLog=data.actionLog??cl.actionLog??[];
+                    serviceActivities=data.serviceActivities??sv.serviceActivities??[];
+                    services=data.services??sv.services??[];
+                    appMode=data.appMode||appMode||'';
+                    normalizeAll();
+                    if(data.localStorageData && typeof data.localStorageData==='object'){
+                        Object.entries(data.localStorageData).forEach(([k,v])=>{
+                            if(k!=='thw_password_hash' && typeof v==='string') localStorage.setItem(k,v);
+                        });
+                    }
+                    saveData();saveServiceData();
+                    updateDynamicDropdowns();renderInventoryCards();renderInventory();renderEmployees();renderBorrowReturnOptions();renderLog();renderServiceApp();applyAppMode();
+                    addLogEntry('Vollständiges Backup importiert');showToast('Backup vollständig importiert','success');
+                }catch(err){console.error(err);alert('Fehler beim Laden des Backups: ungültige oder beschädigte Datei.');}
+            };reader.readAsText(file);event.target.value='';
+        };
+
+        // Erstinitialisierung/Migration
+        normalizeAll();
+        if(document.getElementById('serviceActivityRows')) ensureServiceActivityRows([]);
+        // Geburtstagshinweise sofort für bestehende und neue Dienste neu darstellen.
+        if(document.getElementById('serviceList')) renderServices();
+    })();
 </script>
+
+
+<!-- ==================== APP-AUSWAHL ==================== -->
+<div id="appModeOverlay">
+    <div class="app-mode-card">
+        <div class="app-mode-badge">THW-Jugend Döbeln</div>
+        <h2>Was möchtest du verwalten?</h2>
+        <p>Die Junghelfer und Geburtsdaten sind in beiden Bereichen gemeinsam verfügbar.</p>
+        <div class="app-mode-options">
+            <button type="button" class="app-mode-option" onclick="openMasterData()">
+                <span class="mode-icon">👥</span>
+                <strong>Stammdatenverwaltung</strong>
+                <span>Junghelfer und Betreuer zentral anlegen und bearbeiten.</span>
+            </button>
+            <button type="button" class="app-mode-option" onclick="selectAppMode('clothing')">
+                <span class="mode-icon">👕</span>
+                <strong>Kleidungsverwaltung</strong>
+                <span>Lagerbestand, Ausgabe, Rückgabe, Umtausch und Ausrüstung der Junghelfer.</span>
+            </button>
+            <button type="button" class="app-mode-option" onclick="selectAppMode('service')">
+                <span class="mode-icon">📅</span>
+                <strong>Dienstverwaltung</strong>
+                <span>Dienstplan, Tätigkeiten, Anwesenheit und Dienstdurchführende verwalten.</span>
+            </button>
+        </div>
+        <div id="masterDataPanel" style="display:none;margin-top:18px;text-align:left;">
+            <div class="card" style="padding:18px;">
+                <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <div>
+                        <h3 style="margin:0;">👥 Stammdatenverwaltung</h3>
+                        <div style="font-size:13px;color:#64748b;">Gemeinsame Personenbasis für Kleidung und Dienstverwaltung</div>
+                    </div>
+                    <button type="button" class="btn-secondary btn-sm" onclick="closeMasterData()">← Zurück</button>
+                </div>
+                <input type="hidden" id="masterEditId">
+                <div id="masterEditStatus" style="display:none;margin-top:14px;padding:10px 12px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:13px;font-weight:600;">✏️ Bearbeitungsmodus: Die ausgewählte Person wird geändert.</div>
+                <div class="grid-2" style="margin-top:14px;">
+                    <div class="form-group"><label>Name *</label><input id="masterName" type="text" placeholder="Vor- und Nachname"></div>
+                    <div class="form-group"><label>Geburtsdatum *</label><input id="masterBirthDate" type="date"></div>
+                    <div class="form-group"><label>Kategorie *</label><select id="masterRole"><option value="youth">Junghelfer</option><option value="leader">Betreuer / Dienstdurchführender</option></select></div>
+                    <div class="form-group"><label>Eintrittsdatum</label><input id="masterEntryDate" type="date"></div>
+                    <div class="form-group"><label>Telefon</label><input id="masterPhone" type="text" placeholder="optional"></div>
+                    <div class="form-group"><label>E-Mail</label><input id="masterEmail" type="email" placeholder="optional"></div>
+                    <div class="form-group"><label>Adresse</label><input id="masterAddress" type="text" placeholder="optional"></div>
+                    <div class="form-group"><label>Notizen</label><input id="masterNotes" type="text" placeholder="optional"></div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn-success" style="width:auto;" onclick="saveMasterPerson()">Person speichern</button>
+                    <button type="button" class="btn-secondary" style="width:auto;" onclick="resetMasterForm()">Formular leeren</button>
+                </div>
+                <div style="margin-top:18px;">
+                    <div class="filter-bar"><input id="masterSearch" oninput="renderMasterPeople()" placeholder="Person suchen..."><select id="masterRoleFilter" onchange="renderMasterPeople()"><option value="">Alle</option><option value="youth">Junghelfer</option><option value="leader">Betreuer</option></select></div>
+                    <div id="masterPeopleList" class="employees-cards"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
