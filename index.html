@@ -700,6 +700,10 @@
                     <label>Name</label>
                     <input type="text" id="empName" placeholder="Max Mustermann">
                 </div>
+                <div class="form-group">
+                    <label>Geburtsdatum</label>
+                    <input type="date" id="empBirthDate">
+                </div>
                 <button onclick="addEmployee()">Junghelfer hinzufügen</button>
             </div>
         </div>
@@ -819,6 +823,7 @@
     let currentInventoryType = 'Jacke MEA';
     let selectedEmployeeId = null;
     
+    employees.forEach(emp => { if (!emp.borrowed) emp.borrowed = []; if (!('birthDate' in emp)) emp.birthDate = ''; });
     employees.sort((a, b) => a.name.localeCompare(b.name));
     inventory.forEach(item => { if (!item.note) item.note = ''; });
 
@@ -999,6 +1004,7 @@
                 employees = data.employees || [];
                 borrowHistory = data.borrowHistory || [];
                 actionLog = data.actionLog || [];
+                employees.forEach(emp => { if (!emp.borrowed) emp.borrowed = []; if (!('birthDate' in emp)) emp.birthDate = ''; });
                 employees.sort((a, b) => a.name.localeCompare(b.name));
                 inventory.forEach(item => { if (!item.note) item.note = ''; });
                 localStorage.setItem('inventory', JSON.stringify(inventory));
@@ -1326,21 +1332,62 @@
     // ======================================================================
     // 15. JUNGHELFER – KACHELN & DETAILS
     // ======================================================================
+    function formatBirthDate(dateString) {
+        if (!dateString) return 'Nicht hinterlegt';
+        const d = new Date(dateString + 'T00:00:00');
+        if (Number.isNaN(d.getTime())) return String(dateString);
+        return d.toLocaleDateString('de-DE');
+    }
+
     function addEmployee() {
         const name = document.getElementById('empName').value.trim();
+        const birthDate = document.getElementById('empBirthDate').value;
         if (!name) return alert('Namen eingeben.');
-        employees.push({ id: Date.now().toString(), name: name, borrowed: [] });
+        if (!birthDate) return alert('Geburtsdatum eingeben.');
+        employees.push({ id: Date.now().toString(), name, birthDate, borrowed: [] });
         employees.sort((a, b) => a.name.localeCompare(b.name));
         document.getElementById('empName').value = '';
+        document.getElementById('empBirthDate').value = '';
         saveData(); renderEmployees(); renderBorrowReturnOptions();
         addLogEntry(`Junghelfer "${name}" angelegt`);
         showToast('Junghelfer hinzugefügt!', 'success');
     }
 
+    function editEmployee(id, event) {
+        if (event) event.stopPropagation();
+        const emp = employees.find(e => e.id === id);
+        if (!emp) return;
+        const newName = prompt('Name des Junghelfers:', emp.name || '');
+        if (newName === null) return;
+        const trimmedName = newName.trim();
+        if (!trimmedName) return alert('Der Name darf nicht leer sein.');
+        const shownDate = emp.birthDate ? formatBirthDate(emp.birthDate) : '';
+        const newBirthDate = prompt('Geburtsdatum (TT.MM.JJJJ oder JJJJ-MM-TT):', shownDate);
+        if (newBirthDate === null) return;
+        const value = newBirthDate.trim();
+        let normalizedBirthDate = '';
+        if (/^\d{2}\.\d{2}\.\d{4}$/.test(value)) {
+            const [day, month, year] = value.split('.');
+            normalizedBirthDate = `${year}-${month}-${day}`;
+        } else if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            normalizedBirthDate = value;
+        } else {
+            return alert('Bitte ein gültiges Datum im Format TT.MM.JJJJ oder JJJJ-MM-TT eingeben.');
+        }
+        const oldName = emp.name;
+        emp.name = trimmedName;
+        emp.birthDate = normalizedBirthDate;
+        employees.sort((a, b) => a.name.localeCompare(b.name));
+        saveData(); renderEmployees(); renderBorrowReturnOptions();
+        showEmployeeDetail(emp.id, true);
+        addLogEntry(`Junghelfer "${oldName}" bearbeitet`);
+        showToast('Junghelferdaten aktualisiert', 'success');
+    }
+
     function deleteEmployee(id, event) {
         if(event) event.stopPropagation();
         const emp = employees.find(e => e.id === id);
-        if (emp.borrowed.length > 0) return alert('Erst alles zurückgeben!');
+        if ((emp.borrowed || []).length > 0) return alert('Erst alles zurückgeben!');
         if (confirm('Löschen?')) {
             const name = emp.name;
             employees = employees.filter(e => e.id !== id);
@@ -1370,9 +1417,11 @@
             card.className = 'employee-card' + (selectedEmployeeId === emp.id ? ' active' : '');
             card.dataset.empId = emp.id;
             card.innerHTML = `
-                <div><strong>${emp.name}</strong></div>
+                <div><strong>${escapeHtml(emp.name)}</strong></div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Geb.: ${escapeHtml(formatBirthDate(emp.birthDate))}</div>
                 <span class="badge">${borrowedCount} Artikel ausgeliehen</span>
                 <div style="margin-top: 8px; display: flex; gap: 6px; justify-content: center;">
+                    <button class="btn-secondary btn-sm" onclick="editEmployee('${emp.id}', event)">✏️</button>
                     <button class="btn-secondary btn-sm" onclick="printSingleJunghelfer('${emp.id}', event)">🖨️</button>
                     <button class="btn-danger btn-sm" onclick="deleteEmployee('${emp.id}', event)">✕</button>
                 </div>
@@ -1380,7 +1429,7 @@
             card.onclick = function(e) {
                 if (e.target.closest('button')) return;
                 e.stopPropagation();
-                showEmployeeDetail(emp.id);
+                showEmployeeDetail(emp.id, selectedEmployeeId === emp.id);
             };
             container.appendChild(card);
         });
@@ -1451,9 +1500,13 @@
 
         document.querySelectorAll('.employee-card').forEach(c => c.classList.toggle('active', c.dataset.empId === empId));
 
-        let html = `<div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-            <h4 style="margin: 0;">${emp.name}</h4>
+        let html = `<div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
             <div>
+                <h4 style="margin: 0 0 4px 0;">${escapeHtml(emp.name)}</h4>
+                <div style="font-size: 13px; color: #64748b;">Geburtsdatum: <strong>${escapeHtml(formatBirthDate(emp.birthDate))}</strong></div>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="btn-secondary btn-sm" onclick="editEmployee('${emp.id}', event)" style="width:auto;">✏️ Bearbeiten</button>
                 <button class="btn-secondary btn-sm" onclick="printSingleJunghelfer('${emp.id}', event)" style="width:auto;">🖨️ Einzelausleihe drucken</button>
             </div>
         </div>`;
@@ -1471,6 +1524,7 @@
             html += '<em>Keine Einträge in den letzten 3 Jahren.</em>';
         }
         html += '</div>';
+        html += '<div style="margin-top: 12px; text-align: right;"><button class="btn-secondary btn-sm" onclick="closeEmployeeDetail()" style="width:auto;">✖ Details schließen</button></div>';
         content.innerHTML = html;
         area.classList.add('visible');
         if (!silent) {
@@ -1496,13 +1550,8 @@
             }
         }
 
-        const junghelferArea = document.getElementById('junghelferListArea');
-        if (junghelferArea && junghelferArea.contains(e.target)) {
-            const target = e.target.closest('.employee-card, button, .btn-icon, .btn-sm, .btn-secondary, .btn-danger');
-            if (!target && selectedEmployeeId !== null) {
-                closeEmployeeDetail();
-            }
-        }
+        // Junghelfer-Details bleiben geöffnet und schließen nicht mehr
+        // automatisch durch einen Klick außerhalb des Detailfensters.
     });
 
     // ======================================================================
