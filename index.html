@@ -159,6 +159,7 @@ button:hover { background: #003d82; }
 
 .assignment-group { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; background: #f8fafc; }
 .assignment-group h5 { margin: 0 0 10px; font-size: 14px; color: #0056b3; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.assignment-group h5 .assignment-actions { margin-left: auto; display: inline-flex; gap: 4px; }
 .assignment-list { display: flex; flex-wrap: wrap; gap: 6px 10px; }
 .assignment-list label { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; cursor: pointer; background: #fff; padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0; margin: 0; }
 .assignment-list label.assigned { background: #dcfce7; border-color: #86efac; color: #166534; }
@@ -250,7 +251,7 @@ button:hover { background: #003d82; }
 .random-result-box .random-empty { font-size: 15px; opacity: .85; font-style: italic; }
 .random-result-box .random-name { font-size: 34px; font-weight: 700; animation: popIn .4s ease; }
 .random-result-box .random-label { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; opacity: .85; font-weight: 700; }
-@keyframes popIn { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes popIn { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
 .random-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
 .random-actions button { width: auto; }
 .back-link { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; color: #0056b3; font-weight: 600; font-size: 14px; cursor: pointer; padding: 6px 10px; width: auto; }
@@ -1899,12 +1900,18 @@ function completedForPerson(pid, cid) {
     const m = services.filter(s => s.contentAssignments && Array.isArray(s.contentAssignments[cid]) && s.contentAssignments[cid].includes(pid)).sort((a,b) => (b.date||'').localeCompare(a.date||''));
     return m[0] || null;
 }
+/* Liefert Geburtstage zwischen letztem Dienst und diesem Dienst – für ALLE Personen */
 function birthdayItemsForService(s) {
     const d = new Date(s.date + 'T00:00:00'); if (isNaN(d)) return [];
     const prev = services.filter(x => (x.date||'') < s.date).sort((a,b) => (b.date).localeCompare(a.date))[0];
     const from = prev ? new Date(prev.date + 'T00:00:00') : new Date(d);
     if (!prev) from.setDate(from.getDate() - 30);
-    return junghelfer().filter(e => e.birthDate).map(e => { const b = new Date(e.birthDate + 'T00:00:00'); let bd = new Date(d.getFullYear(), b.getMonth(), b.getDate()); if (bd < from) bd.setFullYear(d.getFullYear() + 1); return { e, bd }; }).filter(x => x.bd > from && x.bd <= d).sort((a,b) => a.bd - b.bd);
+    return employees.filter(e => e.birthDate).map(e => {
+        const b = new Date(e.birthDate + 'T00:00:00');
+        let bd = new Date(d.getFullYear(), b.getMonth(), b.getDate());
+        if (bd < from) bd.setFullYear(d.getFullYear() + 1);
+        return { e, bd };
+    }).filter(x => x.bd > from && x.bd <= d).sort((a,b) => a.bd - b.bd);
 }
 function renderBirthdays(s) { const items = birthdayItemsForService(s); if (!items.length) return ''; return `<div class="birthday-box"><strong>🎂 Geburtstagsgrüße</strong><ul style="margin:8px 0 0;">${items.map(x => `<li>${esc(x.e.name)} – ${x.bd.toLocaleDateString('de-DE')}</li>`).join('')}</ul></div>`; }
 function countAssignedParticipants(s) { if (!s.contentAssignments) return 0; const set = new Set(); Object.values(s.contentAssignments).forEach(a => { if (Array.isArray(a)) a.forEach(id => set.add(id)); }); return set.size; }
@@ -2037,9 +2044,9 @@ function renderServices() {
             </td>
         </tr>`;
     }).join('') : '<tr><td colspan="6">Noch keine zukünftigen Dienste angelegt.</td></tr>';
-    const latest = fu[0];
+    // Geburtstagsanzeige im Plan entfernt – nur noch im Detail-Modal
     const bd = $('serviceBirthdays');
-    if (bd) bd.innerHTML = latest ? renderBirthdays(latest) : '<p>Noch keine zukünftigen Dienste vorhanden.</p>';
+    if (bd) bd.innerHTML = '';
 }
 
 /* ================= ARCHIV ================= */
@@ -2047,6 +2054,14 @@ let openArchiveYears = new Set(), openArchiveHalves = new Set(), openArchiveIds 
 function onArchiveYearToggle(y, o) { if (o) openArchiveYears.add(y); else openArchiveYears.delete(y); }
 function onArchiveHalfToggle(k, o) { if (o) openArchiveHalves.add(k); else openArchiveHalves.delete(k); }
 function onArchiveToggle(id, o) { if (o) openArchiveIds.add(id); else openArchiveIds.delete(id); }
+function selectAllForContent(sid, cid, selectAll) {
+    const s = services.find(x => x.id === sid); if (!s) return;
+    if (!s.contentAssignments) s.contentAssignments = {};
+    const attendees = junghelfer().filter(e => (s.attendanceIds||[]).includes(e.id)).map(e => e.id);
+    s.contentAssignments[cid] = selectAll ? [...attendees] : [];
+    saveServiceData();
+    renderArchive(); renderServices(); renderServicePeople(); renderStatsInline();
+}
 function renderArchive() {
     const c = $('archiveList'); if (!c) return;
     const today = new Date().toISOString().slice(0,10);
@@ -2109,7 +2124,16 @@ function renderArchive() {
                         const as = Array.isArray(s.contentAssignments?.[cid]) ? s.contentAssignments[cid] : [];
                         const lv = (cont.levels||[]).map(l => { const cls = l === 'Bronze' ? 'text-bronze' : l === 'Silber' ? 'text-silber' : 'text-gold'; return `<span class="level-tag ${cls}">${l}</span>`; }).join('');
                         const cb = el.map(e => { const ch = as.includes(e.id); return `<label class="${ch ? 'assigned' : ''}"><input type="checkbox" ${ch ? 'checked' : ''} onchange="toggleContentAssignment('${s.id}', '${cid}', '${e.id}', this.checked)"> ${esc(e.name)}</label>`; }).join('');
-                        return `<div class="assignment-group"><h5>📖 ${esc(cont.name)} ${lv}</h5><div class="assignment-list">${cb}</div></div>`;
+                        const allChecked = el.length > 0 && el.every(e => as.includes(e.id));
+                        return `<div class="assignment-group">
+                            <h5>📖 ${esc(cont.name)} ${lv}
+                                <span class="assignment-actions">
+                                    <button type="button" class="btn-sm" onclick="event.stopPropagation(); selectAllForContent('${s.id}', '${cid}', true)" title="Alle anwesenden Junghelfer auswählen">✅ Alle</button>
+                                    <button type="button" class="btn-sm btn-secondary" onclick="event.stopPropagation(); selectAllForContent('${s.id}', '${cid}', false)" title="Auswahl aufheben">✖ Keine</button>
+                                </span>
+                            </h5>
+                            <div class="assignment-list">${cb}</div>
+                        </div>`;
                     }).join('');
                 }
 
@@ -2165,11 +2189,13 @@ function showServiceDetail(id) {
     const aH = attended.length ? `<ul>${attended.map(e => { const t = getServiceTime(s, e.id); const tc = t.custom ? ` <small style="color:#a16207;">(⏰ ${t.start}–${t.end})</small>` : ''; return `<li>${esc(e.name)}${tc}</li>`; }).join('')}</ul>` : '<p class="empty-hint">Keine Teilnehmer markiert.</p>';
     const mealH = s.meal ? `<div class="info-row"><strong>🍽️ Essen wird gestellt</strong></div>` : '';
     const warnH = renderMealWarning(s);
+    // NEU: Geburtstagsanzeige im Detail-Modal (alle Personen)
+    const bdH = renderBirthdays(s);
     const m = document.createElement('div'); m.className = 'modal-overlay';
     m.onclick = (e) => { if (e.target === m) m.remove(); };
     m.innerHTML = `<div class="modal-content" onclick="event.stopPropagation();">
         <h2>${esc(s.title)}</h2><p class="modal-subtitle">${ds} · ${ts}</p>
-        ${mealH}${warnH}
+        ${mealH}${warnH}${bdH}
         ${s.notes ? `<div class="info-row"><strong>Notizen:</strong> ${esc(s.notes)}</div>` : ''}
         <h3>👥 Betreuer</h3>${lH}
         <h3>📚 Dienstinhalte</h3>${cH}
@@ -2323,8 +2349,9 @@ function renderFinance() {
     const cv = sel.value;
     const years = getAllFinanceYears();
     sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-    if (years.includes(currentYear)) sel.value = currentYear;
-    else if (years.includes(cv)) sel.value = cv;
+    // WICHTIG: gespeicherte Auswahl (cv) priorisieren, damit das Umschalten bestehen bleibt
+    if (cv && years.includes(cv)) sel.value = cv;
+    else if (years.includes(currentYear)) sel.value = currentYear;
     else sel.value = years[0];
     const year = sel.value;
     const d = getFinanceYearData(year);
@@ -2503,14 +2530,14 @@ function renderStatsInline() {
     const cv = sel.value;
     const years = getAllStatsYears();
     sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-    if (years.includes(currentYear)) sel.value = currentYear;
-    else if (years.includes(cv)) sel.value = cv;
+    // WICHTIG: gespeicherte Auswahl (cv) priorisieren
+    if (cv && years.includes(cv)) sel.value = cv;
+    else if (years.includes(currentYear)) sel.value = currentYear;
     else sel.value = years[0];
     const year = sel.value;
     const today = new Date().toISOString().slice(0,10);
     const past = services.filter(s => (s.date||'').startsWith(year) && (s.date||'') < today);
     const totServices = past.length;
-    // NEU: maximal mögliche Dienstzeit = Summe aller Dienststandardzeiten
     let maxPossibleHours = 0;
     past.forEach(s => { maxPossibleHours += serviceDefaultDuration(s); });
     const jh = junghelfer();
@@ -2520,7 +2547,6 @@ function renderStatsInline() {
         const count = att.length;
         const hours = att.reduce((sum, s) => sum + serviceDurationFor(s, e.id), 0);
         totalOwnHours += hours;
-        // Prozent bezogen auf max. mögliche Dienstzeit
         const percent = maxPossibleHours > 0 ? Math.min(100, Math.round(hours / maxPossibleHours * 100)) : 0;
         return { id:e.id, name:e.name, count, hours, percent, servicesCount: totServices };
     });
