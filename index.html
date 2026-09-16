@@ -340,6 +340,44 @@ button:hover { background: #003d82; }
 .pdf-badge:hover { background: #fca5a5; color: #7f1d1d; }
 .pdf-info-box { margin-top: 8px; padding: 10px 12px; background: #f0f6ff; border: 1px solid #cfe0f5; border-radius: 8px; font-size: 13px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
+/* ============ NEU: Vertrauliche Notiz ============ */
+.confidential-note { background: #fef3c7; border: 1px dashed #fbbf24; border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: 13px; color: #78350f; line-height: 1.45; }
+.confidential-note::before { content: '🔒 Vertraulich: '; font-weight: 700; }
+.notes-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; background: #fef3c7; color: #78350f; border: 1px solid #fbbf24; margin-left: 4px; }
+.notes-textarea-hint { font-size: 11px; color: #78350f; background: #fef3c7; padding: 6px 10px; border-radius: 6px; margin-top: 4px; border: 1px dashed #fbbf24; }
+
+/* ============ NEU: Visueller Ausbildungsfortschritt ============ */
+.progress-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 10px 12px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 10px; }
+.progress-level { display: flex; flex-direction: column; gap: 4px; }
+.progress-level-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.progress-label { font-size: 12px; font-weight: 700; }
+.progress-label.bronze { color: #b87333; }
+.progress-label.silber { color: #64748b; }
+.progress-label.gold { color: #b8860b; }
+.progress-count { font-size: 11px; color: #64748b; font-weight: 600; }
+.progress-bar-bg { height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; position: relative; }
+.progress-bar-fill { height: 100%; border-radius: 5px; transition: width .4s ease; }
+.progress-bar-fill.bronze { background: linear-gradient(90deg,#cd7f32,#b87333); }
+.progress-bar-fill.silber { background: linear-gradient(90deg,#cbd5e1,#94a3b8); }
+.progress-bar-fill.gold { background: linear-gradient(90deg,#ffd700,#b8860b); }
+.progress-status { font-size: 11px; font-weight: 700; }
+.progress-status.complete { color: #198754; }
+.progress-status.current { color: #0ea5e9; }
+.progress-status.pending { color: #64748b; }
+
+/* ============ NEU: Inhalts-Statistik Modal ============ */
+.content-stats-section { margin-bottom: 18px; }
+.content-stats-section h4 { margin: 0 0 8px; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.content-stats-section h4 .count { font-size: 12px; padding: 2px 10px; border-radius: 999px; font-weight: 700; }
+.content-stats-section.have-sec h4 .count { background: #dcfce7; color: #166534; }
+.content-stats-section.need-sec h4 .count { background: #fee2e2; color: #991b1b; }
+.content-stats-list { display: flex; flex-direction: column; gap: 6px; }
+.content-stats-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 13.5px; }
+.content-stats-row.have { background: #dcfce7; border-color: #86efac; color: #166534; }
+.content-stats-row.need { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+.content-stats-row .csr-name { flex: 1; font-weight: 600; }
+.content-stats-row .csr-date { font-size: 12px; opacity: .85; }
+
 .content-add-row { display: grid; grid-template-columns: 1fr 1.4fr auto; gap: 10px; align-items: end; margin-bottom: 14px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
 .content-add-row .form-group { margin-bottom: 0; }
 .content-add-row button { width: auto; padding: 10px 20px; white-space: nowrap; }
@@ -389,7 +427,8 @@ body.force-mobile .grid-2, body.force-mobile .grid-3, body.force-mobile .grid-4,
 body.force-mobile .bulk-grid-row.row-3, body.force-mobile .bulk-grid-row.row-2,
 body.force-mobile .inline-create-grid, body.force-mobile .contents-layout,
 body.force-mobile .master-layout,
-body.force-mobile .finance-summary-grid, body.force-mobile .random-pool-grid { grid-template-columns: 1fr !important; }
+body.force-mobile .finance-summary-grid, body.force-mobile .random-pool-grid,
+body.force-mobile .progress-container { grid-template-columns: 1fr !important; }
 body.force-mobile .contents-layout .contents-form-col,
 body.force-mobile .master-layout .master-form-col { position: static; }
 body.force-mobile .contents-list-scroll,
@@ -438,6 +477,7 @@ body.force-mobile .random-result-box .random-name { font-size: 26px; }
   td[data-label="Aktion"] { text-align: right; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e9edf2; }
   td[data-label="Aktion"]::before { display: none; }
   td[data-label="Aktion"] .btn-icon { font-size: 20px; }
+  .progress-container { grid-template-columns: 1fr; }
 }
 @media (max-width: 400px) {
   .grid-3, .grid-4, .grid-5, .bulk-grid-row.row-3, .bulk-grid-row.row-2 { grid-template-columns: 1fr; }
@@ -525,6 +565,11 @@ body.force-mobile .random-result-box .random-name { font-size: 26px; }
           <div class="form-group"><label>🥜 Essensunverträglichkeiten</label><textarea id="masterIntolerances" rows="2" placeholder="z.B. Laktose, Gluten..."></textarea></div>
           <div class="form-group"><label>🌾 Allergien</label><textarea id="masterAllergies" rows="2" placeholder="z.B. Nüsse, Pollen..."></textarea></div>
           <div class="form-group"><label>💊 Medikamente</label><textarea id="masterMedications" rows="2" placeholder="z.B. Asthma-Spray..."></textarea></div>
+          <div class="form-group">
+            <label>📝 Vertrauliche Notiz (nur für Betreuer)</label>
+            <textarea id="masterNotes" rows="2" placeholder="z.B. 'Sehr motiviert bei Gruppenarbeit', 'Braucht öfter Erinnerung'..."></textarea>
+            <div class="notes-textarea-hint">🔒 Nur intern sichtbar – erscheint nicht im Druck und nicht in Ausleihe-Dokumenten.</div>
+          </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button type="button" class="btn-success" onclick="saveMasterPerson()">Person speichern</button>
             <button type="button" class="btn-secondary btn-sm" onclick="resetMasterForm()">Zurücksetzen</button>
@@ -956,7 +1001,8 @@ employees = employees.map((e, i) => {
         dietVegan: !!e.dietVegan,
         intolerances: typeof e.intolerances === 'string' ? e.intolerances : '',
         allergies: typeof e.allergies === 'string' ? e.allergies : '',
-        medications: typeof e.medications === 'string' ? e.medications : ''
+        medications: typeof e.medications === 'string' ? e.medications : '',
+        notes: typeof e.notes === 'string' ? e.notes : ''
     };
 }).filter(e => e.name);
 employees.sort((a,b) => a.name.localeCompare(b.name,'de'));
@@ -1132,7 +1178,7 @@ async function readPdfFile(file) {
 
 /* ================= EXPORT / IMPORT ================= */
 function exportData() {
-    const data = { version: 15, exportedAt: new Date().toISOString(), inventory, employees, borrowHistory, serviceContents, services, centralLog, finances };
+    const data = { version: 16, exportedAt: new Date().toISOString(), inventory, employees, borrowHistory, serviceContents, services, centralLog, finances };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1164,7 +1210,7 @@ function importData(event) {
                 let cat = String(e.category || e.role || 'junghelfer').toLowerCase();
                 if (cat === 'betreuer') cat = 'jugendleiter';
                 if (![...JH_CATS, ...BL_CATS].includes(cat)) cat = 'junghelfer';
-                return { id: String(e.id || ('emp_'+Date.now()+'_'+i)), name: String(e.name||'').trim(), birthDate: e.birthDate||'', category: cat, borrowed: Array.isArray(e.borrowed)?e.borrowed:[], achievements: Array.isArray(e.achievements)?e.achievements:[], dietVegetarian:!!e.dietVegetarian, dietVegan:!!e.dietVegan, intolerances: typeof e.intolerances==='string'?e.intolerances:'', allergies: typeof e.allergies==='string'?e.allergies:'', medications: typeof e.medications==='string'?e.medications:'' };
+                return { id: String(e.id || ('emp_'+Date.now()+'_'+i)), name: String(e.name||'').trim(), birthDate: e.birthDate||'', category: cat, borrowed: Array.isArray(e.borrowed)?e.borrowed:[], achievements: Array.isArray(e.achievements)?e.achievements:[], dietVegetarian:!!e.dietVegetarian, dietVegan:!!e.dietVegan, intolerances: typeof e.intolerances==='string'?e.intolerances:'', allergies: typeof e.allergies==='string'?e.allergies:'', medications: typeof e.medications==='string'?e.medications:'', notes: typeof e.notes==='string'?e.notes:'' };
             }).filter(e => e.name);
             employees.sort((a,b)=>a.name.localeCompare(b.name,'de'));
             services = services.map(s => {
@@ -1484,6 +1530,10 @@ function showEmployeeDetail(empId, silent = false) {
         <div><h4 style="margin:0 0 4px 0;">${esc(emp.name)} <span class="pill ${catPillClass(emp.category)}">${catLabel(emp.category)}</span></h4>
         <div style="font-size:13px;color:#64748b;">Geburtsdatum: <strong>${esc(formatBirthDate(emp.birthDate))}</strong></div></div>
         <button class="btn-secondary btn-sm" onclick="printSingleJunghelfer('${emp.id}', event)" style="width:auto;">🖨️ Einzelausleihe drucken</button></div>`;
+    // Vertrauliche Notiz
+    if (emp.notes && emp.notes.trim()) {
+        h += `<div class="confidential-note">${esc(emp.notes)}</div>`;
+    }
     h += '<strong>Aktuelle Ausrüstung:</strong>' + renderEmployeeEquipmentGroups(emp);
     const hist = getHistoryForEmployee(emp.id, 3);
     h += '<div class="history-section"><strong>Historie (letzte 3 Jahre):</strong><br>';
@@ -1700,6 +1750,8 @@ function renderPersonRow(e) {
     if (e.dietVegan) dietTags.push('<span class="med-badge vegan">🌿 Vegan</span>');
     const hasMed = e.intolerances?.trim() || e.allergies?.trim() || e.medications?.trim();
     const medTag = hasMed ? '<span class="med-badge has">🩺 Med</span>' : '';
+    const notesTag = (e.notes && e.notes.trim()) ? '<span class="notes-badge" title="Vertrauliche Notiz vorhanden">📝 Notiz</span>' : '';
+    const notesBlock = (e.notes && e.notes.trim()) ? `<div class="confidential-note">${esc(e.notes)}</div>` : '';
     return `<div class="person-row ${catRowClass(e.category)}">
         <div class="person-meta">
             <strong>${esc(e.name)}</strong>
@@ -1709,7 +1761,9 @@ function renderPersonRow(e) {
                 ${achH}
                 ${dietTags.join('')}
                 ${medTag}
+                ${notesTag}
             </div>
+            ${notesBlock}
         </div>
         <div class="person-actions">
             <button type="button" class="btn-sm" onclick="editMasterPerson('${e.id}')">✏️ Bearbeiten</button>
@@ -1741,7 +1795,7 @@ function renderMasterPersons() {
     }).join('');
 }
 function resetMasterForm() {
-    ['masterEditId','masterName','masterBirthDate','masterIntolerances','masterAllergies','masterMedications'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+    ['masterEditId','masterName','masterBirthDate','masterIntolerances','masterAllergies','masterMedications','masterNotes'].forEach(id => { const el = $(id); if (el) el.value = ''; });
     $('masterCategory').value = 'junghelfer';
     ['masterLevelBronze','masterLevelSilver','masterLevelGold','masterDietVegetarian','masterDietVegan'].forEach(id => { const el = $(id); if (el) el.checked = false; });
     $('masterFormTitle').textContent = 'Person anlegen';
@@ -1756,6 +1810,7 @@ function editMasterPerson(id) {
     $('masterIntolerances').value = e.intolerances || '';
     $('masterAllergies').value = e.allergies || '';
     $('masterMedications').value = e.medications || '';
+    $('masterNotes').value = e.notes || '';
     $('masterFormTitle').textContent = 'Person bearbeiten';
     $('masterDataCard').scrollIntoView({ behavior:'smooth' });
 }
@@ -1771,11 +1826,12 @@ function saveMasterPerson() {
     const intolerances = $('masterIntolerances').value.trim();
     const allergies = $('masterAllergies').value.trim();
     const medications = $('masterMedications').value.trim();
+    const notes = $('masterNotes').value.trim();
     if (id) {
         const e = employees.find(x => x.id === id);
-        if (e) { e.name = name; e.birthDate = birth; e.category = cat; e.achievements = ach; e.dietVegetarian = dietVegetarian; e.dietVegan = dietVegan; e.intolerances = intolerances; e.allergies = allergies; e.medications = medications; }
+        if (e) { e.name = name; e.birthDate = birth; e.category = cat; e.achievements = ach; e.dietVegetarian = dietVegetarian; e.dietVegan = dietVegan; e.intolerances = intolerances; e.allergies = allergies; e.medications = medications; e.notes = notes; }
     } else {
-        employees.push({ id:'emp_' + Date.now(), name, birthDate: birth, category: cat, borrowed: [], achievements: ach, dietVegetarian, dietVegan, intolerances, allergies, medications });
+        employees.push({ id:'emp_' + Date.now(), name, birthDate: birth, category: cat, borrowed: [], achievements: ach, dietVegetarian, dietVegan, intolerances, allergies, medications, notes });
     }
     employees.sort((a,b) => a.name.localeCompare(b.name, 'de'));
     normalizeEmployees(); resetMasterForm(); renderMasterPersons();
@@ -1966,7 +2022,6 @@ function birthdayItemsForService(s) {
         return { e, bd };
     }).filter(x => x.bd > from && x.bd <= d).sort((a,b) => a.bd - b.bd);
 }
-/* Geburtstagsbox: zeigt Datum + Alter in Klammern an */
 function renderBirthdays(s) {
     const items = birthdayItemsForService(s);
     if (!items.length) return '';
@@ -2002,6 +2057,20 @@ function renderMealWarning(s) {
     w.allergies.forEach((names, k) => parts.push(`<li><strong>Allergie "${esc(k)}" (${names.length}):</strong> ${names.map(esc).join(', ')}</li>`));
     if (!parts.length) return '';
     return `<div class="meal-warning"><strong>🍽️ Essenshinweise beachten!</strong><ul>${parts.join('')}</ul></div>`;
+}
+
+/* ============ NEU: Vertrauliche Notizen für Teilnehmer eines Dienstes ============ */
+function renderConfidentialNotesForService(s) {
+    const list = [];
+    (s.participantIds || []).forEach(pid => {
+        const e = employees.find(x => x.id === pid);
+        if (e && e.notes && e.notes.trim()) list.push({ name: e.name, notes: e.notes.trim() });
+    });
+    if (!list.length) return '';
+    return `<div class="content-stats-section" style="margin-bottom:12px;">
+        <h4>🔒 Vertrauliche Hinweise</h4>
+        ${list.map(x => `<div class="confidential-note"><strong>${esc(x.name)}:</strong> ${esc(x.notes)}</div>`).join('')}
+    </div>`;
 }
 
 /* ================= ZEIT-BERECHNUNG ================= */
@@ -2252,10 +2321,16 @@ function showServiceDetail(id) {
         return `<li>${esc(c.name)}${lvl} <small style="color:#64748b;">– ${a} zugeordnet</small>${pdfBtn}</li>`;
     }).join('')}</ul>` : '<p class="empty-hint">Keine Dienstinhalte.</p>';
     const attended = (s.attendanceIds||[]).map(pid => employees.find(e => e.id === pid)).filter(Boolean);
-    const aH = attended.length ? `<ul>${attended.map(e => { const t = getServiceTime(s, e.id); const tc = t.custom ? ` <small style="color:#a16207;">(⏰ ${t.start}–${t.end})</small>` : ''; return `<li>${esc(e.name)}${tc}</li>`; }).join('')}</ul>` : '<p class="empty-hint">Keine Teilnehmer markiert.</p>';
+    const aH = attended.length ? `<ul>${attended.map(e => {
+        const t = getServiceTime(s, e.id);
+        const tc = t.custom ? ` <small style="color:#a16207;">(⏰ ${t.start}–${t.end})</small>` : '';
+        const nb = (e.notes && e.notes.trim()) ? ` <span class="notes-badge">📝 Notiz</span>` : '';
+        return `<li>${esc(e.name)}${tc}${nb}</li>`;
+    }).join('')}</ul>` : '<p class="empty-hint">Keine Teilnehmer markiert.</p>';
     const mealH = s.meal ? `<div class="info-row"><strong>🍽️ Essen wird gestellt</strong></div>` : '';
     const warnH = renderMealWarning(s);
     const bdH = renderBirthdays(s);
+    const confH = renderConfidentialNotesForService(s);
     const m = document.createElement('div'); m.className = 'modal-overlay';
     m.onclick = (e) => { if (e.target === m) m.remove(); };
     m.innerHTML = `<div class="modal-content" onclick="event.stopPropagation();">
@@ -2265,6 +2340,7 @@ function showServiceDetail(id) {
         <h3>👥 Betreuer</h3>${lH}
         <h3>📚 Dienstinhalte</h3>${cH}
         <h3>👤 Teilgenommen</h3>${aH}
+        ${confH}
         <div class="modal-actions">
             <button type="button" class="btn-secondary" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
             <button type="button" class="btn-success" onclick="this.closest('.modal-overlay').remove(); openEditServiceModal('${s.id}');">✏️ Bearbeiten</button>
@@ -2295,7 +2371,7 @@ th,td{border:1px solid #999;padding:8px 10px;text-align:left;font-size:10.5pt}th
     svcLog(`Druck: ${fu.length} zukünftige Dienste`);
 }
 
-/* ================= CONTENT (mit PDF-Anhang) ================= */
+/* ================= CONTENT (mit PDF-Anhang + Statistikanzeige) ================= */
 async function saveContent() {
     const id = $('contentEditId').value, name = $('contentName').value.trim();
     if (!name) return alert('Bezeichnung eingeben.');
@@ -2351,7 +2427,7 @@ function renderServiceContents() {
         const body = items.map(x => {
             const lv = (x.levels||[]).map(l => { const cls = l === 'Bronze' ? 'text-bronze' : l === 'Silber' ? 'text-silber' : 'text-gold'; return `<span class="level-tag ${cls}">${l}</span>`; }).join('');
             const pdfIco = x.pdfData ? `<span class="pdf-badge" onclick="event.stopPropagation(); viewContentPdf('${x.id}')" title="${esc(x.pdfName || 'PDF')} öffnen">📄 PDF</span>` : '';
-            return `<div class="content-item-row"><div class="content-item-info"><strong>${esc(x.name)}</strong>${lv}${pdfIco}${x.description ? `<small>${esc(x.description)}</small>` : ''}</div><div class="content-item-actions"><button class="btn-sm" onclick="editContent('${x.id}')">✏️</button><button class="btn-danger btn-sm" onclick="deleteContent('${x.id}')">🗑️</button></div></div>`;
+            return `<div class="content-item-row"><div class="content-item-info"><strong>${esc(x.name)}</strong>${lv}${pdfIco}${x.description ? `<small>${esc(x.description)}</small>` : ''}</div><div class="content-item-actions"><button class="btn-sm" title="Wer hat's, wer braucht's?" onclick="showContentStats('${x.id}')">📊</button><button class="btn-sm" onclick="editContent('${x.id}')">✏️</button><button class="btn-danger btn-sm" onclick="deleteContent('${x.id}')">🗑️</button></div></div>`;
         }).join('');
         return `<details class="content-category-details" ${isOpen ? 'open' : ''} ontoggle="onCategoryToggle('${ce}', this.open)"><summary><span class="cat-title">📁 ${esc(cat)}</span><span class="category-count">${items.length}</span></summary><div class="content-category-body">${body}</div></details>`;
     }).join('');
@@ -2412,6 +2488,53 @@ function deleteContent(id) {
     renderServiceContents(); renderServices(); renderArchive();
 }
 
+/* ============ NEU: Statistik pro Dienstinhalt (Umkehrung) ============ */
+function showContentStats(contentId) {
+    const c = serviceContents.find(x => x.id === contentId);
+    if (!c) return;
+    const jh = junghelfer();
+    const have = [], need = [];
+    jh.forEach(e => {
+        const done = completedForPerson(e.id, contentId);
+        if (done) have.push({ e, done });
+        else need.push(e);
+    });
+    // Sortierung: have nach Datum absteigend (neueste zuerst), manuell zuletzt
+    have.sort((a,b) => {
+        if (a.done.manual && !b.done.manual) return 1;
+        if (!a.done.manual && b.done.manual) return -1;
+        return (b.done.date || '').localeCompare(a.done.date || '');
+    });
+    need.sort((a,b) => a.name.localeCompare(b.name, 'de'));
+    const lv = (c.levels || []).map(l => { const cls = l === 'Bronze' ? 'text-bronze' : l === 'Silber' ? 'text-silber' : 'text-gold'; return `<span class="level-tag ${cls}">${l}</span>`; }).join('');
+    const cat = (c.category || '').trim();
+    const pdfBtn = c.pdfData ? `<button type="button" class="btn-sm btn-secondary" onclick="viewContentPdf('${c.id}')" style="margin-left:8px;">📄 PDF</button>` : '';
+    const haveRows = have.length ? have.map(x => {
+        const dTxt = x.done.manual ? 'durch Abzeichen abgedeckt' : new Date(x.done.date + 'T00:00:00').toLocaleDateString('de-DE');
+        return `<div class="content-stats-row have"><span class="csr-name">${esc(x.e.name)}</span><span class="csr-date">${dTxt}</span></div>`;
+    }).join('') : '<p class="empty-hint">Noch niemand hat diesen Inhalt abgeschlossen.</p>';
+    const needRows = need.length ? need.map(e => `<div class="content-stats-row need"><span class="csr-name">${esc(e.name)}</span></div>`).join('') : '<p class="empty-hint">Alle Junghelfer haben diesen Inhalt bereits.</p>';
+    const m = document.createElement('div'); m.className = 'modal-overlay';
+    m.onclick = (e) => { if (e.target === m) m.remove(); };
+    m.innerHTML = `<div class="modal-content" style="max-width:720px;" onclick="event.stopPropagation();">
+        <h2>📊 ${esc(c.name)}</h2>
+        <p class="modal-subtitle">${cat ? esc(cat) + ' · ' : ''}${lv || 'Keine Stufe'}${pdfBtn}</p>
+        ${c.description ? `<p style="color:#64748b;font-size:13px;margin-top:-8px;">${esc(c.description)}</p>` : ''}
+        <div class="content-stats-section have-sec">
+            <h4>✅ Hat's schon <span class="count">${have.length}/${jh.length}</span></h4>
+            <div class="content-stats-list">${haveRows}</div>
+        </div>
+        <div class="content-stats-section need-sec">
+            <h4>❌ Braucht's noch <span class="count">${need.length}/${jh.length}</span></h4>
+            <div class="content-stats-list">${needRows}</div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
+        </div>
+    </div>`;
+    document.body.appendChild(m);
+}
+
 /* ================= STAND LEISTUNGSABZEICHEN ================= */
 function renderServicePeople() {
     const c = $('servicePeopleList'); if (!c) return;
@@ -2430,6 +2553,29 @@ function renderServicePeople() {
             if (!req.length) return '';
             return `<span class="pill" style="background:${comp ? col : '#e2e8f0'};color:${comp && l !== 'Gold' ? '#fff' : '#1e293b'};">${l}: ${dc}/${req.length}${comp ? ' ✓' : ''}</span>`;
         }).filter(Boolean).join(' ');
+
+        // Fortschrittsbalken
+        const progressBars = ['Bronze','Silber','Gold'].map(l => {
+            const req = serviceContents.filter(x => x.levels?.includes(l));
+            if (!req.length) return `<div class="progress-level"><div class="progress-level-head"><span class="progress-label ${l.toLowerCase()}">${l}</span><span class="progress-count">–</span></div><div class="progress-bar-bg"></div><div class="progress-status pending">Keine Inhalte</div></div>`;
+            const dc = req.filter(x => completedForPerson(e.id, x.id)).length;
+            const total = req.length;
+            const pct = total > 0 ? Math.round(dc / total * 100) : 0;
+            const complete = dc === total;
+            const isCurrent = nextGoal === l;
+            const status = complete ? 'Abgeschlossen' : (isCurrent ? 'In Arbeit' : 'Ausstehend');
+            const statusCls = complete ? 'complete' : (isCurrent ? 'current' : 'pending');
+            return `<div class="progress-level">
+                <div class="progress-level-head">
+                    <span class="progress-label ${l.toLowerCase()}">${l}</span>
+                    <span class="progress-count">${dc}/${total}</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill ${l.toLowerCase()}" style="width:${pct}%;"></div></div>
+                <div class="progress-status ${statusCls}">${complete ? '✓ ' : ''}${status}</div>
+            </div>`;
+        }).join('');
+        const progressBox = `<div class="progress-container">${progressBars}</div>`;
+
         const detail = ['Bronze','Silber','Gold'].map(l => {
             const req = serviceContents.filter(x => x.levels?.includes(l));
             if (!req.length) return '';
@@ -2455,7 +2601,7 @@ function renderServicePeople() {
             return `<details class="achievement-details${cgc}"><summary><div class="ach-summary-main"><span class="${lc}">${l} ${le}</span>${isCG ? '<span style="color:#0ea5e9;font-size:11px;font-weight:700;">← aktuelles Ziel</span>' : ''}</div><div class="ach-summary-status${isComp ? ' complete' : ''}">${dc}/${req.length} ${isComp ? '✓ vollständig' : 'erledigt'}</div></summary><div class="achievement-details-content">${itemsH}</div></details>`;
         }).join('');
         const mi = ma.length ? `<small style="color:#64748b;">Manuell zugewiesen: ${ma.join(', ')}</small>` : '';
-        return `<details class="person-badge-details"><summary><div class="person-badge-summary-text"><strong>${esc(e.name)}</strong>${goalB}${sumParts}</div></summary><div class="person-badge-content">${mi ? `<div style="margin-bottom:10px;">${mi}</div>` : ''}${detail || '<p>Keine Leistungsabzeichen-Stufen definiert.</p>'}</div></details>`;
+        return `<details class="person-badge-details"><summary><div class="person-badge-summary-text"><strong>${esc(e.name)}</strong>${goalB}${sumParts}</div></summary><div class="person-badge-content">${progressBox}${mi ? `<div style="margin-bottom:10px;">${mi}</div>` : ''}${detail || '<p>Keine Leistungsabzeichen-Stufen definiert.</p>'}</div></details>`;
     }).join('');
 }
 
