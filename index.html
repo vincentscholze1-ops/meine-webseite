@@ -411,6 +411,31 @@
             background: #cfe2ff; color: #1e40af;
         }
 
+        /* ==================== CONTENTS LAYOUT (fix + scroll) ==================== */
+        .contents-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 20px;
+            align-items: start;
+        }
+        .contents-layout .contents-form-col {
+            position: sticky;
+            top: 80px;
+        }
+        .contents-layout .contents-list-col .card {
+            margin-bottom: 0;
+        }
+        .contents-list-scroll {
+            max-height: calc(100vh - 220px);
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        @media(max-width: 900px) {
+            .contents-layout { grid-template-columns: 1fr; }
+            .contents-layout .contents-form-col { position: static; }
+            .contents-list-scroll { max-height: none; overflow-y: visible; }
+        }
+
         /* ==================== ARCHIV ==================== */
         .archive-year {
             border: 2px solid #d1d9e6;
@@ -603,6 +628,54 @@
             margin-bottom: 10px;
         }
 
+        /* ==================== BULK MODE TOGGLE ==================== */
+        .bulk-mode-switch {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+        .bulk-mode-switch .bulk-mode-label {
+            font-weight: 700;
+            font-size: 13px;
+            color: #1e293b;
+            margin-right: 4px;
+        }
+        .bulk-mode-switch label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid transparent;
+            transition: all 0.15s;
+            margin: 0;
+        }
+        .bulk-mode-switch label.issue-mode {
+            background: #e0f2fe;
+            color: #075985;
+            border-color: #7dd3fc;
+        }
+        .bulk-mode-switch label.return-mode {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+        .bulk-mode-switch label input[type="radio"] {
+            width: auto;
+            margin: 0;
+            accent-color: #0056b3;
+        }
+        .bulk-mode-switch label:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+
         /* ==================== OUT-OF-STOCK ==================== */
         .out-of-stock-row { background: #fff0f0 !important; color: #b02a37; font-weight: 600; }
         .out-of-stock-row td { background: #fff0f0 !important; }
@@ -667,9 +740,12 @@
         body.force-mobile .grid-5,
         body.force-mobile .bulk-grid-row.row-3,
         body.force-mobile .bulk-grid-row.row-2,
-        body.force-mobile .inline-create-grid {
+        body.force-mobile .inline-create-grid,
+        body.force-mobile .contents-layout {
             grid-template-columns: 1fr !important;
         }
+        body.force-mobile .contents-layout .contents-form-col { position: static; }
+        body.force-mobile .contents-list-scroll { max-height: none; overflow-y: visible; }
         body.force-mobile .tabs { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
         body.force-mobile .tab-btn { border-radius: 10px; padding: 10px 6px; font-size: 12px; }
         body.force-mobile .employee-detail-area { padding: 12px; }
@@ -1253,30 +1329,34 @@
 
   <!-- Dienstinhalte -->
   <div id="svc-contents" class="tab-content">
-    <div class="grid-2">
-      <div class="card add-card">
-        <h2 id="contentFormTitle">Dienstinhalt anlegen</h2>
-        <input type="hidden" id="contentEditId">
-        <div class="form-group"><label>Bezeichnung *</label><input id="contentName" type="text" placeholder="z.B. Erste Hilfe"></div>
-        <div class="form-group">
-          <label>Kategorie</label>
-          <input id="contentCategory" type="text" list="categoryList" placeholder="z.B. Grundausbildung, Technik...">
-          <datalist id="categoryList"></datalist>
-        </div>
-        <div class="form-group"><label>Beschreibung</label><textarea id="contentDesc" rows="3"></textarea></div>
-        <div class="form-group"><label>Leistungsabzeichen</label>
-          <div style="display:flex;gap:14px;flex-wrap:wrap;">
-            <label><input type="checkbox" id="levelBronze"> <span class="text-bronze">Bronze</span></label>
-            <label><input type="checkbox" id="levelSilver"> <span class="text-silber">Silber</span></label>
-            <label><input type="checkbox" id="levelGold"> <span class="text-gold">Gold</span></label>
+    <div class="contents-layout">
+      <div class="contents-form-col">
+        <div class="card add-card">
+          <h2 id="contentFormTitle">Dienstinhalt anlegen</h2>
+          <input type="hidden" id="contentEditId">
+          <div class="form-group"><label>Bezeichnung *</label><input id="contentName" type="text" placeholder="z.B. Erste Hilfe"></div>
+          <div class="form-group">
+            <label>Kategorie</label>
+            <input id="contentCategory" type="text" list="categoryList" placeholder="z.B. Grundausbildung, Technik...">
+            <datalist id="categoryList"></datalist>
           </div>
+          <div class="form-group"><label>Beschreibung</label><textarea id="contentDesc" rows="3"></textarea></div>
+          <div class="form-group"><label>Leistungsabzeichen</label>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;">
+              <label><input type="checkbox" id="levelBronze"> <span class="text-bronze">Bronze</span></label>
+              <label><input type="checkbox" id="levelSilver"> <span class="text-silber">Silber</span></label>
+              <label><input type="checkbox" id="levelGold"> <span class="text-gold">Gold</span></label>
+            </div>
+          </div>
+          <button type="button" class="btn-success" onclick="saveContent()">Dienstinhalt speichern</button>
+          <button type="button" class="btn-secondary btn-sm" onclick="resetContentForm()" style="margin-top:8px;">Zurücksetzen</button>
         </div>
-        <button type="button" class="btn-success" onclick="saveContent()">Dienstinhalt speichern</button>
-        <button type="button" class="btn-secondary btn-sm" onclick="resetContentForm()" style="margin-top:8px;">Zurücksetzen</button>
       </div>
-      <div class="card">
-        <h2>Vorhandene Dienstinhalte</h2>
-        <div id="contentList"></div>
+      <div class="contents-list-col">
+        <div class="card">
+          <h2>Vorhandene Dienstinhalte</h2>
+          <div id="contentList" class="contents-list-scroll"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1300,7 +1380,7 @@
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('lager', event)">📦 Lagerbestand</button>
         <button class="tab-btn" onclick="switchTab('junghelfer', event)">👤 Junghelfer & Betreuer</button>
-        <button class="tab-btn" onclick="switchTab('komplett', event)">👕 Komplettausgabe</button>
+        <button class="tab-btn" onclick="switchTab('komplett', event)">👕 Komplettausgabe / -rückgabe</button>
         <button class="tab-btn" onclick="switchTab('einzel', event)">🔄 Einzelausgabe / Rückgabe</button>
         <button class="tab-btn" onclick="switchTab('umtausch', event)">🔁 Umtausch</button>
     </div>
@@ -1379,8 +1459,26 @@
 
     <div id="komplett" class="tab-content">
         <div class="card full-width bulk-card">
-            <h4 style="color: #0dcaf0; margin-top: 0;">👕 Neueinkleidung (Komplettausstattung ausgeben)</h4>
-            <div class="form-group"><label>Junghelfer</label><select id="bulkIssueEmpSelect"></select></div>
+            <h4 style="color: #0dcaf0; margin-top: 0;">👕 Neueinkleidung / Komplettvorgang</h4>
+
+            <!-- Modus-Umschalter -->
+            <div class="bulk-mode-switch">
+                <span class="bulk-mode-label">Modus:</span>
+                <label class="issue-mode">
+                    <input type="radio" name="bulkMode" value="issue" checked onchange="onBulkModeChange()">
+                    📤 Komplettausgabe
+                </label>
+                <label class="return-mode">
+                    <input type="radio" name="bulkMode" value="return" onchange="onBulkModeChange()">
+                    📥 Komplettrückgabe
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Junghelfer</label>
+                <select id="bulkIssueEmpSelect" onchange="onBulkEmpChange()"></select>
+            </div>
+
             <div class="bulk-grid-row row-3">
                 <div class="form-group"><label>Jacke MEA</label><select id="bulkIssue_JackeMEA"></select></div>
                 <div class="form-group"><label>Jacke Fleece</label><select id="bulkIssue_JackeFleece"></select></div>
@@ -1395,13 +1493,13 @@
                 <div class="form-group">
                     <label>Handschuhe</label>
                     <div class="bulk-handschuh-fields">
-                        <select id="bulkIssue_HandschuhTyp" onchange="updateHandschuhGroessen()"><option value="">-- Typ --</option></select>
+                        <select id="bulkIssue_HandschuhTyp" onchange="onBulkHandschuhTypChange()"><option value="">-- Typ --</option></select>
                         <select id="bulkIssue_HandschuhGroesse"><option value="">-- Größe --</option></select>
                     </div>
                 </div>
                 <div class="form-group"><label>T-Shirt</label><select id="bulkIssue_TShirt"></select></div>
             </div>
-            <button onclick="issueBulkClothing()" style="background: #0dcaf0; color: #1e293b;">Alle gewählten Artikel auf einmal ausgeben</button>
+            <button id="bulkActionBtn" onclick="handleBulkAction()" style="background: #0dcaf0; color: #1e293b;">Alle gewählten Artikel auf einmal ausgeben</button>
         </div>
     </div>
 
@@ -1527,7 +1625,6 @@
         });
         s.contentAssignments = newCA;
 
-        // Migration: alter leaderId -> leaderIds Array
         if (!Array.isArray(s.leaderIds)) {
             s.leaderIds = s.leaderId ? [s.leaderId] : [];
         }
@@ -1733,7 +1830,7 @@
     // 9. EXPORT / IMPORT
     // ======================================================================
     function exportData() {
-        const data = { version: 8, exportedAt: new Date().toISOString(), inventory, employees, borrowHistory, serviceContents, services, centralLog };
+        const data = { version: 9, exportedAt: new Date().toISOString(), inventory, employees, borrowHistory, serviceContents, services, centralLog };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1924,7 +2021,6 @@
         const prevSelected = new Set([...sel.selectedOptions].map(o => o.value));
         const list = betreuer();
         sel.innerHTML = list.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join('');
-        // Vorherige Auswahl wiederherstellen, sofern noch vorhanden
         [...sel.options].forEach(opt => {
             if (prevSelected.has(opt.value)) opt.selected = true;
         });
@@ -1980,6 +2076,200 @@
             const item = matchingItems.find(i => i.size === size);
             sizeSelect.innerHTML += `<option value="${item.id}">Größe ${size} (${item.available} verfügbar)</option>`;
         });
+    }
+
+    // ============ BULK MODE (Ausgabe / Rückgabe) ============
+    function getBulkMode() {
+        return document.querySelector('input[name="bulkMode"]:checked')?.value || 'issue';
+    }
+
+    function onBulkModeChange() {
+        const mode = getBulkMode();
+        const btn = document.getElementById('bulkActionBtn');
+        if (btn) {
+            if (mode === 'return') {
+                btn.textContent = 'Alle gewählten Artikel auf einmal zurücknehmen';
+                btn.style.background = '#dc3545';
+                btn.style.color = '#fff';
+            } else {
+                btn.textContent = 'Alle gewählten Artikel auf einmal ausgeben';
+                btn.style.background = '#0dcaf0';
+                btn.style.color = '#1e293b';
+            }
+        }
+        if (mode === 'return') {
+            updateBulkReturnDropdowns();
+        } else {
+            updateBulkIssueDropdowns();
+        }
+    }
+
+    function onBulkEmpChange() {
+        const mode = getBulkMode();
+        if (mode === 'return') {
+            updateBulkReturnDropdowns();
+        } else {
+            updateBulkIssueDropdowns();
+        }
+    }
+
+    function onBulkHandschuhTypChange() {
+        const mode = getBulkMode();
+        if (mode === 'return') {
+            updateBulkReturnHandschuhGroessen();
+        } else {
+            updateHandschuhGroessen();
+        }
+    }
+
+    function updateBulkReturnDropdowns() {
+        const empId = document.getElementById('bulkIssueEmpSelect').value;
+        const emp = employees.find(e => e.id === empId);
+
+        const typeMap = {
+            'JackeMEA': 'Jacke MEA',
+            'HoseMEA': 'Hose MEA',
+            'TShirt': 'T-Shirt',
+            'Schuhe': 'Schuhe',
+            'Helm': 'Helm',
+            'JackeFleece': 'Jacke Fleece',
+            'Hoodie': 'Hoodie'
+        };
+
+        for (const [idSuffix, actualType] of Object.entries(typeMap)) {
+            const select = document.getElementById('bulkIssue_' + idSuffix);
+            if (!select) continue;
+            select.innerHTML = '<option value="">-- Überspringen --</option>';
+            if (!emp) continue;
+            const borrowed = emp.borrowed.filter(b => b.type === actualType && b.quantity > 0);
+            borrowed.sort((a, b) => sortSizes([a.size, b.size], actualType)[0] === a.size ? -1 : 1);
+            borrowed.forEach(b => {
+                select.innerHTML += `<option value="${esc(b.size)}">Größe ${esc(b.size)} (${b.quantity} ausgeliehen)</option>`;
+            });
+        }
+
+        // Handschuhe
+        const typSelect = document.getElementById('bulkIssue_HandschuhTyp');
+        const sizeSelect = document.getElementById('bulkIssue_HandschuhGroesse');
+        if (typSelect && sizeSelect) {
+            typSelect.innerHTML = '<option value="">-- Typ --</option>';
+            sizeSelect.innerHTML = '<option value="">-- Größe --</option>';
+            if (emp) {
+                const handschuhe = emp.borrowed.filter(b => b.type.startsWith('Handschuhe') && b.quantity > 0);
+                const typSet = new Set();
+                handschuhe.forEach(b => {
+                    const match = b.type.match(/Handschuhe\s*\((.+)\)/);
+                    if (match) typSet.add(match[1].trim());
+                    else typSet.add(b.type.replace('Handschuhe', '').trim() || 'Standard');
+                });
+                const typArray = [...typSet].sort();
+                typArray.forEach(t => {
+                    typSelect.innerHTML += `<option value="${esc(t)}">${esc(t)}</option>`;
+                });
+                if (typArray.length === 1) {
+                    typSelect.value = typArray[0];
+                    updateBulkReturnHandschuhGroessen();
+                }
+            }
+        }
+    }
+
+    function updateBulkReturnHandschuhGroessen() {
+        const empId = document.getElementById('bulkIssueEmpSelect').value;
+        const emp = employees.find(e => e.id === empId);
+        const typSelect = document.getElementById('bulkIssue_HandschuhTyp');
+        const sizeSelect = document.getElementById('bulkIssue_HandschuhGroesse');
+        if (!typSelect || !sizeSelect) return;
+        const selectedTyp = typSelect.value;
+        sizeSelect.innerHTML = '<option value="">-- Größe --</option>';
+        if (!emp || !selectedTyp) return;
+        const matching = emp.borrowed.filter(b => {
+            if (!b.type.startsWith('Handschuhe') || b.quantity <= 0) return false;
+            const match = b.type.match(/Handschuhe\s*\((.+)\)/);
+            if (match) return match[1].trim() === selectedTyp;
+            return b.type.replace('Handschuhe', '').trim() === selectedTyp;
+        });
+        sortSizes(matching.map(b => b.size), 'Handschuhe').forEach(size => {
+            const b = matching.find(x => x.size === size);
+            sizeSelect.innerHTML += `<option value="${esc(size)}">Größe ${esc(size)} (${b.quantity} ausgeliehen)</option>`;
+        });
+    }
+
+    function handleBulkAction() {
+        const mode = getBulkMode();
+        if (mode === 'return') bulkReturnClothing();
+        else issueBulkClothing();
+    }
+
+    function bulkReturnClothing() {
+        const eId = document.getElementById('bulkIssueEmpSelect').value;
+        if (!eId) return alert('Bitte zuerst eine Person auswählen!');
+        const emp = employees.find(e => e.id === eId);
+        if (!emp) return;
+
+        const typeMap = {
+            'JackeMEA': 'Jacke MEA',
+            'HoseMEA': 'Hose MEA',
+            'TShirt': 'T-Shirt',
+            'Schuhe': 'Schuhe',
+            'Helm': 'Helm',
+            'JackeFleece': 'Jacke Fleece',
+            'Hoodie': 'Hoodie'
+        };
+
+        let count = 0;
+        const returnedDetails = [];
+
+        // Standard-Artikel
+        Object.entries(typeMap).forEach(([idSuffix, actualType]) => {
+            const select = document.getElementById('bulkIssue_' + idSuffix);
+            if (!select) return;
+            const size = select.value;
+            if (!size) return;
+            const b = emp.borrowed.find(x => x.type === actualType && x.size === size && x.quantity > 0);
+            if (!b) return;
+            const qty = b.quantity;
+            const item = inventory.find(i => i.id === b.invId);
+            if (item) item.available += qty;
+            addBorrowHistory(emp.id, b.invId, b.type, b.size, qty, 'return');
+            returnedDetails.push(`${qty}x ${b.type} Gr. ${b.size}`);
+            emp.borrowed = emp.borrowed.filter(x => x !== b);
+            count += qty;
+        });
+
+        // Handschuhe
+        const typHandschuh = document.getElementById('bulkIssue_HandschuhTyp')?.value;
+        const groesseHandschuh = document.getElementById('bulkIssue_HandschuhGroesse')?.value;
+        if (typHandschuh && groesseHandschuh) {
+            const b = emp.borrowed.find(x => {
+                if (!x.type.startsWith('Handschuhe') || x.size !== groesseHandschuh || x.quantity <= 0) return false;
+                const match = x.type.match(/Handschuhe\s*\((.+)\)/);
+                if (match) return match[1].trim() === typHandschuh;
+                return x.type.replace('Handschuhe', '').trim() === typHandschuh;
+            });
+            if (b) {
+                const qty = b.quantity;
+                const item = inventory.find(i => i.id === b.invId);
+                if (item) item.available += qty;
+                addBorrowHistory(emp.id, b.invId, b.type, b.size, qty, 'return');
+                returnedDetails.push(`${qty}x ${b.type} Gr. ${b.size}`);
+                emp.borrowed = emp.borrowed.filter(x => x !== b);
+                count += qty;
+            }
+        }
+
+        if (count === 0) return alert('Keine Artikel zum Zurücknehmen ausgewählt bzw. keine passenden Ausleihen vorhanden.');
+
+        saveData();
+        renderInventory();
+        renderEmployees();
+        renderBorrowReturnOptions();
+
+        // Rückgabe-Dropdowns nach Aktion neu aufbauen
+        if (getBulkMode() === 'return') updateBulkReturnDropdowns();
+
+        addLogEntry(`Komplettrückgabe von ${emp.name}: ${returnedDetails.join(', ')}`);
+        showToast(`${count} Artikel erfolgreich von ${emp.name} zurückgenommen!`, 'success');
     }
 
     // ======================================================================
@@ -2366,8 +2656,14 @@
             const el = document.getElementById(id);
             if (el) el.innerHTML = '<option value="">-- Person --</option>' + employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
         });
-        updateBulkIssueDropdowns();
         updateDynamicDropdowns();
+        // Komplett-Bereich: je nach Modus
+        const mode = getBulkMode();
+        if (mode === 'return') {
+            updateBulkReturnDropdowns();
+        } else {
+            updateBulkIssueDropdowns();
+        }
     }
 
     function updateBorrowSizes() {
@@ -2601,9 +2897,9 @@
     function scrollToMaster() { document.getElementById('masterDataCard').scrollIntoView({ behavior: 'smooth' }); }
 
     // ======================================================================
-    // 27. STAMMDATEN-VERWALTUNG (mit Gruppen-Aufklappung)
+    // 27. STAMMDATEN-VERWALTUNG
     // ======================================================================
-    let openMasterGroups = new Set(); // Standardmäßig geschlossen
+    let openMasterGroups = new Set();
 
     function onMasterGroupToggle(cat, isOpen) {
         if (isOpen) openMasterGroups.add(cat);
@@ -2660,7 +2956,6 @@
 
         let html = '';
 
-        // Betreuer-Gruppe
         html += `<details class="master-group betreuer-group" ${betrOpen ? 'open' : ''} ontoggle="onMasterGroupToggle('betreuer', this.open)">
             <summary>
                 <span class="master-group-title">👔 Betreuer</span>
@@ -2671,7 +2966,6 @@
             </div>
         </details>`;
 
-        // Junghelfer-Gruppe
         html += `<details class="master-group junghelfer-group" ${jhOpen ? 'open' : ''} ontoggle="onMasterGroupToggle('junghelfer', this.open)">
             <summary>
                 <span class="master-group-title">🧑‍🚒 Junghelfer</span>
@@ -3066,9 +3360,10 @@
             .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
 
         body.innerHTML = future.length ? future.map(s => {
-            const assignedCount = countAssignedParticipants(s);
-            const countCell = assignedCount > 0
-                ? `<strong style="color:#198754;">${assignedCount}</strong>`
+            // "Gemeldet" = Anzahl der aktuell für den Dienst angemeldeten Junghelfer
+            const gemeldetCount = (s.participantIds || []).length;
+            const countCell = gemeldetCount > 0
+                ? `<strong style="color:#198754;">${gemeldetCount}</strong>`
                 : `<span style="color:#94a3b8;">–</span>`;
             const leaderNames = (s.leaderIds || []).map(id => employees.find(e => e.id === id)?.name).filter(Boolean).join(', ');
             const leaderCell = leaderNames ? esc(leaderNames) : '<span style="color:#94a3b8;">–</span>';
@@ -3607,6 +3902,7 @@
     renderCentralLog();
     renderServiceLeaders();
     updateQsLeadersSelect();
+    onBulkModeChange();
 </script>
 </body>
 </html>
