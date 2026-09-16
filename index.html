@@ -1913,7 +1913,16 @@ function birthdayItemsForService(s) {
         return { e, bd };
     }).filter(x => x.bd > from && x.bd <= d).sort((a,b) => a.bd - b.bd);
 }
-function renderBirthdays(s) { const items = birthdayItemsForService(s); if (!items.length) return ''; return `<div class="birthday-box"><strong>🎂 Geburtstagsgrüße</strong><ul style="margin:8px 0 0;">${items.map(x => `<li>${esc(x.e.name)} – ${x.bd.toLocaleDateString('de-DE')}</li>`).join('')}</ul></div>`; }
+/* Geburtstagsbox: zeigt Datum + Alter in Klammern an */
+function renderBirthdays(s) {
+    const items = birthdayItemsForService(s);
+    if (!items.length) return '';
+    return `<div class="birthday-box"><strong>🎂 Geburtstagsgrüße</strong><ul style="margin:8px 0 0;">${items.map(x => {
+        const geb = new Date(x.e.birthDate + 'T00:00:00');
+        const alter = x.bd.getFullYear() - geb.getFullYear();
+        return `<li>${esc(x.e.name)} – ${x.bd.toLocaleDateString('de-DE')} (${alter} Jahre)</li>`;
+    }).join('')}</ul></div>`;
+}
 function countAssignedParticipants(s) { if (!s.contentAssignments) return 0; const set = new Set(); Object.values(s.contentAssignments).forEach(a => { if (Array.isArray(a)) a.forEach(id => set.add(id)); }); return set.size; }
 function countAttended(s) { return Array.isArray(s.attendanceIds) ? s.attendanceIds.length : 0; }
 
@@ -2124,7 +2133,6 @@ function renderArchive() {
                         const as = Array.isArray(s.contentAssignments?.[cid]) ? s.contentAssignments[cid] : [];
                         const lv = (cont.levels||[]).map(l => { const cls = l === 'Bronze' ? 'text-bronze' : l === 'Silber' ? 'text-silber' : 'text-gold'; return `<span class="level-tag ${cls}">${l}</span>`; }).join('');
                         const cb = el.map(e => { const ch = as.includes(e.id); return `<label class="${ch ? 'assigned' : ''}"><input type="checkbox" ${ch ? 'checked' : ''} onchange="toggleContentAssignment('${s.id}', '${cid}', '${e.id}', this.checked)"> ${esc(e.name)}</label>`; }).join('');
-                        const allChecked = el.length > 0 && el.every(e => as.includes(e.id));
                         return `<div class="assignment-group">
                             <h5>📖 ${esc(cont.name)} ${lv}
                                 <span class="assignment-actions">
@@ -2189,7 +2197,7 @@ function showServiceDetail(id) {
     const aH = attended.length ? `<ul>${attended.map(e => { const t = getServiceTime(s, e.id); const tc = t.custom ? ` <small style="color:#a16207;">(⏰ ${t.start}–${t.end})</small>` : ''; return `<li>${esc(e.name)}${tc}</li>`; }).join('')}</ul>` : '<p class="empty-hint">Keine Teilnehmer markiert.</p>';
     const mealH = s.meal ? `<div class="info-row"><strong>🍽️ Essen wird gestellt</strong></div>` : '';
     const warnH = renderMealWarning(s);
-    // NEU: Geburtstagsanzeige im Detail-Modal (alle Personen)
+    // Geburtstagsanzeige im Detail-Modal (alle Personen)
     const bdH = renderBirthdays(s);
     const m = document.createElement('div'); m.className = 'modal-overlay';
     m.onclick = (e) => { if (e.target === m) m.remove(); };
