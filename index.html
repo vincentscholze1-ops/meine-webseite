@@ -336,6 +336,10 @@ button:hover { background: #003d82; }
 .content-item-info small { display: block; margin-top: 3px; color: #64748b; }
 .content-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
+.pdf-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; background: #fee2e2; color: #991b1b; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid #fecaca; margin-left: 6px; }
+.pdf-badge:hover { background: #fca5a5; color: #7f1d1d; }
+.pdf-info-box { margin-top: 8px; padding: 10px 12px; background: #f0f6ff; border: 1px solid #cfe0f5; border-radius: 8px; font-size: 13px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
 .content-add-row { display: grid; grid-template-columns: 1fr 1.4fr auto; gap: 10px; align-items: end; margin-bottom: 14px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
 .content-add-row .form-group { margin-bottom: 0; }
 .content-add-row button { width: auto; padding: 10px 20px; white-space: nowrap; }
@@ -468,7 +472,7 @@ body.force-mobile .random-result-box .random-name { font-size: 26px; }
     </div>
 </div>
 
-<!-- GLOBALE NAV (Statistik-Button entfernt) -->
+<!-- GLOBALE NAV -->
 <div class="global-nav-bar" id="globalNavBar" style="display:none;">
     <div class="global-nav">
         <button type="button" data-app="home" onclick="goHome()">🏠 Stammdaten</button>
@@ -602,6 +606,12 @@ body.force-mobile .random-result-box .random-name { font-size: 26px; }
               <label><input type="checkbox" id="levelSilver"> <span class="text-silber">Silber</span></label>
               <label><input type="checkbox" id="levelGold"> <span class="text-gold">Gold</span></label>
             </div>
+          </div>
+          <div class="form-group">
+            <label>📎 PDF-Anhang (optional)</label>
+            <input type="file" id="contentPdf" accept="application/pdf">
+            <small style="color:#64748b;font-size:11px;display:block;margin-top:4px;">Nur PDF-Dateien, max. 3 MB. Wird zusammen mit dem Dienstinhalt gespeichert.</small>
+            <div id="contentPdfInfo" style="display:none;"></div>
           </div>
           <button type="button" class="btn-success" onclick="saveContent()">Dienstinhalt speichern</button>
           <button type="button" class="btn-secondary btn-sm" onclick="resetContentForm()" style="margin-top:8px;">Zurücksetzen</button>
@@ -908,6 +918,7 @@ const LEVEL_ORDER = ['Bronze','Silber','Gold'];
 const CAT_FALLBACK = 'Ohne Kategorie';
 const JH_CATS = ['junghelfer','jugendsprecher'];
 const BL_CATS = ['jugendleiter','helfer_efz'];
+const MAX_PDF_SIZE = 3 * 1024 * 1024; // 3 MB
 
 /* ================= DATEN ================= */
 let inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
@@ -920,7 +931,15 @@ let currentInventoryType = 'Jacke MEA';
 let selectedEmployeeId = null;
 let appMode = 'home';
 
-serviceContents = serviceContents.map(c => ({ id:c.id, name:c.name, description:c.description||'', category:typeof c.category==='string'?c.category:'', levels:Array.isArray(c.levels)?c.levels:[] }));
+serviceContents = serviceContents.map(c => ({
+    id: c.id,
+    name: c.name,
+    description: c.description || '',
+    category: typeof c.category === 'string' ? c.category : '',
+    levels: Array.isArray(c.levels) ? c.levels : [],
+    pdfData: typeof c.pdfData === 'string' ? c.pdfData : '',
+    pdfName: typeof c.pdfName === 'string' ? c.pdfName : ''
+}));
 
 employees = employees.map((e, i) => {
     let cat = String(e.category || e.role || 'junghelfer').toLowerCase();
@@ -1066,7 +1085,15 @@ function saveData() {
     localStorage.setItem('borrowHistory', JSON.stringify(borrowHistory));
     saveCentralLog();
 }
-function saveServiceData() { localStorage.setItem('serviceContents', JSON.stringify(serviceContents)); localStorage.setItem('services', JSON.stringify(services)); }
+function saveServiceData() {
+    try {
+        localStorage.setItem('serviceContents', JSON.stringify(serviceContents));
+        localStorage.setItem('services', JSON.stringify(services));
+    } catch (err) {
+        alert('Speicher voll! Bitte weniger oder kleinere PDF-Anhänge verwenden.');
+        throw err;
+    }
+}
 function saveFinanceData() {
     try { localStorage.setItem('finances', JSON.stringify(finances)); }
     catch(err) { alert('Speicher voll! Bitte weniger oder kleinere Belege verwenden.'); throw err; }
@@ -1087,9 +1114,25 @@ function sortSizes(sizes, type) {
     return sizes.sort((a,b) => { const oA = t[a]||999, oB = t[b]||999; if (oA!==999 && oB!==999) return oA-oB; const nA = parseInt(a), nB = parseInt(b); return (!isNaN(nA)&&!isNaN(nB)) ? nA-nB : a.localeCompare(b); });
 }
 
+/* ================= PDF-HILFSFUNKTIONEN ================= */
+function fileToBase64(file) {
+    return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+    });
+}
+async function readPdfFile(file) {
+    if (file.type !== 'application/pdf') throw new Error('Nur PDF-Dateien erlaubt.');
+    if (file.size > MAX_PDF_SIZE) throw new Error(`PDF zu groß (max. ${MAX_PDF_SIZE / 1024 / 1024} MB).`);
+    const b64 = await fileToBase64(file);
+    return { data: b64, name: file.name };
+}
+
 /* ================= EXPORT / IMPORT ================= */
 function exportData() {
-    const data = { version: 14, exportedAt: new Date().toISOString(), inventory, employees, borrowHistory, serviceContents, services, centralLog, finances };
+    const data = { version: 15, exportedAt: new Date().toISOString(), inventory, employees, borrowHistory, serviceContents, services, centralLog, finances };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1107,7 +1150,14 @@ function importData(event) {
             inventory = Array.isArray(d.inventory) ? d.inventory : inventory;
             employees = Array.isArray(d.employees) ? d.employees : employees;
             borrowHistory = Array.isArray(d.borrowHistory) ? d.borrowHistory : borrowHistory;
-            serviceContents = Array.isArray(d.serviceContents) ? d.serviceContents : [];
+            serviceContents = Array.isArray(d.serviceContents) ? d.serviceContents.map(c => ({
+                id: c.id, name: c.name,
+                description: c.description || '',
+                category: typeof c.category === 'string' ? c.category : '',
+                levels: Array.isArray(c.levels) ? c.levels : [],
+                pdfData: typeof c.pdfData === 'string' ? c.pdfData : '',
+                pdfName: typeof c.pdfName === 'string' ? c.pdfName : ''
+            })) : [];
             services = Array.isArray(d.services) ? d.services : [];
             finances = (d.finances && typeof d.finances === 'object') ? d.finances : {};
             employees = employees.map((e,i) => {
@@ -1791,7 +1841,8 @@ function openEditServiceModal(id) {
         const c = serviceContents.find(x => x.id === cid); if (!c) return '';
         const cat = (c.category || '').trim() || CAT_FALLBACK;
         const lv = (c.levels || []).map(l => { const cls = l === 'Bronze' ? 'text-bronze' : l === 'Silber' ? 'text-silber' : 'text-gold'; return `<span class="level-tag ${cls}">${l}</span>`; }).join('');
-        return `<div class="service-content-row" data-content-id="${cid}"><div class="content-chip"><strong>${esc(c.name)}</strong>${cat ? `<span class="pill">${esc(cat)}</span>` : ''}${lv}</div><button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">✖</button></div>`;
+        const pdfIco = c.pdfData ? `<span class="pdf-badge" onclick="event.stopPropagation(); viewContentPdf('${c.id}')" title="${esc(c.pdfName || 'PDF')} öffnen">📄 PDF</span>` : '';
+        return `<div class="service-content-row" data-content-id="${cid}"><div class="content-chip"><strong>${esc(c.name)}</strong>${cat ? `<span class="pill">${esc(cat)}</span>` : ''}${lv}${pdfIco}</div><button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">✖</button></div>`;
     }).join('');
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
@@ -1836,7 +1887,8 @@ function openEditServiceModal(id) {
         const already = [...modal.querySelectorAll('#editSvcContentRows [data-content-id]')].map(r => r.dataset.contentId);
         serviceContents.filter(c => { const cc = (c.category || '').trim() || CAT_FALLBACK; return cc === cat && !already.includes(c.id); }).sort((a,b) => a.name.localeCompare(b.name,'de')).forEach(c => {
             const lv = c.levels?.length ? ' · ' + c.levels.join('/') : '';
-            conSel.innerHTML += `<option value="${c.id}">${esc(c.name)}${lv}</option>`;
+            const pdfMark = c.pdfData ? ' 📄' : '';
+            conSel.innerHTML += `<option value="${c.id}">${esc(c.name)}${lv}${pdfMark}</option>`;
         });
     };
 }
@@ -1849,8 +1901,9 @@ function addEditContentToModal() {
     const c = serviceContents.find(x => x.id === cid); if (!c) return;
     const cat = (c.category || '').trim() || CAT_FALLBACK;
     const lv = (c.levels || []).map(l => { const cls = l === 'Bronze' ? 'text-bronze' : l === 'Silber' ? 'text-silber' : 'text-gold'; return `<span class="level-tag ${cls}">${l}</span>`; }).join('');
+    const pdfIco = c.pdfData ? `<span class="pdf-badge" onclick="event.stopPropagation(); viewContentPdf('${c.id}')" title="${esc(c.pdfName || 'PDF')} öffnen">📄 PDF</span>` : '';
     const row = document.createElement('div'); row.className = 'service-content-row'; row.dataset.contentId = cid;
-    row.innerHTML = `<div class="content-chip"><strong>${esc(c.name)}</strong>${cat ? `<span class="pill">${esc(cat)}</span>` : ''}${lv}</div><button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">✖</button>`;
+    row.innerHTML = `<div class="content-chip"><strong>${esc(c.name)}</strong>${cat ? `<span class="pill">${esc(cat)}</span>` : ''}${lv}${pdfIco}</div><button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">✖</button>`;
     w.appendChild(row); cs.value = '';
     m.querySelector('#editSvcContentCategory').dispatchEvent(new Event('change'));
 }
@@ -2053,7 +2106,6 @@ function renderServices() {
             </td>
         </tr>`;
     }).join('') : '<tr><td colspan="6">Noch keine zukünftigen Dienste angelegt.</td></tr>';
-    // Geburtstagsanzeige im Plan entfernt – nur noch im Detail-Modal
     const bd = $('serviceBirthdays');
     if (bd) bd.innerHTML = '';
 }
@@ -2132,9 +2184,10 @@ function renderArchive() {
                         const cont = serviceContents.find(x => x.id === cid); if (!cont) return '';
                         const as = Array.isArray(s.contentAssignments?.[cid]) ? s.contentAssignments[cid] : [];
                         const lv = (cont.levels||[]).map(l => { const cls = l === 'Bronze' ? 'text-bronze' : l === 'Silber' ? 'text-silber' : 'text-gold'; return `<span class="level-tag ${cls}">${l}</span>`; }).join('');
+                        const pdfIco = cont.pdfData ? `<span class="pdf-badge" onclick="event.stopPropagation(); viewContentPdf('${cont.id}')" title="${esc(cont.pdfName || 'PDF')} öffnen">📄 PDF</span>` : '';
                         const cb = el.map(e => { const ch = as.includes(e.id); return `<label class="${ch ? 'assigned' : ''}"><input type="checkbox" ${ch ? 'checked' : ''} onchange="toggleContentAssignment('${s.id}', '${cid}', '${e.id}', this.checked)"> ${esc(e.name)}</label>`; }).join('');
                         return `<div class="assignment-group">
-                            <h5>📖 ${esc(cont.name)} ${lv}
+                            <h5>📖 ${esc(cont.name)} ${lv}${pdfIco}
                                 <span class="assignment-actions">
                                     <button type="button" class="btn-sm" onclick="event.stopPropagation(); selectAllForContent('${s.id}', '${cid}', true)" title="Alle anwesenden Junghelfer auswählen">✅ Alle</button>
                                     <button type="button" class="btn-sm btn-secondary" onclick="event.stopPropagation(); selectAllForContent('${s.id}', '${cid}', false)" title="Auswahl aufheben">✖ Keine</button>
@@ -2192,12 +2245,16 @@ function showServiceDetail(id) {
     const leaders = (s.leaderIds||[]).map(pid => employees.find(e => e.id === pid)).filter(Boolean);
     const contents = (s.contentIds||[]).map(cid => serviceContents.find(c => c.id === cid)).filter(Boolean);
     const lH = leaders.length ? `<ul>${leaders.map(e => `<li>${esc(e.name)}</li>`).join('')}</ul>` : '<p class="empty-hint">Keine Betreuer eingetragen.</p>';
-    const cH = contents.length ? `<ul>${contents.map(c => { const lvl = c.levels?.length ? ` (${c.levels.join(', ')})` : ''; const a = Array.isArray(s.contentAssignments?.[c.id]) ? s.contentAssignments[c.id].length : 0; return `<li>${esc(c.name)}${lvl} <small style="color:#64748b;">– ${a} zugeordnet</small></li>`; }).join('')}</ul>` : '<p class="empty-hint">Keine Dienstinhalte.</p>';
+    const cH = contents.length ? `<ul>${contents.map(c => {
+        const lvl = c.levels?.length ? ` (${c.levels.join(', ')})` : '';
+        const a = Array.isArray(s.contentAssignments?.[c.id]) ? s.contentAssignments[c.id].length : 0;
+        const pdfBtn = c.pdfData ? ` <button type="button" class="btn-sm" onclick="event.stopPropagation(); viewContentPdf('${c.id}')" style="margin-left:6px;">📄 PDF</button>` : '';
+        return `<li>${esc(c.name)}${lvl} <small style="color:#64748b;">– ${a} zugeordnet</small>${pdfBtn}</li>`;
+    }).join('')}</ul>` : '<p class="empty-hint">Keine Dienstinhalte.</p>';
     const attended = (s.attendanceIds||[]).map(pid => employees.find(e => e.id === pid)).filter(Boolean);
     const aH = attended.length ? `<ul>${attended.map(e => { const t = getServiceTime(s, e.id); const tc = t.custom ? ` <small style="color:#a16207;">(⏰ ${t.start}–${t.end})</small>` : ''; return `<li>${esc(e.name)}${tc}</li>`; }).join('')}</ul>` : '<p class="empty-hint">Keine Teilnehmer markiert.</p>';
     const mealH = s.meal ? `<div class="info-row"><strong>🍽️ Essen wird gestellt</strong></div>` : '';
     const warnH = renderMealWarning(s);
-    // Geburtstagsanzeige im Detail-Modal (alle Personen)
     const bdH = renderBirthdays(s);
     const m = document.createElement('div'); m.className = 'modal-overlay';
     m.onclick = (e) => { if (e.target === m) m.remove(); };
@@ -2238,8 +2295,8 @@ th,td{border:1px solid #999;padding:8px 10px;text-align:left;font-size:10.5pt}th
     svcLog(`Druck: ${fu.length} zukünftige Dienste`);
 }
 
-/* ================= CONTENT ================= */
-function saveContent() {
+/* ================= CONTENT (mit PDF-Anhang) ================= */
+async function saveContent() {
     const id = $('contentEditId').value, name = $('contentName').value.trim();
     if (!name) return alert('Bezeichnung eingeben.');
     const levels = [];
@@ -2247,17 +2304,36 @@ function saveContent() {
     if ($('levelSilver').checked) levels.push('Silber');
     if ($('levelGold').checked) levels.push('Gold');
     const category = $('contentCategory').value.trim(), description = $('contentDesc').value.trim();
-    const obj = { id: id || 'content_' + Date.now(), name, description, category, levels };
+
+    let pdfData = '', pdfName = '';
+    if (id) {
+        const ex = serviceContents.find(c => c.id === id);
+        if (ex) { pdfData = ex.pdfData || ''; pdfName = ex.pdfName || ''; }
+    }
+    const file = $('contentPdf')?.files?.[0];
+    if (file) {
+        try {
+            const r = await readPdfFile(file);
+            pdfData = r.data;
+            pdfName = r.name;
+        } catch (err) { return alert(err.message); }
+    }
+
+    const obj = { id: id || 'content_' + Date.now(), name, description, category, levels, pdfData, pdfName };
     if (id) serviceContents = serviceContents.map(x => x.id === id ? obj : x);
     else serviceContents.push(obj);
-    saveServiceData(); updateCategoryDatalist();
-    svcLog(`${id ? 'Dienstinhalt geändert' : 'Dienstinhalt angelegt'}: ${name}`);
+
+    try { saveServiceData(); } catch (e) { return; }
+    updateCategoryDatalist();
+    svcLog(`${id ? 'Dienstinhalt geändert' : 'Dienstinhalt angelegt'}: ${name}${pdfData ? ' [mit PDF]' : ''}`);
     resetContentForm(); renderServiceContents();
     showToast('Gespeichert', 'success');
 }
 function resetContentForm() {
     ['contentEditId','contentName','contentDesc','contentCategory'].forEach(id => $(id).value = '');
     ['Bronze','Silver','Gold'].forEach(x => $('level' + x).checked = false);
+    const pdfInput = $('contentPdf'); if (pdfInput) pdfInput.value = '';
+    const info = $('contentPdfInfo'); if (info) { info.style.display = 'none'; info.innerHTML = ''; }
     $('contentFormTitle').textContent = 'Dienstinhalt anlegen';
 }
 let openContentCategories = new Set();
@@ -2274,7 +2350,8 @@ function renderServiceContents() {
         const ce = esc(cat).replace(/'/g, "\\'");
         const body = items.map(x => {
             const lv = (x.levels||[]).map(l => { const cls = l === 'Bronze' ? 'text-bronze' : l === 'Silber' ? 'text-silber' : 'text-gold'; return `<span class="level-tag ${cls}">${l}</span>`; }).join('');
-            return `<div class="content-item-row"><div class="content-item-info"><strong>${esc(x.name)}</strong>${lv}${x.description ? `<small>${esc(x.description)}</small>` : ''}</div><div class="content-item-actions"><button class="btn-sm" onclick="editContent('${x.id}')">✏️</button><button class="btn-danger btn-sm" onclick="deleteContent('${x.id}')">🗑️</button></div></div>`;
+            const pdfIco = x.pdfData ? `<span class="pdf-badge" onclick="event.stopPropagation(); viewContentPdf('${x.id}')" title="${esc(x.pdfName || 'PDF')} öffnen">📄 PDF</span>` : '';
+            return `<div class="content-item-row"><div class="content-item-info"><strong>${esc(x.name)}</strong>${lv}${pdfIco}${x.description ? `<small>${esc(x.description)}</small>` : ''}</div><div class="content-item-actions"><button class="btn-sm" onclick="editContent('${x.id}')">✏️</button><button class="btn-danger btn-sm" onclick="deleteContent('${x.id}')">🗑️</button></div></div>`;
         }).join('');
         return `<details class="content-category-details" ${isOpen ? 'open' : ''} ontoggle="onCategoryToggle('${ce}', this.open)"><summary><span class="cat-title">📁 ${esc(cat)}</span><span class="category-count">${items.length}</span></summary><div class="content-category-body">${body}</div></details>`;
     }).join('');
@@ -2283,12 +2360,51 @@ function editContent(id) {
     const x = serviceContents.find(c => c.id === id); if (!x) return;
     $('contentEditId').value = x.id; $('contentName').value = x.name; $('contentDesc').value = x.description || ''; $('contentCategory').value = x.category || '';
     $('levelBronze').checked = x.levels?.includes('Bronze'); $('levelSilver').checked = x.levels?.includes('Silber'); $('levelGold').checked = x.levels?.includes('Gold');
+    const pdfInput = $('contentPdf'); if (pdfInput) pdfInput.value = '';
+    const info = $('contentPdfInfo');
+    if (info) {
+        if (x.pdfData) {
+            info.style.display = 'block';
+            info.className = 'pdf-info-box';
+            info.innerHTML = `📄 Aktuell hinterlegt: <strong>${esc(x.pdfName || 'Anhang.pdf')}</strong>
+                <button type="button" class="btn-sm btn-secondary" onclick="viewContentPdf('${x.id}')">Ansehen</button>
+                <button type="button" class="btn-sm btn-danger" onclick="removeContentPdf('${x.id}')">Entfernen</button>
+                <div style="width:100%;color:#64748b;font-size:11px;margin-top:4px;">Eine neu gewählte Datei ersetzt den bisherigen Anhang.</div>`;
+        } else {
+            info.style.display = 'none'; info.innerHTML = ''; info.className = '';
+        }
+    }
     $('contentFormTitle').textContent = 'Dienstinhalt bearbeiten'; serviceTab('contents');
+}
+function removeContentPdf(id) {
+    const x = serviceContents.find(c => c.id === id); if (!x) return;
+    if (!confirm(`PDF-Anhang von "${x.name}" entfernen?`)) return;
+    x.pdfData = ''; x.pdfName = '';
+    saveServiceData();
+    svcLog(`PDF-Anhang entfernt: ${x.name}`);
+    editContent(id);
+    renderServiceContents();
+    showToast('PDF entfernt', 'success');
+}
+function viewContentPdf(id) {
+    const x = serviceContents.find(c => c.id === id); if (!x || !x.pdfData) return;
+    const m = document.createElement('div'); m.className = 'modal-overlay';
+    m.onclick = (e) => { if (e.target === m) m.remove(); };
+    const cat = (x.category || '').trim();
+    m.innerHTML = `<div class="modal-content" style="max-width:900px;padding:16px;" onclick="event.stopPropagation();">
+        <h2 style="margin-bottom:4px;">📄 ${esc(x.name)}</h2>
+        <p class="modal-subtitle">${esc(x.pdfName || 'Anhang.pdf')}${cat ? ' · ' + esc(cat) : ''}</p>
+        <embed src="${x.pdfData}" type="application/pdf" style="width:100%;height:70vh;border-radius:10px;border:1px solid #e2e8f0;">
+        <div class="modal-actions">
+            <a href="${x.pdfData}" download="${esc(x.pdfName || 'anhang.pdf')}"><button type="button" class="btn-secondary">💾 Herunterladen</button></a>
+            <button type="button" class="btn-success" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
+        </div></div>`;
+    document.body.appendChild(m);
 }
 function deleteContent(id) {
     const x = serviceContents.find(c => c.id === id); if (!x) return;
     if (services.some(s => (s.contentIds||[]).includes(id)) && !confirm('Wird in Diensten verwendet. Trotzdem löschen?')) return;
-    if (!confirm(`${x.name} löschen?`)) return;
+    if (!confirm(`${x.name} löschen?${x.pdfData ? ' (inkl. PDF-Anhang)' : ''}`)) return;
     serviceContents = serviceContents.filter(c => c.id !== id);
     services.forEach(s => { if (s.contentIds) s.contentIds = s.contentIds.filter(c => c !== id); if (s.contentAssignments && s.contentAssignments[id]) delete s.contentAssignments[id]; });
     saveServiceData(); updateCategoryDatalist();
@@ -2357,7 +2473,6 @@ function renderFinance() {
     const cv = sel.value;
     const years = getAllFinanceYears();
     sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-    // WICHTIG: gespeicherte Auswahl (cv) priorisieren, damit das Umschalten bestehen bleibt
     if (cv && years.includes(cv)) sel.value = cv;
     else if (years.includes(currentYear)) sel.value = currentYear;
     else sel.value = years[0];
@@ -2409,7 +2524,6 @@ function compressImage(file, mw=1000, q=.7) {
         r.onerror = rej; r.readAsDataURL(file);
     });
 }
-function fileToBase64(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = rej; r.readAsDataURL(file); }); }
 async function processReceiptFile(file) {
     if (file.type === 'application/pdf') {
         if (file.size > 3 * 1024 * 1024) throw new Error('PDF zu groß (max. 3 MB).');
@@ -2524,7 +2638,7 @@ function viewReceipt(id) {
     document.body.appendChild(m);
 }
 
-/* ================= STATISTIK (Balken nach max. Dienstzeit) ================= */
+/* ================= STATISTIK ================= */
 function formatHours(h) { if (!h) return '0 h'; return h.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' h'; }
 function getAllStatsYears() {
     const s = new Set();
@@ -2538,7 +2652,6 @@ function renderStatsInline() {
     const cv = sel.value;
     const years = getAllStatsYears();
     sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-    // WICHTIG: gespeicherte Auswahl (cv) priorisieren
     if (cv && years.includes(cv)) sel.value = cv;
     else if (years.includes(currentYear)) sel.value = currentYear;
     else sel.value = years[0];
