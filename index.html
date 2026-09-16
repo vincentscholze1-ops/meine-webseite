@@ -196,7 +196,6 @@
         }
         .inventory-card.active .badge, .employee-card.active .badge { opacity: 0.9; }
 
-        /* Betreuer-Hervorhebung in Kleidungsverwaltung */
         .employee-card.betreuer-card {
             background: #fff8e1;
             border-color: #ffc107;
@@ -246,7 +245,6 @@
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: #f8fafc; }
 
-        /* Klickbare Dienstplan-Zeile */
         .service-clickable-row { cursor: pointer; transition: background 0.15s; }
         .service-clickable-row:hover td { background: #eef4fb !important; }
 
@@ -519,7 +517,7 @@
         .mode-card h3 { margin: 10px 0 6px; }
         .mode-card p { margin: 0; color: #64748b; font-size: 14px; }
 
-        /* ==================== PERSONEN-LISTE (Stammdaten) ==================== */
+        /* ==================== PERSONEN-LISTE ==================== */
         .master-person-list { max-height: 52vh; overflow-y: auto; padding-right: 4px; }
         .person-row {
             display: flex; align-items: center; justify-content: space-between;
@@ -585,10 +583,6 @@
         }
 
         /* ==================== SERVICE ==================== */
-        .service-content-row {
-            display: grid; grid-template-columns: 1fr auto;
-            gap: 8px; align-items: end; margin-bottom: 8px;
-        }
         .service-person-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
             gap: 8px;
@@ -597,19 +591,195 @@
             border: 1px solid #dce2e9; border-radius: 9px;
             padding: 9px; background: #fff;
         }
-        .badge-box {
-            border: 1px solid #e2e8f0; border-radius: 12px;
-            padding: 14px; margin-bottom: 12px;
-        }
-        .badge-box h4 { margin: 0 0 10px; }
-        .missing { color: #b02a37; }
-        .done { color: #198754; }
         .service-table td, .service-table th { vertical-align: top; }
         .birthday-box {
             border-left: 5px solid #ffc107;
             background: #fff8db; padding: 12px 14px;
             border-radius: 8px; margin-bottom: 14px;
         }
+
+        /* Farbige Schrift für Bronze / Silber / Gold */
+        .text-bronze { color: #b87333; font-weight: 700; }
+        .text-silber { color: #64748b; font-weight: 700; }
+        .text-gold   { color: #b8860b; font-weight: 700; }
+
+        .level-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            margin-left: 4px;
+        }
+        .level-tag.text-bronze { color: #b87333; background: #fef3e8; border: 1px solid #f5cfa6; }
+        .level-tag.text-silber { color: #475569; background: #f1f5f9; border: 1px solid #cbd5e1; }
+        .level-tag.text-gold   { color: #a16207; background: #fefce8; border: 1px solid #fde047; }
+
+        /* Inhalte-Liste (Kategorien + Abhaken) */
+        .content-category-group { margin-bottom: 20px; }
+        .category-heading {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: #0056b3;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #d1d9e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .category-heading .category-count {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .content-item-row {
+            display: flex; gap: 10px; align-items: flex-start;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            background: #f8fafc;
+            border-left: 4px solid #cbd5e1;
+            transition: background 0.15s;
+        }
+        .content-item-row:hover { background: #f0f6ff; }
+        .content-item-row.content-done {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+        }
+        .content-done-label { flex-shrink: 0; display: flex; padding-top: 3px; cursor: pointer; }
+        .content-done-label input {
+            width: 18px; height: 18px; cursor: pointer; accent-color: #198754;
+        }
+        .content-item-info { flex: 1; min-width: 0; }
+        .content-item-info strong { display: inline-block; font-size: 14px; }
+        .content-item-row.content-done .content-item-info strong {
+            text-decoration: line-through;
+            color: #64748b;
+        }
+        .content-item-info small { display: block; margin-top: 3px; color: #64748b; }
+        .content-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .badge-done {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            background: #dcfce7;
+            color: #166534;
+        }
+        .badge-planned {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* ==================== ZWEISTUFIGE INHALT-AUSWAHL ==================== */
+        .content-add-row {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr auto;
+            gap: 10px;
+            align-items: end;
+            margin-bottom: 14px;
+            padding: 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+        .content-add-row .form-group { margin-bottom: 0; }
+        .content-add-row button { width: auto; padding: 10px 20px; white-space: nowrap; }
+        @media(max-width: 700px) {
+            .content-add-row { grid-template-columns: 1fr; }
+            .content-add-row button { width: 100%; }
+        }
+
+        .service-content-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+        .service-content-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f0f6ff;
+            border: 1px solid #cfe0f5;
+            border-radius: 8px;
+        }
+        .content-chip { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+        .content-chip strong { font-size: 14px; }
+        .service-content-empty {
+            padding: 12px;
+            color: #94a3b8;
+            font-style: italic;
+            text-align: center;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        /* ==================== AUFKLAPPBARE ABZEICHEN ==================== */
+        .achievement-details {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .achievement-details.current-goal {
+            border: 2px solid #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14,165,233,0.15);
+        }
+        .achievement-details > summary {
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            list-style: none;
+            user-select: none;
+            font-weight: 600;
+            transition: background 0.15s;
+        }
+        .achievement-details > summary:hover { background: #eef2f6; }
+        .achievement-details > summary::-webkit-details-marker { display: none; }
+        .achievement-details > summary::before {
+            content: '▶';
+            font-size: 10px;
+            margin-right: 8px;
+            color: #64748b;
+            transition: transform 0.2s;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .achievement-details[open] > summary::before { transform: rotate(90deg); }
+        .achievement-details > summary .ach-summary-main {
+            display: flex; align-items: center; gap: 8px; flex: 1;
+        }
+        .achievement-details > summary .ach-summary-status {
+            font-size: 12px; color: #64748b; font-weight: 500;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .achievement-details > summary .ach-summary-status.complete {
+            color: #198754; font-weight: 700;
+        }
+        .achievement-details .achievement-details-content {
+            padding: 12px 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .achievement-details .achievement-details-content .done,
+        .achievement-details .achievement-details-content .missing,
+        .achievement-details .achievement-details-content .repeat {
+            padding: 4px 0;
+            font-size: 13.5px;
+        }
+        .repeat { color: #0891b2; }
 
         /* ==================== AUFKLAPPBARE JUNGHELFER ==================== */
         .person-badge-details {
@@ -674,16 +844,8 @@
             border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        .modal-content h2 {
-            margin: 0 0 6px;
-            color: #0056b3;
-            font-size: 22px;
-        }
-        .modal-content .modal-subtitle {
-            color: #64748b;
-            margin: 0 0 18px;
-            font-size: 14px;
-        }
+        .modal-content h2 { margin: 0 0 6px; color: #0056b3; font-size: 22px; }
+        .modal-content .modal-subtitle { color: #64748b; margin: 0 0 18px; font-size: 14px; }
         .modal-content h3 {
             margin: 20px 0 8px;
             font-size: 15px;
@@ -691,12 +853,8 @@
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 5px;
         }
-        .modal-content ul {
-            margin: 0; padding-left: 20px;
-        }
-        .modal-content li {
-            padding: 3px 0;
-        }
+        .modal-content ul { margin: 0; padding-left: 20px; }
+        .modal-content li { padding: 3px 0; }
         .modal-content .modal-actions {
             margin-top: 22px;
             display: flex; gap: 8px;
@@ -704,20 +862,14 @@
             flex-wrap: wrap;
         }
         .modal-content .modal-actions button { width: auto; }
-        .modal-content .info-row {
-            padding: 6px 0;
-            font-size: 14px;
-        }
+        .modal-content .info-row { padding: 6px 0; font-size: 14px; }
         .modal-content .info-row strong { color: #1e293b; }
-        .modal-content .empty-hint {
-            color: #94a3b8; font-style: italic;
-        }
+        .modal-content .empty-hint { color: #94a3b8; font-style: italic; }
 
         @media(max-width: 900px) {
             .mode-card-grid { grid-template-columns: repeat(2, 1fr); }
         }
         @media(max-width: 800px) {
-            .service-content-row { grid-template-columns: 1fr; }
             .person-row { align-items: flex-start; flex-direction: column; }
             .person-actions { width: 100%; }
         }
@@ -848,9 +1000,27 @@
         <div class="form-group"><label>Dienstdurchführende / Betreuer</label><div id="svcLeaders" class="service-person-grid"></div></div>
         <div class="form-group full-width"><label>Notizen</label><textarea id="svcNotes" rows="2"></textarea></div>
       </div>
+
       <h3>📚 Dienstinhalte / Leistungsabzeichen</h3>
-      <div id="serviceContentRows"></div>
-      <button type="button" class="btn-secondary btn-sm" onclick="addServiceContentRow()">➕ weiteren Inhalt hinzufügen</button>
+      <div class="content-add-row">
+        <div class="form-group">
+          <label>1️⃣ Kategorie</label>
+          <select id="svcContentCategory" onchange="onSvcCategoryChange()">
+            <option value="">-- Kategorie wählen --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>2️⃣ Inhalt</label>
+          <select id="svcContentSelect">
+            <option value="">-- Erst Kategorie wählen --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <button type="button" class="btn-success" onclick="addSelectedContentToService()">➕ Hinzufügen</button>
+        </div>
+      </div>
+      <div id="serviceContentRows" class="service-content-list"></div>
+
       <hr style="margin:20px 0;border:0;border-top:1px solid #e2e8f0;">
       <h3>👤 Junghelfer für diesen Dienst</h3>
       <div id="svcParticipants" class="service-person-grid"></div>
@@ -867,12 +1037,17 @@
         <h2 id="contentFormTitle">Inhalt anlegen</h2>
         <input type="hidden" id="contentEditId">
         <div class="form-group"><label>Bezeichnung *</label><input id="contentName" type="text" placeholder="z.B. Erste Hilfe"></div>
+        <div class="form-group">
+          <label>Kategorie</label>
+          <input id="contentCategory" type="text" list="categoryList" placeholder="z.B. Grundausbildung, Technik...">
+          <datalist id="categoryList"></datalist>
+        </div>
         <div class="form-group"><label>Beschreibung</label><textarea id="contentDesc" rows="3"></textarea></div>
         <div class="form-group"><label>Leistungsabzeichen</label>
           <div style="display:flex;gap:14px;flex-wrap:wrap;">
-            <label><input type="checkbox" id="levelBronze"> Bronze</label>
-            <label><input type="checkbox" id="levelSilver"> Silber</label>
-            <label><input type="checkbox" id="levelGold"> Gold</label>
+            <label><input type="checkbox" id="levelBronze"> <span class="text-bronze">Bronze</span></label>
+            <label><input type="checkbox" id="levelSilver"> <span class="text-silber">Silber</span></label>
+            <label><input type="checkbox" id="levelGold"> <span class="text-gold">Gold</span></label>
           </div>
         </div>
         <button type="button" class="btn-success" onclick="saveContent()">Inhalt speichern</button>
@@ -905,7 +1080,6 @@
         <button class="tab-btn" onclick="switchTab('umtausch', event)">🔁 Umtausch</button>
     </div>
 
-    <!-- LAGERBESTAND -->
     <div id="lager" class="tab-content active">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
             <h3 style="margin: 0;">Aktueller Lagerbestand</h3>
@@ -959,7 +1133,6 @@
         </div>
     </div>
 
-    <!-- JUNGHELFER & BETREUER -->
     <div id="junghelfer" class="tab-content">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
             <h3 style="margin: 0;">👤 Junghelfer & Betreuer</h3>
@@ -979,7 +1152,6 @@
         </div>
     </div>
 
-    <!-- KOMPLETTAUSGABE -->
     <div id="komplett" class="tab-content">
         <div class="card full-width bulk-card">
             <h4 style="color: #0dcaf0; margin-top: 0;">👕 Neueinkleidung (Komplettausstattung ausgeben)</h4>
@@ -1008,7 +1180,6 @@
         </div>
     </div>
 
-    <!-- EINZELAUSGABE / RÜCKGABE -->
     <div id="einzel" class="tab-content">
         <div class="grid-2">
             <div class="card borrow-card">
@@ -1030,7 +1201,6 @@
         </div>
     </div>
 
-    <!-- UMTAUSCH -->
     <div id="umtausch" class="tab-content">
         <div class="card full-width exchange-card">
             <h4 style="color: #0d6efd; margin-top: 0;">🔄 Ausrüstung umtauschen</h4>
@@ -1091,6 +1261,7 @@
     const FIXED_PASSWORD = 'Jugend2026';
     const AUTH_SESSION_KEY = 'thw_authenticated';
     const LEVEL_ORDER = ['Bronze', 'Silber', 'Gold'];
+    const CAT_FALLBACK = 'Ohne Kategorie';
 
     // ======================================================================
     // 1. DATEN
@@ -1104,6 +1275,12 @@
     let serviceContents = JSON.parse(localStorage.getItem('serviceContents') || '[]');
     let services = JSON.parse(localStorage.getItem('services') || '[]');
     let appMode = 'home';
+
+    serviceContents = serviceContents.map(c => ({
+        ...c,
+        category: typeof c.category === 'string' ? c.category : '',
+        done: !!c.done
+    }));
 
     let centralLog = (() => {
         const existing = localStorage.getItem('centralLog');
@@ -1303,7 +1480,7 @@
     // 9. EXPORT / IMPORT
     // ======================================================================
     function exportData() {
-        const data = { version: 3, exportedAt: new Date().toISOString(), inventory, employees, borrowHistory, serviceContents, services, centralLog };
+        const data = { version: 5, exportedAt: new Date().toISOString(), inventory, employees, borrowHistory, serviceContents, services, centralLog };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1328,6 +1505,12 @@
                 serviceContents = Array.isArray(d.serviceContents) ? d.serviceContents : [];
                 services = Array.isArray(d.services) ? d.services : [];
 
+                serviceContents = serviceContents.map(c => ({
+                    ...c,
+                    category: typeof c.category === 'string' ? c.category : '',
+                    done: !!c.done
+                }));
+
                 if (Array.isArray(d.centralLog)) {
                     centralLog = d.centralLog;
                 } else {
@@ -1348,6 +1531,7 @@
                 saveData();
                 saveServiceData();
                 updateDynamicDropdowns();
+                updateCategoryDatalist();
                 renderInventoryCards();
                 renderInventory();
                 renderEmployees();
@@ -1357,6 +1541,7 @@
                 renderServiceContents();
                 renderServicePeople();
                 renderCentralLog();
+                renderSvcCategorySelect();
                 showToast('Gesamtbackup importiert', 'success');
             } catch (err) {
                 console.error(err);
@@ -1457,6 +1642,13 @@
 
         if (rIt) { rIt.innerHTML = '<option value="">-- Artikeltyp --</option>' + optionsHtml; if (allTypes.includes(currentRIt)) rIt.value = currentRIt; }
         if (bTs) { bTs.innerHTML = '<option value="">-- Artikeltyp --</option>' + optionsHtml; if (allTypes.includes(currentBTs)) bTs.value = currentBTs; }
+    }
+
+    function updateCategoryDatalist() {
+        const dl = document.getElementById('categoryList');
+        if (!dl) return;
+        const cats = [...new Set(serviceContents.map(c => (c.category || '').trim()).filter(Boolean))].sort();
+        dl.innerHTML = cats.map(c => `<option value="${esc(c)}">`).join('');
     }
 
     function updateBulkIssueDropdowns() {
@@ -1644,7 +1836,7 @@
     }
 
     // ======================================================================
-    // 16. JUNGHELFER IN KLEIDUNG (nur lesen)
+    // 16. JUNGHELFER IN KLEIDUNG
     // ======================================================================
     function formatBirthDate(dateString) {
         if (!dateString) return 'Nicht hinterlegt';
@@ -2110,6 +2302,7 @@
             renderServices();
             renderServiceContents();
             renderServicePeople();
+            renderSvcCategorySelect();
         }
         if (which === 'clothing') {
             normalizeEmployeesCentral();
@@ -2261,6 +2454,7 @@
         if (id === 'plan') renderServices();
         if (id === 'contents') renderServiceContents();
         if (id === 'people') renderServicePeople();
+        if (id === 'new') renderSvcCategorySelect();
     }
 
     function junghelfer() { normalizeEmployeesCentral(); return employees.filter(e => e.category === 'junghelfer'); }
@@ -2280,45 +2474,115 @@
             return `<label class="service-person-check"><input type="checkbox" name="svcParticipant" value="${e.id}"> ${esc(e.name)}${goalTxt}</label>`;
         }).join('') || '<p>Keine Junghelfer in den Stammdaten.</p>';
     }
-    function contentOptions(selected = '') {
-        const sorted = [...serviceContents].sort((a, b) => {
-            const aMin = Math.min(...(a.levels || []).map(l => LEVEL_ORDER.indexOf(l)).filter(i => i >= 0), 999);
-            const bMin = Math.min(...(b.levels || []).map(l => LEVEL_ORDER.indexOf(l)).filter(i => i >= 0), 999);
-            if (aMin !== bMin) return aMin - bMin;
-            return a.name.localeCompare(b.name, 'de');
-        });
-        return '<option value="">-- Inhalt auswählen --</option>' + sorted.map(c => {
-            const lvlInfo = c.levels?.length ? ' · ' + c.levels.join('/') : '';
-            return `<option value="${c.id}" ${c.id === selected ? 'selected' : ''}>${esc(c.name)}${lvlInfo}</option>`;
+
+    // ============ ZWEISTUFIGE INHALT-AUSWAHL: Kategorie -> Inhalt ============
+    function renderSvcCategorySelect() {
+        const sel = document.getElementById('svcContentCategory');
+        if (!sel) return;
+        const currentVal = sel.value;
+        const cats = [...new Set(serviceContents.map(c => (c.category || '').trim() || CAT_FALLBACK))]
+            .sort((a, b) => {
+                if (a === CAT_FALLBACK) return 1;
+                if (b === CAT_FALLBACK) return -1;
+                return a.localeCompare(b, 'de');
+            });
+        sel.innerHTML = '<option value="">-- Kategorie wählen --</option>' +
+            cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+        if (cats.includes(currentVal)) sel.value = currentVal;
+        onSvcCategoryChange();
+    }
+
+    function onSvcCategoryChange() {
+        const catSel = document.getElementById('svcContentCategory');
+        const contentSel = document.getElementById('svcContentSelect');
+        if (!catSel || !contentSel) return;
+        const cat = catSel.value;
+        contentSel.innerHTML = '<option value="">-- Erst Kategorie wählen --</option>';
+        if (!cat) return;
+
+        const selectedIds = new Set(selectedServiceContents());
+        const items = serviceContents.filter(c => {
+            const cCat = (c.category || '').trim() || CAT_FALLBACK;
+            return cCat === cat && !selectedIds.has(c.id);
+        }).sort((a, b) => a.name.localeCompare(b.name, 'de'));
+
+        if (!items.length) {
+            contentSel.innerHTML = '<option value="">-- Keine (weiteren) Inhalte in dieser Kategorie --</option>';
+            return;
+        }
+        contentSel.innerHTML = '<option value="">-- Inhalt wählen --</option>' + items.map(c => {
+            const lvl = c.levels?.length ? ' · ' + c.levels.join('/') : '';
+            return `<option value="${c.id}">${esc(c.name)}${lvl}</option>`;
         }).join('');
     }
-    function addServiceContentRow(selected = '') {
+
+    function addSelectedContentToService() {
+        const contentSel = document.getElementById('svcContentSelect');
+        if (!contentSel) return;
+        const cid = contentSel.value;
+        if (!cid) return alert('Bitte zuerst eine Kategorie und einen Inhalt wählen.');
+        addServiceContentRow(cid);
+        onSvcCategoryChange();
+    }
+
+    function addServiceContentRow(cid) {
+        if (!cid) return;
         const wrap = document.getElementById('serviceContentRows');
         if (!wrap) return;
+        if (wrap.querySelector(`[data-content-id="${cid}"]`)) return;
+        const c = serviceContents.find(x => x.id === cid);
+        if (!c) return;
         const row = document.createElement('div');
         row.className = 'service-content-row';
-        row.innerHTML = `<div><label>Dienstinhalt</label><select class="svc-content-select">${contentOptions(selected)}</select></div><button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">✖</button>`;
+        row.dataset.contentId = cid;
+        const cats = (c.category || '').trim();
+        const levels = (c.levels || []).map(l => {
+            const cls = l === 'Bronze' ? 'text-bronze' : l === 'Silber' ? 'text-silber' : 'text-gold';
+            return `<span class="level-tag ${cls}">${l}</span>`;
+        }).join('');
+        row.innerHTML = `
+            <div class="content-chip">
+                <strong>${esc(c.name)}</strong>
+                ${cats ? `<span class="pill">${esc(cats)}</span>` : ''}
+                ${levels}
+            </div>
+            <button type="button" class="btn-danger btn-sm" onclick="removeServiceContentRow(this)">✖</button>
+        `;
         wrap.appendChild(row);
-        row.querySelector('select').addEventListener('change', ensureTrailingContentRow);
     }
-    function ensureTrailingContentRow() {
+
+    function removeServiceContentRow(btn) {
+        const row = btn.closest('.service-content-row');
+        if (row) row.remove();
+        onSvcCategoryChange();
+    }
+
+    function resetServiceContentRows() {
         const wrap = document.getElementById('serviceContentRows');
-        if (!wrap) return;
-        const rows = [...wrap.querySelectorAll('.svc-content-select')];
-        if (rows.length === 0) { addServiceContentRow(); return; }
-        const last = rows[rows.length - 1];
-        if (last.value) addServiceContentRow();
+        if (wrap) wrap.innerHTML = '';
+        const catSel = document.getElementById('svcContentCategory');
+        if (catSel) catSel.value = '';
+        onSvcCategoryChange();
     }
-    function resetServiceContentRows() { document.getElementById('serviceContentRows').innerHTML = ''; addServiceContentRow(); }
+
     function selectedServiceContents() {
-        return [...document.querySelectorAll('.svc-content-select')].map(x => x.value).filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+        return [...document.querySelectorAll('#serviceContentRows .service-content-row')]
+            .map(r => r.dataset.contentId).filter(Boolean);
     }
+
     function resetServiceForm() {
-        ['serviceEditId', 'svcDate', 'svcStart', 'svcEnd', 'svcTitle', 'svcLocation', 'svcNotes'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('serviceEditId').value = '';
+        document.getElementById('svcDate').value = '';
+        document.getElementById('svcStart').value = '17:00';
+        document.getElementById('svcEnd').value = '19:30';
+        document.getElementById('svcTitle').value = 'Jugenddienst';
+        document.getElementById('svcLocation').value = '';
+        document.getElementById('svcNotes').value = '';
         document.getElementById('serviceFormTitle').textContent = 'Dienst anlegen';
         document.querySelectorAll('input[name="svcLeader"],input[name="svcParticipant"]').forEach(x => x.checked = false);
         resetServiceContentRows();
     }
+
     function saveService() {
         const id = document.getElementById('serviceEditId').value;
         const date = document.getElementById('svcDate').value;
@@ -2354,6 +2618,7 @@
         showToast('Dienst gespeichert', 'success');
         serviceTab('plan');
     }
+
     function editService(id) {
         const s = services.find(x => x.id === id);
         if (!s) return;
@@ -2373,9 +2638,10 @@
             s.participantIds?.forEach(id => { const x = document.querySelector(`input[name="svcParticipant"][value="${id}"]`); if (x) x.checked = true; });
             document.getElementById('serviceContentRows').innerHTML = '';
             (s.contentIds || []).forEach(cid => addServiceContentRow(cid));
-            addServiceContentRow();
+            renderSvcCategorySelect();
         }, 0);
     }
+
     function deleteService(id) {
         const s = services.find(x => x.id === id);
         if (!s) return;
@@ -2387,6 +2653,7 @@
         renderServicePeople();
     }
 
+    // ============ COMPLETED-LOGIK ============
     function completedForPerson(personId, contentId) {
         const emp = employees.find(e => e.id === personId);
         const content = serviceContents.find(c => c.id === contentId);
@@ -2474,7 +2741,8 @@
         const contentsHtml = contents.length
             ? `<ul>${contents.map(c => {
                 const lvlInfo = c.levels?.length ? ` <span style="color:#64748b;font-size:12px;">(${c.levels.join(', ')})</span>` : '';
-                return `<li>${esc(c.name)}${lvlInfo}</li>`;
+                const catInfo = c.category ? ` <span class="pill" style="font-size:10px;">${esc(c.category)}</span>` : '';
+                return `<li>${esc(c.name)}${catInfo}${lvlInfo}</li>`;
             }).join('')}</ul>`
             : '<p class="empty-hint">Keine Dienstinhalte eingetragen.</p>';
 
@@ -2621,7 +2889,7 @@
     }
 
     // ======================================================================
-    // INHALTE
+    // INHALTE (Verwaltung)
     // ======================================================================
     function saveContent() {
         const id = document.getElementById('contentEditId').value;
@@ -2631,46 +2899,114 @@
         if (document.getElementById('levelBronze').checked) levels.push('Bronze');
         if (document.getElementById('levelSilver').checked) levels.push('Silber');
         if (document.getElementById('levelGold').checked) levels.push('Gold');
-        const obj = { id: id || 'content_' + Date.now(), name, description: document.getElementById('contentDesc').value.trim(), levels };
+        const category = document.getElementById('contentCategory').value.trim();
+        const description = document.getElementById('contentDesc').value.trim();
+        const existing = id ? serviceContents.find(x => x.id === id) : null;
+        const obj = {
+            id: id || 'content_' + Date.now(),
+            name,
+            description,
+            category,
+            levels,
+            done: existing ? !!existing.done : false
+        };
         if (id) serviceContents = serviceContents.map(x => x.id === id ? obj : x);
         else serviceContents.push(obj);
         saveServiceData();
-        svcLog(`${id ? 'Inhalt geändert' : 'Inhalt angelegt'}: ${name}`);
+        updateCategoryDatalist();
+        svcLog(`${id ? 'Inhalt geändert' : 'Inhalt angelegt'}: ${name}${category ? ' ['+category+']' : ''}`);
         resetContentForm();
         renderServiceContents();
+        renderSvcCategorySelect();
         showToast('Inhalt gespeichert', 'success');
     }
+
     function resetContentForm() {
         document.getElementById('contentEditId').value = '';
         document.getElementById('contentName').value = '';
         document.getElementById('contentDesc').value = '';
+        document.getElementById('contentCategory').value = '';
         ['Bronze', 'Silver', 'Gold'].forEach(x => document.getElementById('level' + x).checked = false);
         document.getElementById('contentFormTitle').textContent = 'Inhalt anlegen';
     }
+
+    function toggleContentDone(contentId, checked) {
+        const c = serviceContents.find(x => x.id === contentId);
+        if (!c) return;
+        c.done = !!checked;
+        saveServiceData();
+        renderServiceContents();
+        svcLog(`Inhalt "${c.name}" ${checked ? 'als behandelt markiert ✓' : 'auf geplant zurückgesetzt'}`);
+    }
+
     function renderServiceContents() {
         const c = document.getElementById('contentList');
         if (!c) return;
-        c.innerHTML = serviceContents.length ? serviceContents.map(x => `
-            <div class="person-row">
-                <div><strong>${esc(x.name)}</strong><br><small>${esc(x.description || '')}${x.levels?.length ? ' · ' + x.levels.join(', ') : ' · kein Leistungsabzeichen'}</small></div>
-                <div class="person-actions">
-                    <button class="btn-sm" onclick="editContent('${x.id}')">✏️</button>
-                    <button class="btn-danger btn-sm" onclick="deleteContent('${x.id}')">🗑️</button>
-                </div>
-            </div>`).join('') : '<p>Noch keine Inhalte angelegt.</p>';
+
+        if (!serviceContents.length) {
+            c.innerHTML = '<p>Noch keine Inhalte angelegt.</p>';
+            return;
+        }
+
+        const catMap = new Map();
+        serviceContents.forEach(x => {
+            const cat = ((x.category || '').trim()) || CAT_FALLBACK;
+            if (!catMap.has(cat)) catMap.set(cat, []);
+            catMap.get(cat).push(x);
+        });
+        const sortedCats = [...catMap.keys()].sort((a, b) => {
+            if (a === CAT_FALLBACK) return 1;
+            if (b === CAT_FALLBACK) return -1;
+            return a.localeCompare(b, 'de');
+        });
+
+        let html = '';
+        sortedCats.forEach(cat => {
+            const items = catMap.get(cat);
+            const doneCount = items.filter(i => i.done).length;
+            html += `<div class="content-category-group">
+                <h4 class="category-heading">
+                    <span>📁 ${esc(cat)}</span>
+                    <span class="category-count">${doneCount}/${items.length} behandelt</span>
+                </h4>`;
+            html += items.map(x => {
+                const levelsHtml = (x.levels || []).map(l => {
+                    const cls = l === 'Bronze' ? 'text-bronze' : l === 'Silber' ? 'text-silber' : 'text-gold';
+                    return `<span class="level-tag ${cls}">${l}</span>`;
+                }).join('');
+                return `<div class="content-item-row ${x.done ? 'content-done' : ''}">
+                    <label class="content-done-label" title="Abhaken, sobald das Thema tatsächlich behandelt wurde">
+                        <input type="checkbox" ${x.done ? 'checked' : ''} onchange="toggleContentDone('${x.id}', this.checked)">
+                    </label>
+                    <div class="content-item-info">
+                        <strong>${esc(x.name)}</strong>${levelsHtml}
+                        ${x.description ? `<small>${esc(x.description)}</small>` : ''}
+                    </div>
+                    <div class="content-item-actions">
+                        <button class="btn-sm" onclick="editContent('${x.id}')">✏️</button>
+                        <button class="btn-danger btn-sm" onclick="deleteContent('${x.id}')">🗑️</button>
+                    </div>
+                </div>`;
+            }).join('');
+            html += '</div>';
+        });
+        c.innerHTML = html;
     }
+
     function editContent(id) {
         const x = serviceContents.find(c => c.id === id);
         if (!x) return;
         document.getElementById('contentEditId').value = x.id;
         document.getElementById('contentName').value = x.name;
         document.getElementById('contentDesc').value = x.description || '';
+        document.getElementById('contentCategory').value = x.category || '';
         document.getElementById('levelBronze').checked = x.levels?.includes('Bronze');
         document.getElementById('levelSilver').checked = x.levels?.includes('Silber');
         document.getElementById('levelGold').checked = x.levels?.includes('Gold');
         document.getElementById('contentFormTitle').textContent = 'Inhalt bearbeiten';
         serviceTab('contents');
     }
+
     function deleteContent(id) {
         const x = serviceContents.find(c => c.id === id);
         if (!x) return;
@@ -2680,12 +3016,14 @@
         if (!confirm(`${x.name} löschen?`)) return;
         serviceContents = serviceContents.filter(c => c.id !== id);
         saveServiceData();
+        updateCategoryDatalist();
         svcLog(`Inhalt gelöscht: ${x.name}`);
         renderServiceContents();
+        renderSvcCategorySelect();
     }
 
     // ======================================================================
-    // AUFKLAPPBARE JUNGHELFER + LEISTUNGSABZEICHEN
+    // JUNGHELFER + LEISTUNGSABZEICHEN
     // ======================================================================
     function renderServicePeople() {
         const c = document.getElementById('servicePeopleList');
@@ -2720,19 +3058,42 @@
                 const doneCount = done.filter(d => d.service).length;
                 const isComplete = doneCount === req.length;
                 const isCurrentGoal = nextGoal === level;
-                const highlight = isCurrentGoal ? ' style="border:2px solid #0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,0.15);"' : '';
-                return `<div class="badge-box"${highlight}>
-                    <h4>${level} ${level === 'Bronze' ? '🥉' : level === 'Silber' ? '🥈' : '🥇'}
-                        <span style="font-weight:400;font-size:13px;color:#64748b;margin-left:6px;">${doneCount}/${req.length} erledigt</span>
-                        ${isComplete ? '<span style="color:#198754;font-weight:700;margin-left:6px;">✓ Vollständig</span>' : ''}
-                        ${isCurrentGoal ? '<span style="color:#0ea5e9;font-weight:700;margin-left:6px;font-size:12px;">← aktuelles Ziel</span>' : ''}
-                    </h4>
-                    ${done.map(d => {
-                        if (!d.service) return `<div class="missing">❌ ${esc(d.x.name)}</div>`;
-                        if (d.service.manual) return `<div class="done">✅ ${esc(d.x.name)} <small>– manuell in Stammdaten zugewiesen</small></div>`;
+                const levelClass = level === 'Bronze' ? 'text-bronze' : level === 'Silber' ? 'text-silber' : 'text-gold';
+                const levelEmoji = level === 'Bronze' ? '🥉' : level === 'Silber' ? '🥈' : '🥇';
+                const currentGoalClass = isCurrentGoal ? ' current-goal' : '';
+
+                const itemsHtml = done.map(d => {
+                    const contentLevels = d.x.levels || [];
+                    const currentIdx = LEVEL_ORDER.indexOf(level);
+                    const priorLevels = contentLevels.filter(l => LEVEL_ORDER.indexOf(l) >= 0 && LEVEL_ORDER.indexOf(l) < currentIdx);
+                    const alreadyHadPrior = priorLevels.some(l => (manualAchievements || []).includes(l));
+
+                    if (d.service && d.service.manual) {
+                        return `<div class="done">✅ ${esc(d.x.name)} <small>– durch zugewiesenes Abzeichen automatisch abgedeckt</small></div>`;
+                    }
+                    if (d.service) {
                         return `<div class="done">✅ ${esc(d.x.name)} <small>– ${new Date(d.service.date + 'T00:00:00').toLocaleDateString('de-DE')}</small></div>`;
-                    }).join('')}
-                </div>`;
+                    }
+                    if (alreadyHadPrior) {
+                        return `<div class="repeat">🔁 ${esc(d.x.name)} <small>(Wiederholung)</small></div>`;
+                    }
+                    return `<div class="missing">❌ ${esc(d.x.name)}</div>`;
+                }).join('');
+
+                return `<details class="achievement-details${currentGoalClass}">
+                    <summary>
+                        <div class="ach-summary-main">
+                            <span class="${levelClass}">${level} ${levelEmoji}</span>
+                            ${isCurrentGoal ? '<span style="color:#0ea5e9;font-size:11px;font-weight:700;">← aktuelles Ziel</span>' : ''}
+                        </div>
+                        <div class="ach-summary-status${isComplete ? ' complete' : ''}">
+                            ${doneCount}/${req.length} ${isComplete ? '✓ vollständig' : 'erledigt'}
+                        </div>
+                    </summary>
+                    <div class="achievement-details-content">
+                        ${itemsHtml}
+                    </div>
+                </details>`;
             }).join('');
 
             const manualInfo = manualAchievements.length
@@ -2759,6 +3120,7 @@
     // INITIALISIERUNG
     // ======================================================================
     initPasswordProtection();
+    updateCategoryDatalist();
     renderInventoryCards();
     renderInventory();
     updateDynamicDropdowns();
@@ -2768,7 +3130,8 @@
     renderServiceContents();
     renderServiceLeaders();
     renderServiceParticipants();
-    resetServiceContentRows();
+    resetServiceForm();
+    renderSvcCategorySelect();
     renderCentralLog();
     renderServices();
     renderServicePeople();
