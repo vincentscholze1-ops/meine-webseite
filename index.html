@@ -233,7 +233,7 @@
             font-weight: 600; font-size: 14px; color: #1e293b;
         }
         input[type="text"], input[type="number"], input[type="password"],
-        input[type="date"], input[type="time"], select, textarea {
+        input[type="date"], input[type="time"], select, textarea, input[type="file"] {
             width: 100%; padding: 10px 14px;
             border: 1px solid #d1d9e6; border-radius: 8px;
             font-family: inherit; font-size: 14px;
@@ -297,7 +297,7 @@
         .card.bulk-card   { border-left: 5px solid #0dcaf0; }
         .card.exchange-card { border-left: 5px solid #0d6efd; }
 
-        /* ==================== INLINE CREATE ROW (Zukünftige Dienste) ==================== */
+        /* ==================== INLINE CREATE ROW ==================== */
         .inline-create-row {
             background: #f1f6fe;
             border: 2px solid #b3d7ff;
@@ -411,7 +411,7 @@
             background: #cfe2ff; color: #1e40af;
         }
 
-        /* ==================== CONTENTS LAYOUT (fix + scroll) ==================== */
+        /* ==================== CONTENTS LAYOUT ==================== */
         .contents-layout {
             display: grid;
             grid-template-columns: 1fr 1.2fr;
@@ -676,6 +676,174 @@
         }
         .bulk-mode-switch label:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,.06); }
 
+        /* ==================== FINANZVERWALTUNG ==================== */
+        .finance-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-top: 10px;
+        }
+        .finance-summary-card {
+            border-radius: 12px;
+            padding: 18px 20px;
+            text-align: center;
+            border: 2px solid transparent;
+        }
+        .finance-summary-card .label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.8;
+            margin-bottom: 6px;
+        }
+        .finance-summary-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .finance-summary-card.budget { background: #e0f2fe; border-color: #7dd3fc; color: #075985; }
+        .finance-summary-card.expenses { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+        .finance-summary-card.remaining { background: #dcfce7; border-color: #86efac; color: #166534; }
+        .finance-summary-card.remaining.negative { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+        .finance-summary-card .btn-sm {
+            background: rgba(255,255,255,0.7);
+            color: inherit;
+            border: 1px solid rgba(0,0,0,0.1);
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px;
+            width: auto;
+        }
+        .finance-summary-card .btn-sm:hover { background: #fff; }
+        @media(max-width: 700px) {
+            .finance-summary-grid { grid-template-columns: 1fr; }
+        }
+
+        .finance-expense-list {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .finance-expense-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            background: #fff;
+            align-items: center;
+        }
+        .finance-expense-item:last-child { margin-bottom: 0; }
+        .finance-expense-item .receipt-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .finance-expense-item .receipt-placeholder {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            border: 1px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 20px;
+            background: #f8fafc;
+            flex-shrink: 0;
+        }
+        .finance-expense-item .expense-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .finance-expense-item .expense-info strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 3px;
+            word-break: break-word;
+        }
+        .finance-expense-item .expense-info small {
+            color: #64748b;
+            font-size: 12px;
+        }
+        .finance-expense-item .expense-amount {
+            font-weight: 700;
+            color: #b02a37;
+            font-size: 15px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* ==================== STATISTIK ==================== */
+        .stat-person-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            background: #f8fafc;
+        }
+        .stat-person-row:last-child { margin-bottom: 0; }
+        .stat-person-row .stat-name {
+            flex: 1;
+            font-weight: 600;
+            font-size: 14px;
+            min-width: 0;
+            word-break: break-word;
+        }
+        .stat-person-row .stat-bar-wrapper {
+            flex: 1.5;
+            height: 22px;
+            background: #e2e8f0;
+            border-radius: 11px;
+            overflow: hidden;
+            position: relative;
+            min-width: 80px;
+        }
+        .stat-person-row .stat-bar {
+            height: 100%;
+            border-radius: 11px;
+            transition: width 0.4s;
+        }
+        .stat-person-row .stat-bar.high { background: #198754; }
+        .stat-person-row .stat-bar.medium { background: #ffc107; }
+        .stat-person-row .stat-bar.low { background: #dc3545; }
+        .stat-person-row .stat-percent {
+            font-weight: 700;
+            font-size: 14px;
+            width: 55px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .stat-person-row .stat-hours {
+            font-weight: 600;
+            font-size: 13px;
+            color: #0891b2;
+            width: 70px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .stat-person-row .stat-counts {
+            font-size: 12px;
+            color: #64748b;
+            width: 70px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        @media(max-width: 700px) {
+            .stat-person-row { flex-wrap: wrap; }
+            .stat-person-row .stat-bar-wrapper { flex-basis: 100%; order: 10; }
+        }
+
         /* ==================== OUT-OF-STOCK ==================== */
         .out-of-stock-row { background: #fff0f0 !important; color: #b02a37; font-weight: 600; }
         .out-of-stock-row td { background: #fff0f0 !important; }
@@ -696,9 +864,11 @@
         .cat-kleidung { background: #cfe2ff; color: #084298; }
         .cat-dienst { background: #e2d9f3; color: #432874; }
         .cat-stammdaten { background: #ffe5d0; color: #984c0c; }
+        .cat-finanzen { background: #d1fae5; color: #065f46; }
         .log-entry.log-category-kleidung { border-left-color: #0d6efd; }
         .log-entry.log-category-dienst { border-left-color: #6f42c1; }
         .log-entry.log-category-stammdaten { border-left-color: #fd7e14; }
+        .log-entry.log-category-finanzen { border-left-color: #10b981; }
 
         /* ==================== EMPLOYEE DETAILS ==================== */
         .employee-detail-area {
@@ -741,7 +911,8 @@
         body.force-mobile .bulk-grid-row.row-3,
         body.force-mobile .bulk-grid-row.row-2,
         body.force-mobile .inline-create-grid,
-        body.force-mobile .contents-layout {
+        body.force-mobile .contents-layout,
+        body.force-mobile .finance-summary-grid {
             grid-template-columns: 1fr !important;
         }
         body.force-mobile .contents-layout .contents-form-col { position: static; }
@@ -756,6 +927,7 @@
         body.force-mobile .global-nav button.icon-btn { padding: 6px 8px; font-size: 14px; }
         body.force-mobile .app-shell { max-width: 600px; }
         body.force-mobile .btn-sm { width: auto; }
+        body.force-mobile .finance-summary-card .btn-sm { width: auto; }
 
         /* ==================== RESPONSIVE ==================== */
         @media (max-width: 992px) {
@@ -835,12 +1007,12 @@
             body { background: white; padding: 0; }
             .container { box-shadow: none; border: none; }
             table { min-width: 100%; }
-            #homeApp, #serviceApp, #logApp { display: none !important; }
+            #homeApp, #serviceApp, #logApp, #financeApp, #statsApp { display: none !important; }
             #clothingApp { display: block !important; }
         }
 
         /* ==================== APP-SHELL ==================== */
-        #homeApp, #serviceApp, #clothingApp, #logApp { display: none; }
+        #homeApp, #serviceApp, #clothingApp, #logApp, #financeApp, #statsApp { display: none; }
         .app-shell { max-width: 1200px; margin: 0 auto; }
         .app-header {
             display: flex; justify-content: space-between;
@@ -1061,6 +1233,7 @@
             flex-wrap: wrap;
         }
         .modal-content .modal-actions button { width: auto; }
+        .modal-content .modal-actions a { text-decoration: none; }
         .modal-content .info-row { padding: 6px 0; font-size: 14px; }
         .modal-content .info-row strong { color: #1e293b; }
         .modal-content .empty-hint { color: #94a3b8; font-style: italic; }
@@ -1190,6 +1363,8 @@
         <button type="button" data-app="home" onclick="goHome()">🏠 Stammdaten</button>
         <button type="button" data-app="service" onclick="openServices()">🧰 Dienste</button>
         <button type="button" data-app="clothing" onclick="openClothing()">👕 Kleidung</button>
+        <button type="button" data-app="finance" onclick="openFinance()">💰 Finanzen</button>
+        <button type="button" data-app="stats" onclick="openStats()">📊 Statistik</button>
         <button type="button" data-app="log" onclick="openLog()">📓 Logbuch</button>
         <button type="button" class="icon-btn" id="globalModeToggle" onclick="toggleMode()" title="Mobile-Ansicht umschalten">📱</button>
         <button type="button" class="icon-btn logout-btn" onclick="logout()" title="Abmelden">🔒</button>
@@ -1257,7 +1432,6 @@
     <button class="tab-btn" onclick="serviceTab('people',event)">🏆 Stand Leistungsabzeichen</button>
   </div>
 
-  <!-- Zukünftige Dienste -->
   <div id="svc-plan" class="tab-content active">
     <div class="card">
       <div class="app-header">
@@ -1267,7 +1441,6 @@
         </div>
       </div>
 
-      <!-- Inline Dienst anlegen -->
       <div class="inline-create-row">
         <div class="inline-title">➕ Neuen Dienst anlegen</div>
         <div class="inline-create-grid">
@@ -1318,7 +1491,6 @@
     </div>
   </div>
 
-  <!-- Vergangene Dienste (Archiv) -->
   <div id="svc-archive" class="tab-content">
     <div class="card">
       <h2 style="margin-top:0;">🗂️ Vergangene Dienste</h2>
@@ -1327,7 +1499,6 @@
     </div>
   </div>
 
-  <!-- Dienstinhalte -->
   <div id="svc-contents" class="tab-content">
     <div class="contents-layout">
       <div class="contents-form-col">
@@ -1361,7 +1532,6 @@
     </div>
   </div>
 
-  <!-- Stand Leistungsabzeichen -->
   <div id="svc-people" class="tab-content">
     <div class="card">
       <h2>🏆 Stand Leistungsabzeichen</h2>
@@ -1461,7 +1631,6 @@
         <div class="card full-width bulk-card">
             <h4 style="color: #0dcaf0; margin-top: 0;">👕 Neueinkleidung / Komplettvorgang</h4>
 
-            <!-- Modus-Umschalter -->
             <div class="bulk-mode-switch">
                 <span class="bulk-mode-label">Modus:</span>
                 <label class="issue-mode">
@@ -1539,6 +1708,105 @@
   </div>
 </div>
 
+<!-- FINANZVERWALTUNG -->
+<div id="financeApp" class="app-shell">
+  <div class="app-header">
+    <h1>💰 Finanzverwaltung</h1>
+  </div>
+
+  <div class="card">
+    <div class="app-header">
+      <h2 style="margin:0;">Übersicht</h2>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <label style="margin:0;font-weight:600;font-size:13px;">Jahr:</label>
+        <select id="financeYearSelect" onchange="renderFinance()" style="width:auto;min-width:100px;"></select>
+      </div>
+    </div>
+    <div class="finance-summary-grid">
+      <div class="finance-summary-card budget">
+        <div class="label">Jahresbudget</div>
+        <div class="value" id="financeBudgetDisplay">0,00 €</div>
+        <button class="btn-sm" onclick="editBudget()">✏️ Ändern</button>
+      </div>
+      <div class="finance-summary-card expenses">
+        <div class="label">Ausgaben</div>
+        <div class="value" id="financeExpensesDisplay">0,00 €</div>
+      </div>
+      <div class="finance-summary-card remaining">
+        <div class="label">Verfügbar</div>
+        <div class="value" id="financeRemainingDisplay">0,00 €</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card add-card">
+      <h2 style="margin-top:0;">Ausgabe hinzufügen</h2>
+      <form id="expenseForm" onsubmit="event.preventDefault(); saveExpense();">
+        <div class="form-group">
+          <label>Datum *</label>
+          <input type="date" id="expenseDate">
+        </div>
+        <div class="form-group">
+          <label>Beschreibung *</label>
+          <input type="text" id="expenseDesc" placeholder="z.B. Material für Zeltlager">
+        </div>
+        <div class="form-group">
+          <label>Betrag (€) *</label>
+          <input type="number" id="expenseAmount" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>Rechnung / Beleg (Bild, optional)</label>
+          <input type="file" id="expenseReceipt" accept="image/*">
+          <small style="color:#64748b;font-size:11px;display:block;margin-top:4px;">Bild wird automatisch verkleinert und komprimiert gespeichert.</small>
+        </div>
+        <button type="submit" class="btn-success">Ausgabe speichern</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="app-header">
+        <h2 style="margin:0;">Ausgaben</h2>
+        <span id="financeExpenseCount" class="pill">0</span>
+      </div>
+      <div id="financeExpenseList" class="finance-expense-list" style="margin-top:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ANWESENHEITSSTATISTIK -->
+<div id="statsApp" class="app-shell">
+  <div class="app-header">
+    <h1>📊 Anwesenheitsstatistik</h1>
+  </div>
+
+  <div class="card">
+    <div class="app-header">
+      <h2 style="margin:0;">Übersicht</h2>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <label style="margin:0;font-weight:600;font-size:13px;">Jahr:</label>
+        <select id="statsYearSelect" onchange="renderStats()" style="width:auto;min-width:100px;"></select>
+      </div>
+    </div>
+    <p style="color:#64748b;font-size:13px;margin-top:0;">
+      Basis: vergangene Dienste im gewählten Jahr, bei denen der Junghelfer als „gemeldet" eingetragen war.
+    </p>
+    <div id="statsSummary" class="finance-summary-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="app-header">
+      <h2 style="margin:0;">Junghelfer im Detail</h2>
+      <div style="font-size:12px;color:#64748b;text-align:right;">
+        <span style="color:#198754;font-weight:700;">■</span> ≥ 75% ·
+        <span style="color:#ffc107;font-weight:700;">■</span> 40–74% ·
+        <span style="color:#dc3545;font-weight:700;">■</span> &lt; 40%
+      </div>
+    </div>
+    <div id="statsPersonList" style="margin-top:12px;"></div>
+  </div>
+</div>
+
 <!-- LOGBUCH & BACKUP -->
 <div id="logApp" class="app-shell">
   <div class="app-header">
@@ -1562,6 +1830,7 @@
           <option value="kleidung">👕 Kleidung</option>
           <option value="dienst">🧰 Dienste</option>
           <option value="stammdaten">👥 Stammdaten</option>
+          <option value="finanzen">💰 Finanzen</option>
       </select>
     </div>
     <div id="centralLogContainer"></div>
@@ -1597,6 +1866,7 @@
 
     let serviceContents = JSON.parse(localStorage.getItem('serviceContents') || '[]');
     let services = JSON.parse(localStorage.getItem('services') || '[]');
+    let finances = JSON.parse(localStorage.getItem('finances') || '{}');
     let appMode = 'home';
 
     // Contents normalisieren
@@ -1753,7 +2023,8 @@
         const catLabels = {
             kleidung: { label: '👕 Kleidung', cls: 'cat-kleidung' },
             dienst: { label: '🧰 Dienste', cls: 'cat-dienst' },
-            stammdaten: { label: '👥 Stammdaten', cls: 'cat-stammdaten' }
+            stammdaten: { label: '👥 Stammdaten', cls: 'cat-stammdaten' },
+            finanzen: { label: '💰 Finanzen', cls: 'cat-finanzen' }
         };
         c.innerHTML = filtered.map(entry => {
             const cat = catLabels[entry.category] || { label: entry.category, cls: '' };
@@ -1796,6 +2067,15 @@
         localStorage.setItem('services', JSON.stringify(services));
     }
 
+    function saveFinanceData() {
+        try {
+            localStorage.setItem('finances', JSON.stringify(finances));
+        } catch(err) {
+            alert('Speicher voll! Bitte weniger oder kleinere Belegbilder verwenden.');
+            throw err;
+        }
+    }
+
     // ======================================================================
     // 7. MODE TOGGLE
     // ======================================================================
@@ -1830,7 +2110,7 @@
     // 9. EXPORT / IMPORT
     // ======================================================================
     function exportData() {
-        const data = { version: 9, exportedAt: new Date().toISOString(), inventory, employees, borrowHistory, serviceContents, services, centralLog };
+        const data = { version: 10, exportedAt: new Date().toISOString(), inventory, employees, borrowHistory, serviceContents, services, centralLog, finances };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1854,6 +2134,7 @@
                 borrowHistory = Array.isArray(d.borrowHistory) ? d.borrowHistory : borrowHistory;
                 serviceContents = Array.isArray(d.serviceContents) ? d.serviceContents : [];
                 services = Array.isArray(d.services) ? d.services : [];
+                finances = (d.finances && typeof d.finances === 'object') ? d.finances : finances;
 
                 serviceContents = serviceContents.map(c => ({
                     id: c.id, name: c.name, description: c.description || '',
@@ -1899,6 +2180,7 @@
                 normalizeEmployeesCentral();
                 saveData();
                 saveServiceData();
+                saveFinanceData();
                 updateDynamicDropdowns();
                 updateCategoryDatalist();
                 renderInventoryCards();
@@ -1911,6 +2193,8 @@
                 renderServicePeople();
                 renderArchive();
                 renderCentralLog();
+                renderFinance();
+                renderStats();
                 showToast('Gesamtbackup importiert', 'success');
             } catch (err) {
                 console.error(err);
@@ -2078,7 +2362,7 @@
         });
     }
 
-    // ============ BULK MODE (Ausgabe / Rückgabe) ============
+    // ============ BULK MODE ============
     function getBulkMode() {
         return document.querySelector('input[name="bulkMode"]:checked')?.value || 'issue';
     }
@@ -2097,29 +2381,20 @@
                 btn.style.color = '#1e293b';
             }
         }
-        if (mode === 'return') {
-            updateBulkReturnDropdowns();
-        } else {
-            updateBulkIssueDropdowns();
-        }
+        if (mode === 'return') updateBulkReturnDropdowns();
+        else updateBulkIssueDropdowns();
     }
 
     function onBulkEmpChange() {
         const mode = getBulkMode();
-        if (mode === 'return') {
-            updateBulkReturnDropdowns();
-        } else {
-            updateBulkIssueDropdowns();
-        }
+        if (mode === 'return') updateBulkReturnDropdowns();
+        else updateBulkIssueDropdowns();
     }
 
     function onBulkHandschuhTypChange() {
         const mode = getBulkMode();
-        if (mode === 'return') {
-            updateBulkReturnHandschuhGroessen();
-        } else {
-            updateHandschuhGroessen();
-        }
+        if (mode === 'return') updateBulkReturnHandschuhGroessen();
+        else updateHandschuhGroessen();
     }
 
     function updateBulkReturnDropdowns() {
@@ -2127,13 +2402,8 @@
         const emp = employees.find(e => e.id === empId);
 
         const typeMap = {
-            'JackeMEA': 'Jacke MEA',
-            'HoseMEA': 'Hose MEA',
-            'TShirt': 'T-Shirt',
-            'Schuhe': 'Schuhe',
-            'Helm': 'Helm',
-            'JackeFleece': 'Jacke Fleece',
-            'Hoodie': 'Hoodie'
+            'JackeMEA': 'Jacke MEA', 'HoseMEA': 'Hose MEA', 'TShirt': 'T-Shirt',
+            'Schuhe': 'Schuhe', 'Helm': 'Helm', 'JackeFleece': 'Jacke Fleece', 'Hoodie': 'Hoodie'
         };
 
         for (const [idSuffix, actualType] of Object.entries(typeMap)) {
@@ -2148,7 +2418,6 @@
             });
         }
 
-        // Handschuhe
         const typSelect = document.getElementById('bulkIssue_HandschuhTyp');
         const sizeSelect = document.getElementById('bulkIssue_HandschuhGroesse');
         if (typSelect && sizeSelect) {
@@ -2163,13 +2432,8 @@
                     else typSet.add(b.type.replace('Handschuhe', '').trim() || 'Standard');
                 });
                 const typArray = [...typSet].sort();
-                typArray.forEach(t => {
-                    typSelect.innerHTML += `<option value="${esc(t)}">${esc(t)}</option>`;
-                });
-                if (typArray.length === 1) {
-                    typSelect.value = typArray[0];
-                    updateBulkReturnHandschuhGroessen();
-                }
+                typArray.forEach(t => typSelect.innerHTML += `<option value="${esc(t)}">${esc(t)}</option>`);
+                if (typArray.length === 1) { typSelect.value = typArray[0]; updateBulkReturnHandschuhGroessen(); }
             }
         }
     }
@@ -2208,19 +2472,13 @@
         if (!emp) return;
 
         const typeMap = {
-            'JackeMEA': 'Jacke MEA',
-            'HoseMEA': 'Hose MEA',
-            'TShirt': 'T-Shirt',
-            'Schuhe': 'Schuhe',
-            'Helm': 'Helm',
-            'JackeFleece': 'Jacke Fleece',
-            'Hoodie': 'Hoodie'
+            'JackeMEA': 'Jacke MEA', 'HoseMEA': 'Hose MEA', 'TShirt': 'T-Shirt',
+            'Schuhe': 'Schuhe', 'Helm': 'Helm', 'JackeFleece': 'Jacke Fleece', 'Hoodie': 'Hoodie'
         };
 
         let count = 0;
         const returnedDetails = [];
 
-        // Standard-Artikel
         Object.entries(typeMap).forEach(([idSuffix, actualType]) => {
             const select = document.getElementById('bulkIssue_' + idSuffix);
             if (!select) return;
@@ -2237,7 +2495,6 @@
             count += qty;
         });
 
-        // Handschuhe
         const typHandschuh = document.getElementById('bulkIssue_HandschuhTyp')?.value;
         const groesseHandschuh = document.getElementById('bulkIssue_HandschuhGroesse')?.value;
         if (typHandschuh && groesseHandschuh) {
@@ -2264,8 +2521,6 @@
         renderInventory();
         renderEmployees();
         renderBorrowReturnOptions();
-
-        // Rückgabe-Dropdowns nach Aktion neu aufbauen
         if (getBulkMode() === 'return') updateBulkReturnDropdowns();
 
         addLogEntry(`Komplettrückgabe von ${emp.name}: ${returnedDetails.join(', ')}`);
@@ -2657,13 +2912,9 @@
             if (el) el.innerHTML = '<option value="">-- Person --</option>' + employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
         });
         updateDynamicDropdowns();
-        // Komplett-Bereich: je nach Modus
         const mode = getBulkMode();
-        if (mode === 'return') {
-            updateBulkReturnDropdowns();
-        } else {
-            updateBulkIssueDropdowns();
-        }
+        if (mode === 'return') updateBulkReturnDropdowns();
+        else updateBulkIssueDropdowns();
     }
 
     function updateBorrowSizes() {
@@ -2862,6 +3113,8 @@
         document.getElementById('homeApp').style.display = which === 'home' ? 'block' : 'none';
         document.getElementById('serviceApp').style.display = which === 'service' ? 'block' : 'none';
         document.getElementById('clothingApp').style.display = which === 'clothing' ? 'block' : 'none';
+        document.getElementById('financeApp').style.display = which === 'finance' ? 'block' : 'none';
+        document.getElementById('statsApp').style.display = which === 'stats' ? 'block' : 'none';
         document.getElementById('logApp').style.display = which === 'log' ? 'block' : 'none';
         appMode = which;
         localStorage.setItem('thw_app_mode', which);
@@ -2887,12 +3140,16 @@
             renderInventoryCards();
             renderInventory();
         }
+        if (which === 'finance') renderFinance();
+        if (which === 'stats') renderStats();
         if (which === 'log') renderCentralLog();
         window.scrollTo(0, 0);
     }
     function goHome() { showOnlyApp('home'); }
     function openClothing() { showOnlyApp('clothing'); }
     function openServices() { showOnlyApp('service'); }
+    function openFinance() { showOnlyApp('finance'); }
+    function openStats() { showOnlyApp('stats'); }
     function openLog() { showOnlyApp('log'); }
     function scrollToMaster() { document.getElementById('masterDataCard').scrollIntoView({ behavior: 'smooth' }); }
 
@@ -3072,7 +3329,6 @@
         c.innerHTML = betreuer().length ? betreuer().map(e => `<label class="service-person-check"><input type="checkbox" name="svcLeader" value="${e.id}"> ${esc(e.name)}</label>`).join('') : '<p>Keine Betreuer in den Stammdaten.</p>';
     }
 
-    // ============ SCHNELL-ANLAGE ============
     function quickCreateService() {
         const date = document.getElementById('qsDate').value;
         const start = document.getElementById('qsStart').value;
@@ -3109,7 +3365,6 @@
         showToast('Dienst erstellt', 'success');
     }
 
-    // ============ DIENST BEARBEITEN (Modal) ============
     function openEditServiceModal(id) {
         const s = services.find(x => x.id === id);
         if (!s) return;
@@ -3305,7 +3560,6 @@
         renderServicePeople();
     }
 
-    // ============ COMPLETED-LOGIK ============
     function completedForPerson(personId, contentId) {
         const emp = employees.find(e => e.id === personId);
         const content = serviceContents.find(c => c.id === contentId);
@@ -3350,7 +3604,6 @@
         return set.size;
     }
 
-    // ============ ZUKÜNFTIGE DIENSTE ANZEIGEN ============
     function renderServices() {
         const body = document.getElementById('servicePlanBody');
         if (!body) return;
@@ -3360,7 +3613,6 @@
             .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
 
         body.innerHTML = future.length ? future.map(s => {
-            // "Gemeldet" = Anzahl der aktuell für den Dienst angemeldeten Junghelfer
             const gemeldetCount = (s.participantIds || []).length;
             const countCell = gemeldetCount > 0
                 ? `<strong style="color:#198754;">${gemeldetCount}</strong>`
@@ -3535,9 +3787,6 @@
         renderServicePeople();
     }
 
-    // ======================================================================
-    // MODAL: DIENST-DETAILS (nur lesen)
-    // ======================================================================
     function showServiceDetail(id) {
         const s = services.find(x => x.id === id);
         if (!s) return;
@@ -3593,9 +3842,6 @@
         document.body.appendChild(modal);
     }
 
-    // ======================================================================
-    // DRUCK: ZUKÜNFTIGE DIENSTE
-    // ======================================================================
     function printFutureServices() {
         const todayIso = new Date().toISOString().slice(0, 10);
         const future = services
@@ -3658,9 +3904,6 @@
         svcLog(`Druck: ${future.length} zukünftige(r) Dienst(e) gedruckt`);
     }
 
-    // ======================================================================
-    // DIENSTINHALTE (Verwaltung)
-    // ======================================================================
     function saveContent() {
         const id = document.getElementById('contentEditId').value;
         const name = document.getElementById('contentName').value.trim();
@@ -3790,9 +4033,6 @@
         renderArchive();
     }
 
-    // ======================================================================
-    // STAND LEISTUNGSABZEICHEN
-    // ======================================================================
     function renderServicePeople() {
         const c = document.getElementById('servicePeopleList');
         if (!c) return;
@@ -3885,6 +4125,271 @@
     }
 
     // ======================================================================
+    // 29. FINANZVERWALTUNG
+    // ======================================================================
+    function getFinanceYearData(year) {
+        if (!finances[year]) finances[year] = { budget: 0, expenses: [] };
+        if (!Array.isArray(finances[year].expenses)) finances[year].expenses = [];
+        if (typeof finances[year].budget !== 'number') finances[year].budget = 0;
+        return finances[year];
+    }
+
+    function getAllFinanceYears() {
+        const years = new Set(Object.keys(finances));
+        years.add(new Date().getFullYear().toString());
+        services.forEach(s => { if (s.date) years.add(s.date.slice(0,4)); });
+        return [...years].filter(y => /^\d{4}$/.test(y)).sort((a,b) => b.localeCompare(a));
+    }
+
+    function formatEuro(val) {
+        return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(val || 0);
+    }
+
+    function renderFinance() {
+        const yearSel = document.getElementById('financeYearSelect');
+        if (!yearSel) return;
+        const currentVal = yearSel.value;
+        const years = getAllFinanceYears();
+        yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+        if (years.includes(currentVal)) yearSel.value = currentVal;
+        else yearSel.value = years[0];
+
+        const year = yearSel.value;
+        const data = getFinanceYearData(year);
+        const totalExpenses = data.expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+        const remaining = data.budget - totalExpenses;
+
+        document.getElementById('financeBudgetDisplay').textContent = formatEuro(data.budget);
+        document.getElementById('financeExpensesDisplay').textContent = formatEuro(totalExpenses);
+        const remEl = document.getElementById('financeRemainingDisplay');
+        remEl.textContent = formatEuro(remaining);
+        remEl.parentElement.classList.toggle('negative', remaining < 0);
+
+        const list = document.getElementById('financeExpenseList');
+        document.getElementById('financeExpenseCount').textContent = data.expenses.length;
+        if (!data.expenses.length) {
+            list.innerHTML = '<p style="color:#94a3b8;font-style:italic;">Noch keine Ausgaben erfasst.</p>';
+            return;
+        }
+        const sorted = [...data.expenses].sort((a,b) => (b.date || '').localeCompare(a.date || ''));
+        list.innerHTML = sorted.map(exp => {
+            const dateStr = exp.date ? new Date(exp.date + 'T00:00:00').toLocaleDateString('de-DE') : '–';
+            const receiptHtml = exp.receipt
+                ? `<img src="${exp.receipt}" class="receipt-thumb" onclick="viewReceipt('${exp.id}')" title="Beleg ansehen" alt="Beleg">`
+                : `<div class="receipt-placeholder" title="Kein Beleg">–</div>`;
+            return `<div class="finance-expense-item">
+                ${receiptHtml}
+                <div class="expense-info">
+                    <strong>${esc(exp.description)}</strong>
+                    <small>${dateStr}</small>
+                </div>
+                <div class="expense-amount">${formatEuro(exp.amount)}</div>
+                <button class="btn-danger btn-sm" onclick="deleteExpense('${exp.id}')" title="Löschen">🗑️</button>
+            </div>`;
+        }).join('');
+    }
+
+    function editBudget() {
+        const year = document.getElementById('financeYearSelect').value;
+        const data = getFinanceYearData(year);
+        const input = prompt(`Jahresbudget für ${year} (€):`, (data.budget || 0).toString().replace('.', ','));
+        if (input === null) return;
+        const val = parseFloat(input.replace(',', '.'));
+        if (isNaN(val) || val < 0) return alert('Ungültiger Betrag.');
+        data.budget = val;
+        saveFinanceData();
+        addLogEntry(`Jahresbudget ${year} auf ${formatEuro(val)} gesetzt`, 'finanzen');
+        renderFinance();
+        showToast('Budget gespeichert', 'success');
+    }
+
+    function compressImage(file, maxWidth = 1000, quality = 0.7) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width, h = img.height;
+                    if (w > maxWidth) { h = h * (maxWidth / w); w = maxWidth; }
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function saveExpense() {
+        const year = document.getElementById('financeYearSelect').value;
+        const date = document.getElementById('expenseDate').value;
+        const desc = document.getElementById('expenseDesc').value.trim();
+        const amountRaw = document.getElementById('expenseAmount').value;
+        const fileInput = document.getElementById('expenseReceipt');
+
+        if (!date || !desc || !amountRaw) return alert('Bitte Datum, Beschreibung und Betrag angeben.');
+        const amount = parseFloat(amountRaw);
+        if (isNaN(amount) || amount < 0) return alert('Ungültiger Betrag.');
+
+        let receipt = '';
+        const file = fileInput?.files?.[0];
+        if (file) {
+            if (file.size > 10 * 1024 * 1024) return alert('Bild zu groß (max. 10 MB).');
+            try { receipt = await compressImage(file, 1000, 0.7); }
+            catch(err) { return alert('Bild konnte nicht verarbeitet werden.'); }
+        }
+
+        const data = getFinanceYearData(year);
+        data.expenses.push({
+            id: 'exp_' + Date.now(),
+            date, description: desc, amount, receipt
+        });
+        try {
+            saveFinanceData();
+        } catch(e) { return; }
+        addLogEntry(`Ausgabe erfasst (${year}): ${desc} – ${formatEuro(amount)}`, 'finanzen');
+        document.getElementById('expenseDate').value = '';
+        document.getElementById('expenseDesc').value = '';
+        document.getElementById('expenseAmount').value = '';
+        document.getElementById('expenseReceipt').value = '';
+        renderFinance();
+        showToast('Ausgabe gespeichert', 'success');
+    }
+
+    function deleteExpense(id) {
+        const year = document.getElementById('financeYearSelect').value;
+        const data = getFinanceYearData(year);
+        const exp = data.expenses.find(e => e.id === id);
+        if (!exp) return;
+        if (!confirm(`Ausgabe "${exp.description}" (${formatEuro(exp.amount)}) löschen?`)) return;
+        data.expenses = data.expenses.filter(e => e.id !== id);
+        saveFinanceData();
+        addLogEntry(`Ausgabe gelöscht (${year}): ${exp.description} – ${formatEuro(exp.amount)}`, 'finanzen');
+        renderFinance();
+        showToast('Ausgabe gelöscht', 'success');
+    }
+
+    function viewReceipt(id) {
+        const year = document.getElementById('financeYearSelect').value;
+        const data = getFinanceYearData(year);
+        const exp = data.expenses.find(e => e.id === id);
+        if (!exp || !exp.receipt) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width:800px;padding:16px;" onclick="event.stopPropagation();">
+                <h2 style="margin-bottom:4px;">${esc(exp.description)}</h2>
+                <p class="modal-subtitle">${new Date(exp.date + 'T00:00:00').toLocaleDateString('de-DE')} · ${formatEuro(exp.amount)}</p>
+                <img src="${exp.receipt}" style="width:100%;height:auto;border-radius:10px;border:1px solid #e2e8f0;" alt="Beleg">
+                <div class="modal-actions">
+                    <a href="${exp.receipt}" download="beleg_${esc(exp.date)}.jpg"><button type="button" class="btn-secondary">💾 Herunterladen</button></a>
+                    <button type="button" class="btn-success" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+    }
+
+    // ======================================================================
+    // 30. ANWESENHEITSSTATISTIK
+    // ======================================================================
+    function serviceDuration(s) {
+        if (!s.startTime || !s.endTime) return 0;
+        const [sh, sm] = (s.startTime || '').split(':').map(Number);
+        const [eh, em] = (s.endTime || '').split(':').map(Number);
+        if ([sh, sm, eh, em].some(n => isNaN(n))) return 0;
+        let mins = (eh * 60 + em) - (sh * 60 + sm);
+        if (mins < 0) mins += 24 * 60;
+        return mins / 60;
+    }
+
+    function formatHours(h) {
+        if (!h) return '0 h';
+        return h.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' h';
+    }
+
+    function getAllStatsYears() {
+        const years = new Set();
+        services.forEach(s => { if (s.date) years.add(s.date.slice(0,4)); });
+        years.add(new Date().getFullYear().toString());
+        return [...years].filter(y => /^\d{4}$/.test(y)).sort((a,b) => b.localeCompare(a));
+    }
+
+    function renderStats() {
+        const yearSel = document.getElementById('statsYearSelect');
+        if (!yearSel) return;
+        const currentVal = yearSel.value;
+        const years = getAllStatsYears();
+        yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+        if (years.includes(currentVal)) yearSel.value = currentVal;
+        else yearSel.value = years[0];
+
+        const year = yearSel.value;
+        const today = new Date().toISOString().slice(0, 10);
+        const pastServices = services.filter(s => (s.date||'').startsWith(year) && (s.date||'') < today);
+        const totalServices = pastServices.length;
+
+        const jh = junghelfer();
+        let totalHours = 0;
+        const personStats = jh.map(e => {
+            const attended = pastServices.filter(s => (s.participantIds||[]).includes(e.id));
+            const count = attended.length;
+            const hours = attended.reduce((sum, s) => sum + serviceDuration(s), 0);
+            totalHours += hours;
+            const percent = totalServices > 0 ? Math.round(count / totalServices * 100) : 0;
+            return { id: e.id, name: e.name, count, hours, percent };
+        });
+
+        personStats.sort((a,b) => b.percent - a.percent || b.hours - a.hours || a.name.localeCompare(b.name, 'de'));
+
+        const avgPercent = personStats.length > 0
+            ? Math.round(personStats.reduce((s,p) => s + p.percent, 0) / personStats.length)
+            : 0;
+
+        const summary = document.getElementById('statsSummary');
+        summary.innerHTML = `
+            <div class="finance-summary-card budget">
+                <div class="label">Dienste im Jahr</div>
+                <div class="value">${totalServices}</div>
+            </div>
+            <div class="finance-summary-card" style="background:#fef3c7;border-color:#fde047;color:#854d0e;">
+                <div class="label">Ø Teilnahmequote</div>
+                <div class="value">${avgPercent} %</div>
+            </div>
+            <div class="finance-summary-card remaining">
+                <div class="label">Gesamtstunden</div>
+                <div class="value">${formatHours(totalHours)}</div>
+            </div>
+        `;
+
+        const list = document.getElementById('statsPersonList');
+        if (!personStats.length) {
+            list.innerHTML = '<p style="color:#94a3b8;font-style:italic;">Keine Junghelfer in den Stammdaten vorhanden.</p>';
+            return;
+        }
+
+        list.innerHTML = personStats.map(p => {
+            const barClass = p.percent >= 75 ? 'high' : p.percent >= 40 ? 'medium' : 'low';
+            const percentColor = p.percent >= 75 ? '#198754' : p.percent >= 40 ? '#a16207' : '#b02a37';
+            return `<div class="stat-person-row">
+                <div class="stat-name">${esc(p.name)}</div>
+                <div class="stat-bar-wrapper">
+                    <div class="stat-bar ${barClass}" style="width:${p.percent}%;"></div>
+                </div>
+                <div class="stat-percent" style="color:${percentColor};">${p.percent} %</div>
+                <div class="stat-counts">${p.count}/${totalServices}</div>
+                <div class="stat-hours">${formatHours(p.hours)}</div>
+            </div>`;
+        }).join('');
+    }
+
+    // ======================================================================
     // INITIALISIERUNG
     // ======================================================================
     initPasswordProtection();
@@ -3903,6 +4408,8 @@
     renderServiceLeaders();
     updateQsLeadersSelect();
     onBulkModeChange();
+    renderFinance();
+    renderStats();
 </script>
 </body>
 </html>
