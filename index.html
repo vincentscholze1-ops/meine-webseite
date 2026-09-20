@@ -152,7 +152,7 @@
             decryptedHMAC = CryptoJS.HmacSHA256(encryptedHTML, CryptoJS.SHA256(passphrase)).toString();
 
         if (decryptedHMAC !== encryptedHMAC) {
-            alert('wrong password!');
+            alert('Falsches Passwort!');
             return;
         }
 
