@@ -4,15 +4,19 @@ let s = null;
 // Schieberegler: [Schlüssel, min, max, Schritt, Titel, Erklärung, Einheit, Text für 0]
 const LIMITS = [
   ["maxDistanceKm", 1, 200, 1, "Maximale Entfernung", "Weiter entfernte Einsätze werden ausgelassen. Credits gibt es nur, wenn dein Fahrzeug vor Einsatzende ankommt.", " km"],
-  ["reserve", 0, 30, 1, "Reserve für eigene Einsätze", "So viele passende Fahrzeuge bleiben immer frei.", " Fzg."],
-  ["intervalSec", 20, 600, 10, "Prüfintervall", "Wie oft der Bot nachschaut (mit etwas Zufall).", " s"]
+  ["reserve", 0, 30, 1, "Reserve für eigene Einsätze", "So viele passende Fahrzeuge bleiben immer frei.", " Fzg."]
 ];
 const FILTERS = [["minCredits", 0, 20000, 250, "Mindest-Credits", "Nur Einsätze, die im Schnitt mindestens so viel bringen.", " Cr", "alle"]];
 const ADVANCED = [
   ["maxActive", 0, 100, 1, "Obergrenze gleichzeitig", "Höchstens so viele laufende Einsätze gleichzeitig. Ganz links = unbegrenzt.", "", "unbegrenzt"],
-  ["maxPerHour", 0, 300, 5, "Obergrenze pro Stunde", "Höchstens so viele Alarmierungen pro Stunde. Ganz links = unbegrenzt.", "", "unbegrenzt"],
   ["maxPerRound", 0, 20, 1, "Obergrenze pro Prüfung", "Höchstens so viele neue Einsätze auf einmal. Ganz links = unbegrenzt.", "", "unbegrenzt"],
   ["maxErrors", 1, 20, 1, "Stopp nach Fehlern", "Nach so vielen Fehlern hintereinander hält der Bot an (z.B. wenn du ausgeloggt wirst).", ""]
+];
+
+// Zahlenfelder: [Schlüssel, min, max, Titel, Erklärung, Einheit, leer/0 erlaubt (= unbegrenzt)]
+const TEMPO = [
+  ["intervalSec", 20, 3600, "Einsätze abfragen alle", "Wie oft der Bot die Einsatzlisten prüft (mit etwas Zufall, mindestens 20 Sekunden).", "Sekunden", false],
+  ["maxPerHour", 0, 1000, "Alarmierungen pro Stunde", "Höchstens so viele Einsätze pro Stunde. Leer lassen oder 0 = unbegrenzt.", "pro Stunde", true]
 ];
 
 const QUICK = {
@@ -59,14 +63,14 @@ function renderSummary() {
   const parts = [];
   parts.push(
     lists.length
-      ? `Alle ca. <b>${s.intervalSec} s</b> prüft der Bot: ${lists.join(", ")}.`
+      ? `Alle ca. <b>${s.intervalSec} Sekunden</b> prüft der Bot: ${lists.join(", ")}.`
       : `<b>Keine Einsatzliste gewählt – der Bot tut nichts.</b>`
   );
   parts.push(`Er schickt <b>${presetText(s.preset)}</b>` + (s.presetPlanned ? `, zu geplanten Einsätzen <b>${presetText(s.presetPlanned)}</b>.` : "."));
+  parts.push(s.maxPerHour > 0 ? `Höchstens <b>${s.maxPerHour}</b> Alarmierungen pro Stunde.` : `Alarmierungen pro Stunde: <b>unbegrenzt</b>.`);
   parts.push(`Nur Einsätze bis <b>${s.maxDistanceKm} km</b>, und <b>${s.reserve}</b> passende Fahrzeuge bleiben immer frei.`);
   const caps = [
     s.maxActive > 0 && `${s.maxActive} gleichzeitig`,
-    s.maxPerHour > 0 && `${s.maxPerHour} pro Stunde`,
     s.maxPerRound > 0 && `${s.maxPerRound} pro Prüfung`
   ].filter(Boolean);
   if (caps.length) parts.push(`Obergrenzen: ${caps.join(", ")}.`);
@@ -219,6 +223,44 @@ function renderSliders(containerId, specs) {
   }
 }
 
+// ---------- Zahlenfelder ----------
+
+function renderNumbers(containerId, specs) {
+  const box = $(containerId);
+  box.replaceChildren();
+  for (const [key, min, max, title, hint, unit, zeroAllowed] of specs) {
+    const el = document.createElement("div");
+    el.className = "number";
+    el.innerHTML = `<label for="nr-${key}">${title}</label>
+      <span class="number-input"><input type="number" id="nr-${key}" min="${min}" max="${max}" step="1"
+        ${zeroAllowed ? 'placeholder="unbegrenzt"' : ""}><span>${unit}</span></span>
+      <small>${hint}</small><small class="error" hidden></small>`;
+    const input = el.querySelector("input");
+    const error = el.querySelector(".error");
+    input.value = zeroAllowed && !s[key] ? "" : s[key];
+    const check = (final) => {
+      const raw = input.value.trim();
+      let value = raw === "" && zeroAllowed ? 0 : Math.round(Number(raw));
+      let msg = "";
+      if (raw === "" && !zeroAllowed) msg = "Bitte eine Zahl eingeben.";
+      else if (!Number.isFinite(value)) msg = "Bitte eine ganze Zahl eingeben.";
+      else if (!(zeroAllowed && value === 0) && (value < min || value > max)) msg = `Erlaubt: ${min}–${max}.`;
+      if (msg && final) {
+        // beim Verlassen des Feldes auf den nächsten gültigen Wert setzen
+        value = Number.isFinite(value) && raw !== "" ? Math.min(max, Math.max(min, value)) : s[key];
+        input.value = zeroAllowed && !value ? "" : value;
+        msg = "";
+      }
+      error.hidden = !msg;
+      error.textContent = msg;
+      if (!msg && value !== s[key]) save({ [key]: value });
+    };
+    input.addEventListener("input", () => check(false));
+    input.addEventListener("change", () => check(true));
+    box.appendChild(el);
+  }
+}
+
 // ---------- Aufbau ----------
 
 function render() {
@@ -229,6 +271,7 @@ function render() {
   $("plannedOwn").checked = !!s.presetPlanned;
   $("presetPlannedBox").hidden = !s.presetPlanned;
   if (s.presetPlanned) renderPreset("presetPlanned", "presetPlanned");
+  renderNumbers("tempo", TEMPO);
   renderSliders("limits", LIMITS);
   renderSliders("filters", FILTERS);
   renderSliders("advanced", ADVANCED);

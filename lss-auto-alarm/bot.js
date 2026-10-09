@@ -34,6 +34,9 @@
     if ("running" in changes) {
       errors = 0;
       settings.running ? schedule(2000) : stop();
+    } else if ("intervalSec" in changes && nextRoundAt && !roundRunning) {
+      // Neues Intervall sofort übernehmen, nicht erst nach dem alten Countdown
+      schedule(jitter(settings.intervalSec * 1000));
     }
     panel.update();
     refreshView();

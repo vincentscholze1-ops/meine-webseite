@@ -50,6 +50,15 @@
     .slider small { grid-column: 1 / -1; color: var(--muted); }
     input[type=text] { width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font: inherit; }
 
+    .number { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .number:last-child { border-bottom: 0; }
+    .number label { font-weight: 500; }
+    .number small { grid-column: 1 / -1; color: var(--muted); }
+    .number small.error { color: var(--red); }
+    .number-input { display: inline-flex; align-items: center; gap: 8px; }
+    .number-input span { color: var(--muted); font-size: 13px; min-width: 70px; }
+    .number input { width: 110px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font: inherit; font-size: 15px; font-weight: 600; text-align: right; }
+    .number input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
     #saved { position: fixed; right: 16px; bottom: 16px; background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; opacity: 0; transition: opacity .2s; }
     #saved.show { opacity: 1; }
   </style>
@@ -86,13 +95,19 @@
   </section>
 
   <section class="card">
-    <h2>3. Entfernung &amp; Reserve</h2>
+    <h2>3. Tempo</h2>
+    <p class="sub">Wie oft der Bot nachschaut und wie viel er pro Stunde alarmieren darf.</p>
+    <div id="tempo"></div>
+  </section>
+
+  <section class="card">
+    <h2>4. Entfernung &amp; Reserve</h2>
     <p class="sub">Damit nur Einsätze angefahren werden, die sich lohnen, und dir genug Fahrzeuge bleiben.</p>
     <div id="limits"></div>
   </section>
 
   <section class="card">
-    <h2>4. Filter</h2>
+    <h2>5. Filter</h2>
     <div id="filters"></div>
     <label class="check">
       <input type="checkbox" id="allowUnknownCredits">
