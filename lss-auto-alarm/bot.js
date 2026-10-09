@@ -219,10 +219,11 @@
       for (const [id, until] of skipped) if (until < now || !inList.has(id)) skipped.delete(id);
 
       const { active, lastHour } = counts(missions);
-      let budget = Math.min(settings.maxPerRound, settings.maxActive - active, settings.maxPerHour - lastHour);
+      const cap = (limit, used) => (limit > 0 ? limit - used : Infinity); // 0 = unbegrenzt
+      let budget = Math.min(cap(settings.maxPerRound, 0), cap(settings.maxActive, active), cap(settings.maxPerHour, lastHour));
 
       if (budget <= 0) {
-        summarize(`Grenze erreicht (aktiv ${active}/${settings.maxActive}, Stunde ${lastHour}/${settings.maxPerHour}) – warte.`);
+        summarize(`Obergrenze aus den erweiterten Einstellungen erreicht (${active} aktiv, ${lastHour} in der letzten Stunde) – warte.`);
       } else {
         const candidates = await findCandidates(missions);
         if (!candidates.length) {
@@ -367,31 +368,46 @@
     const box = document.createElement("div");
     box.id = "lss-auto-alarm";
     box.innerHTML = `
-      <div class="lssaa-head">
-        <button type="button" class="lssaa-collapse" title="Ein-/Ausklappen">▾</button>
-        <strong>Verbands-Bot</strong>
-        <span class="lssaa-state"></span>
+      <div class="lssaa-head" title="Ziehen zum Verschieben · Doppelklick setzt die Position zurück">
+        <span class="lssaa-logo">🚒</span>
+        <span class="lssaa-title">
+          <strong>Verbands-Bot</strong>
+          <span class="lssaa-state"></span>
+        </span>
         <span class="lssaa-spacer"></span>
-        <button type="button" class="lssaa-settings" title="Einstellungen">⚙</button>
-        <button type="button" class="lssaa-toggle"></button>
+        <button type="button" class="lssaa-icon lssaa-settings" title="Einstellungen">⚙</button>
+        <button type="button" class="lssaa-icon lssaa-collapse" title="Ein-/Ausklappen">▾</button>
       </div>
       <div class="lssaa-body">
+        <button type="button" class="lssaa-toggle"></button>
         <div class="lssaa-stats">
           <div><b class="lssaa-active">0</b><span>aktiv</span></div>
           <div><b class="lssaa-hour">0</b><span>letzte Stunde</span></div>
           <div><b class="lssaa-next">–</b><span>nächste Prüfung</span></div>
         </div>
         <div class="lssaa-actions">
-          <button type="button" class="lssaa-now">Jetzt prüfen</button>
-          <button type="button" class="lssaa-diag" title="Probelauf ohne Alarmierung">Diagnose</button>
+          <button type="button" class="lssaa-now">⟳ Jetzt prüfen</button>
+          <button type="button" class="lssaa-diag" title="Probelauf ohne Alarmierung">🔍 Diagnose</button>
         </div>
-        <div class="lssaa-section">Vom Bot alarmiert</div>
+        <div class="lssaa-section">Vom Bot alarmiert <span class="lssaa-count"></span></div>
         <ul class="lssaa-mine"></ul>
         <details class="lssaa-logbox"><summary>Protokoll</summary><ul class="lssaa-log"></ul></details>
       </div>`;
     document.body.appendChild(box);
     const $ = (sel) => box.querySelector(sel);
     const logEl = $(".lssaa-log");
+    const store = (key, value) => {
+      try {
+        value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value);
+      } catch (e) {}
+    };
+    const load = (key) => {
+      try {
+        return localStorage.getItem(key);
+      } catch (e) {
+        return null;
+      }
+    };
 
     $(".lssaa-toggle").addEventListener("click", () => chrome.storage.sync.set({ running: !settings.running }));
     $(".lssaa-diag").addEventListener("click", () => {
@@ -407,14 +423,55 @@
     const setCollapsed = (c) => {
       box.classList.toggle("collapsed", c);
       $(".lssaa-collapse").textContent = c ? "▸" : "▾";
-      try {
-        localStorage.setItem("lssaa-collapsed", c ? "1" : "");
-      } catch (e) {}
+      store("lssaa-collapsed", c ? "1" : null);
+      keepInView();
     };
     $(".lssaa-collapse").addEventListener("click", () => setCollapsed(!box.classList.contains("collapsed")));
+
+    // ---- Verschieben: am Kopf ziehen, Position merken ----
+    const place = (left, top) => {
+      box.style.left = left + "px";
+      box.style.top = top + "px";
+      box.style.bottom = "auto";
+    };
+    function keepInView() {
+      if (!box.style.top) return;
+      const r = box.getBoundingClientRect();
+      const left = Math.min(Math.max(0, r.left), window.innerWidth - r.width);
+      const top = Math.min(Math.max(0, r.top), window.innerHeight - 40);
+      place(left, top);
+    }
+    const head = $(".lssaa-head");
+    head.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || e.target.closest("button")) return;
+      const r = box.getBoundingClientRect();
+      const dx = e.clientX - r.left;
+      const dy = e.clientY - r.top;
+      box.classList.add("dragging");
+      head.setPointerCapture(e.pointerId);
+      const move = (ev) => place(ev.clientX - dx, ev.clientY - dy);
+      const up = () => {
+        head.removeEventListener("pointermove", move);
+        head.removeEventListener("pointerup", up);
+        box.classList.remove("dragging");
+        keepInView();
+        store("lssaa-pos", JSON.stringify({ left: parseFloat(box.style.left), top: parseFloat(box.style.top) }));
+      };
+      head.addEventListener("pointermove", move);
+      head.addEventListener("pointerup", up);
+      e.preventDefault();
+    });
+    head.addEventListener("dblclick", (e) => {
+      if (e.target.closest("button")) return;
+      store("lssaa-pos", null);
+      box.style.left = box.style.top = box.style.bottom = "";
+    });
+    window.addEventListener("resize", keepInView);
     try {
-      setCollapsed(!!localStorage.getItem("lssaa-collapsed"));
+      const pos = JSON.parse(load("lssaa-pos"));
+      if (pos) place(pos.left, pos.top);
     } catch (e) {}
+    setCollapsed(!!load("lssaa-collapsed"));
 
     // Countdown jede Sekunde
     setInterval(() => {
@@ -429,41 +486,48 @@
       update() {
         const waiting = settings.running && !haveLock;
         const state = $(".lssaa-state");
-        state.textContent = waiting ? "wartet (anderer Tab)" : settings.running ? "● läuft" : "○ gestoppt";
-        state.className = "lssaa-state " + (settings.running ? "on" : "off");
-        $(".lssaa-toggle").textContent = settings.running ? "Stopp" : "Start";
-        $(".lssaa-toggle").classList.toggle("on", settings.running);
+        state.textContent = waiting ? "wartet (anderer Tab)" : settings.running ? "läuft" : "gestoppt";
+        box.classList.toggle("running", settings.running && !waiting);
+        $(".lssaa-toggle").textContent = settings.running ? "■  Stoppen" : "▶  Starten";
       },
       view({ active, lastHour, mine, total }) {
-        $(".lssaa-active").textContent = `${active}/${settings.maxActive}`;
-        $(".lssaa-hour").textContent = `${lastHour}/${settings.maxPerHour}`;
+        $(".lssaa-active").textContent = active;
+        $(".lssaa-hour").textContent = lastHour;
+        $(".lssaa-count").textContent = mine.length ? mine.length : "";
         const list = $(".lssaa-mine");
         list.replaceChildren();
         if (!mine.length) {
           const li = document.createElement("li");
           li.className = "empty";
-          li.textContent = total ? "Noch keine – " + total + " Einsätze in den Listen." : "Noch keine.";
+          li.textContent = total ? `Noch keine – ${total} Einsätze in den Listen.` : "Noch keine.";
           list.appendChild(li);
         }
         for (const m of mine) {
           const li = document.createElement("li");
-          const dot = document.createElement("span");
-          dot.className = "dot " + (m.state === "vor Ort" ? "green" : m.state === "Anfahrt" ? "yellow" : "red");
-          dot.title = m.state;
+          const cls = m.state === "vor Ort" ? "green" : m.state === "Anfahrt" ? "yellow" : "red";
+          li.className = cls;
           const a = document.createElement("a");
           a.href = `/missions/${m.id}`;
           a.className = "lightbox-open";
           a.textContent = (m.planned ? "📅 " : "") + m.caption;
-          const meta = document.createElement("small");
+          const meta = document.createElement("div");
+          meta.className = "meta";
+          const badge = document.createElement("span");
+          badge.className = "lssaa-badge " + cls;
+          badge.textContent = m.state;
+          const info = document.createElement("span");
           const mins = Math.round((Date.now() - m.time) / 60000);
-          meta.textContent = `${m.credits != null ? m.credits + " Cr · " : ""}${m.state} · vor ${mins} min`;
-          li.append(dot, a, meta);
+          info.textContent = `${m.credits != null ? m.credits.toLocaleString("de-DE") + " Cr · " : ""}vor ${mins} min`;
+          meta.append(badge, info);
+          li.append(a, meta);
           list.appendChild(li);
         }
       },
       log(text) {
         const li = document.createElement("li");
-        li.textContent = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " " + text;
+        const time = document.createElement("time");
+        time.textContent = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+        li.append(time, " " + text);
         logEl.prepend(li);
         while (logEl.children.length > 30) logEl.lastChild.remove();
       }

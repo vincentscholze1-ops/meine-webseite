@@ -1,17 +1,19 @@
 const $ = (id) => document.getElementById(id);
 let s = null;
 
-// Schieberegler: [Schlüssel, Bereich, Titel, Erklärung, Einheit]
+// Schieberegler: [Schlüssel, min, max, Schritt, Titel, Erklärung, Einheit, Text für 0]
 const LIMITS = [
-  ["maxActive", 1, 50, 1, "Gleichzeitig beteiligt", "So viele laufende Einsätze darf der Bot gleichzeitig bedienen. Das ist die wichtigste Mengen-Grenze.", ""],
-  ["maxPerHour", 1, 200, 1, "Alarmierungen pro Stunde", "Obergrenze, wie oft der Bot pro Stunde alarmiert.", ""],
-  ["maxPerRound", 1, 10, 1, "Einsätze pro Prüfung", "So viele neue Einsätze höchstens auf einmal.", ""],
   ["maxDistanceKm", 1, 200, 1, "Maximale Entfernung", "Weiter entfernte Einsätze werden ausgelassen. Credits gibt es nur, wenn dein Fahrzeug vor Einsatzende ankommt.", " km"],
   ["reserve", 0, 30, 1, "Reserve für eigene Einsätze", "So viele passende Fahrzeuge bleiben immer frei.", " Fzg."],
   ["intervalSec", 20, 600, 10, "Prüfintervall", "Wie oft der Bot nachschaut (mit etwas Zufall).", " s"]
 ];
-const FILTERS = [["minCredits", 0, 20000, 250, "Mindest-Credits", "Nur Einsätze, die im Schnitt mindestens so viel bringen. 0 = alle.", " Cr"]];
-const ADVANCED = [["maxErrors", 1, 20, 1, "Stopp nach Fehlern", "Nach so vielen Fehlern hintereinander hält der Bot an (z.B. wenn du ausgeloggt wirst).", ""]];
+const FILTERS = [["minCredits", 0, 20000, 250, "Mindest-Credits", "Nur Einsätze, die im Schnitt mindestens so viel bringen.", " Cr", "alle"]];
+const ADVANCED = [
+  ["maxActive", 0, 100, 1, "Obergrenze gleichzeitig", "Höchstens so viele laufende Einsätze gleichzeitig. Ganz links = unbegrenzt.", "", "unbegrenzt"],
+  ["maxPerHour", 0, 300, 5, "Obergrenze pro Stunde", "Höchstens so viele Alarmierungen pro Stunde. Ganz links = unbegrenzt.", "", "unbegrenzt"],
+  ["maxPerRound", 0, 20, 1, "Obergrenze pro Prüfung", "Höchstens so viele neue Einsätze auf einmal. Ganz links = unbegrenzt.", "", "unbegrenzt"],
+  ["maxErrors", 1, 20, 1, "Stopp nach Fehlern", "Nach so vielen Fehlern hintereinander hält der Bot an (z.B. wenn du ausgeloggt wirst).", ""]
+];
 
 const QUICK = {
   "🚒 Löschfahrzeug": LSS_VEHICLE_GROUPS["Löschfahrzeuge"],
@@ -61,10 +63,13 @@ function renderSummary() {
       : `<b>Keine Einsatzliste gewählt – der Bot tut nichts.</b>`
   );
   parts.push(`Er schickt <b>${presetText(s.preset)}</b>` + (s.presetPlanned ? `, zu geplanten Einsätzen <b>${presetText(s.presetPlanned)}</b>.` : "."));
-  parts.push(
-    `Höchstens <b>${s.maxPerRound}</b> pro Prüfung, <b>${s.maxPerHour}</b> pro Stunde und <b>${s.maxActive}</b> gleichzeitig – ` +
-      `nur bis <b>${s.maxDistanceKm} km</b>, und <b>${s.reserve}</b> Fahrzeuge bleiben frei.`
-  );
+  parts.push(`Nur Einsätze bis <b>${s.maxDistanceKm} km</b>, und <b>${s.reserve}</b> passende Fahrzeuge bleiben immer frei.`);
+  const caps = [
+    s.maxActive > 0 && `${s.maxActive} gleichzeitig`,
+    s.maxPerHour > 0 && `${s.maxPerHour} pro Stunde`,
+    s.maxPerRound > 0 && `${s.maxPerRound} pro Prüfung`
+  ].filter(Boolean);
+  if (caps.length) parts.push(`Obergrenzen: ${caps.join(", ")}.`);
   if (s.minCredits > 0) parts.push(`Nur Einsätze ab <b>${s.minCredits} Credits</b>.`);
   if (s.excludeWords.length) parts.push(`Übersprungen wird: ${s.excludeWords.join(", ")}.`);
   $("summary").innerHTML = parts.join(" ");
@@ -196,7 +201,7 @@ function renderPreset(containerId, key) {
 function renderSliders(containerId, specs) {
   const box = $(containerId);
   box.replaceChildren();
-  for (const [key, min, max, step, title, hint, unit] of specs) {
+  for (const [key, min, max, step, title, hint, unit, zeroText] of specs) {
     const el = document.createElement("div");
     el.className = "slider";
     el.innerHTML = `<label for="sl-${key}">${title}</label><output></output>
@@ -204,7 +209,7 @@ function renderSliders(containerId, specs) {
     const input = el.querySelector("input");
     const out = el.querySelector("output");
     input.value = s[key];
-    const show = () => (out.textContent = (key === "minCredits" && +input.value === 0 ? "alle" : input.value) + (key === "minCredits" && +input.value === 0 ? "" : unit));
+    const show = () => (out.textContent = zeroText && +input.value === 0 ? zeroText : input.value + unit);
     show();
     input.addEventListener("input", () => {
       show();

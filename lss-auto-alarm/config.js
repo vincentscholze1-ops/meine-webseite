@@ -12,12 +12,10 @@ const LSS_DEFAULTS = {
   // ---------- Grenzen ----------
   // Prüfintervall in Sekunden (± 30 % Zufall)
   intervalSec: 60,
-  // Höchstens so viele Einsätze pro Durchgang
-  maxPerRound: 3,
-  // Höchstens so viele Verbandseinsätze gleichzeitig, an denen du beteiligt bist
-  maxActive: 10,
-  // Höchstens so viele Alarmierungen pro Stunde
-  maxPerHour: 40,
+  // Optionale Obergrenzen (0 = unbegrenzt): pro Durchgang, gleichzeitig beteiligt, pro Stunde
+  maxPerRound: 0,
+  maxActive: 0,
+  maxPerHour: 0,
   // Nur Einsätze, bei denen das nächste passende Fahrzeug höchstens so weit weg ist (km)
   maxDistanceKm: 15,
   // Mindestens so viele passende Fahrzeuge bleiben für deine eigenen Einsätze frei
@@ -33,7 +31,9 @@ const LSS_DEFAULTS = {
   // Eigene Fahrzeugauswahl für geplante Einsätze (Sicherheitswachen); null = gleiche wie oben
   presetPlanned: null,
   // Nach so vielen Fehlern hintereinander stoppt der Bot
-  maxErrors: 3
+  maxErrors: 3,
+  // Version der gespeicherten Einstellungen (für Umstellungen bei Updates)
+  settingsVersion: 4
 };
 
 // Einsatzlisten auf der Hauptseite: Schlüssel -> [Element-ID, Anzeigename, geplant?]
@@ -68,6 +68,13 @@ const LSS_TYPE_IDS = {
 
 function lssLoadSettings() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(LSS_DEFAULTS, (s) => resolve(s));
+    chrome.storage.sync.get({ ...LSS_DEFAULTS, settingsVersion: 0 }, (s) => {
+      // Ab Version 4 sind die Mengen-Obergrenzen standardmäßig aus
+      if (s.settingsVersion < 4) {
+        Object.assign(s, { maxPerRound: 0, maxActive: 0, maxPerHour: 0, settingsVersion: 4 });
+        chrome.storage.sync.set({ maxPerRound: 0, maxActive: 0, maxPerHour: 0, settingsVersion: 4 });
+      }
+      resolve(s);
+    });
   });
 }

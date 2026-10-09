@@ -15,16 +15,18 @@ Die lukrativsten Einsätze kommen zuerst.
 4. **Entpackte Erweiterung laden** → diesen Ordner wählen.
 5. `https://www.leitstellenspiel.de/` mit F5 neu laden.
 
-Im Popup der Erweiterung steht oben die Version (aktuell **v3.0.0**).
+Im Popup der Erweiterung steht oben die Version (aktuell **v3.1.0**).
 
 ## Das Panel (unten links auf der Hauptseite)
 
-- **Start / Stopp**: Bot ein- und ausschalten. **⚙** öffnet die Einstellungen, **▾** klappt das Panel ein.
+- **Verschieben**: am roten Kopf festhalten und ziehen. Die Position wird gemerkt;
+  Doppelklick auf den Kopf setzt sie zurück.
+- **Starten / Stoppen**: Bot ein- und ausschalten. **⚙** öffnet die Einstellungen, **▾** klappt das Panel ein.
 - **aktiv / letzte Stunde / nächste Prüfung**: aktualisiert sich sofort, sobald sich im Spiel etwas ändert.
 - **Jetzt prüfen**: sofort einen Durchgang starten, ohne auf den Countdown zu warten.
 - **Diagnose**: Probelauf ohne Alarmierung – zeigt, was der Bot sieht und schicken würde.
-- **Vom Bot alarmiert**: alle Einsätze, zu denen der Bot Fahrzeuge geschickt hat.
-  Punkt: 🔴 offen · 🟡 Anfahrt · 🟢 vor Ort, 📅 = geplanter Einsatz. Ein Klick öffnet den Einsatz.
+- **Vom Bot alarmiert**: alle Einsätze, zu denen der Bot Fahrzeuge geschickt hat, mit Status
+  (offen / Anfahrt / vor Ort) und Credits. 📅 = geplanter Einsatz. Ein Klick öffnet den Einsatz.
 - **Protokoll** (aufklappbar): was der Bot getan oder warum er etwas übersprungen hat.
 
 ## Einstellungen
@@ -35,8 +37,11 @@ Alles wird sofort gespeichert. Oben steht in einem Satz, was der Bot mit den akt
 2. **Was wird geschickt?** – Anzahl mit − / + einstellen, Fahrzeugtypen per Klick wählen
    (oder Schnellwahl: Löschfahrzeug, RTW, Streifenwagen, GKW). Für geplante Einsätze kann
    eine eigene Auswahl eingestellt werden.
-3. **Grenzen** – gleichzeitig beteiligt, pro Stunde, pro Prüfung, maximale Entfernung, Reserve, Prüfintervall.
+3. **Entfernung & Reserve** – maximale Entfernung, Reserve für eigene Einsätze, Prüfintervall.
 4. **Filter** – Mindest-Credits, Einsätze ohne bekannte Credits, Einsätze nach Namen überspringen.
+
+Mengen-Obergrenzen (gleichzeitig, pro Stunde, pro Prüfung) gibt es standardmäßig keine.
+Wer sie doch möchte, findet sie unter **Erweitert** (ganz links = unbegrenzt).
 
 Credits gibt es im Leitstellenspiel nur, wenn dein Fahrzeug **vor Abschluss am Einsatzort** ist.
 Die wichtigsten Stellschrauben sind daher **Maximale Entfernung** und **Reserve**.
