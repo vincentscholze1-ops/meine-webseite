@@ -11,10 +11,14 @@ const LSS_DEFAULTS = {
   preset: [{ count: 1, typeIds: lssTypeIds(["LF 20", "HLF 20", "LF 10", "LF 8/6", "LF 20/16", "LF 10/6", "LF 16-TS", "TSF-W", "MLF"]) }],
 
   // ---------- Grenzen ----------
+  // Tempo-Stufe (siehe LSS_SPEEDS); "eigene", sobald Werte von Hand geändert werden
+  speed: "normal",
   // Prüfintervall in Sekunden (± 30 % Zufall)
   intervalSec: 60,
+  // Pause zwischen zwei Alarmierungen innerhalb einer Prüfung (Sekunden, ± 30 % Zufall)
+  pauseSec: 3,
   // Optionale Obergrenzen (0 = unbegrenzt): pro Durchgang, gleichzeitig beteiligt, pro Stunde
-  maxPerRound: 0,
+  maxPerRound: 5,
   maxActive: 0,
   maxPerHour: 0,
   // Nur Einsätze, bei denen das nächste passende Fahrzeug höchstens so weit weg ist (km)
@@ -34,8 +38,31 @@ const LSS_DEFAULTS = {
   // Nach so vielen Fehlern hintereinander stoppt der Bot
   maxErrors: 3,
   // Version der gespeicherten Einstellungen (für Umstellungen bei Updates)
-  settingsVersion: 5
+  settingsVersion: 6
 };
+
+// Tempo-Stufen für die drei Knöpfe im Panel und auf der Einstellungsseite
+const LSS_SPEEDS = {
+  gemuetlich: { icon: "🐢", label: "Gemütlich", intervalSec: 120, maxPerRound: 2, pauseSec: 6,
+    hint: "alle ~2 min, höchstens 2 Einsätze pro Prüfung" },
+  normal: { icon: "🚗", label: "Normal", intervalSec: 60, maxPerRound: 5, pauseSec: 3,
+    hint: "jede Minute, höchstens 5 Einsätze pro Prüfung" },
+  schnell: { icon: "🚀", label: "Schnell", intervalSec: 25, maxPerRound: 0, pauseSec: 1,
+    hint: "alle ~25 s, alle passenden Einsätze sofort" }
+};
+
+// Welche Tempo-Stufe passt zu den aktuellen Werten? (sonst "eigene")
+function lssSpeedOf(s) {
+  const hit = Object.entries(LSS_SPEEDS).find(
+    ([, v]) => v.intervalSec === s.intervalSec && v.maxPerRound === s.maxPerRound && v.pauseSec === s.pauseSec
+  );
+  return hit ? hit[0] : "eigene";
+}
+
+function lssSpeedValues(key) {
+  const { intervalSec, maxPerRound, pauseSec } = LSS_SPEEDS[key];
+  return { speed: key, intervalSec, maxPerRound, pauseSec };
+}
 
 // Einsatzlisten auf der Hauptseite: Schlüssel -> [Element-ID, Anzeigename, geplant?]
 const LSS_LISTS = {
@@ -71,6 +98,13 @@ function lssLoadSettings() {
         s.presetPlanned = lssMigratePreset(s.presetPlanned);
         s.settingsVersion = 5;
         chrome.storage.sync.set({ preset: s.preset, presetPlanned: s.presetPlanned, settingsVersion: 5 });
+      }
+      // Ab Version 6 gibt es Tempo-Stufen; bisherige Werte bleiben erhalten
+      if (s.settingsVersion < 6) {
+        // Standard-Intervall -> Stufe "Normal"; selbst gewählte Intervalle bleiben als "eigene"
+        const v = s.intervalSec === 60 ? lssSpeedValues("normal") : { speed: lssSpeedOf(s), pauseSec: s.pauseSec };
+        Object.assign(s, v, { settingsVersion: 6 });
+        chrome.storage.sync.set({ ...v, settingsVersion: 6 });
       }
       resolve(s);
     });

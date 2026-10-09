@@ -16,6 +16,7 @@ const ADVANCED = [
 // Zahlenfelder: [Schlüssel, min, max, Titel, Erklärung, Einheit, leer/0 erlaubt (= unbegrenzt)]
 const TEMPO = [
   ["intervalSec", 20, 3600, "Einsätze abfragen alle", "Wie oft der Bot die Einsatzlisten prüft (mit etwas Zufall, mindestens 20 Sekunden).", "Sekunden", false],
+  ["pauseSec", 0, 60, "Pause zwischen zwei Alarmierungen", "Wartezeit zwischen den Einsätzen einer Prüfung (mit etwas Zufall).", "Sekunden", false],
   ["maxPerHour", 0, 1000, "Alarmierungen pro Stunde", "Höchstens so viele Einsätze pro Stunde. Leer lassen oder 0 = unbegrenzt.", "pro Stunde", true]
 ];
 
@@ -33,6 +34,10 @@ const typeLabel = (id) => LSS_TYPE_NAMES[id] || `Typ-ID ${id}`;
 let saveTimer = null;
 let pending = {};
 function save(partial) {
+  // Tempo-Werte von Hand geändert -> passende Stufe ermitteln (oder "eigene")
+  if (!("speed" in partial) && ["intervalSec", "pauseSec", "maxPerRound"].some((k) => k in partial)) {
+    partial = { ...partial, speed: lssSpeedOf({ ...s, ...partial }) };
+  }
   Object.assign(s, partial);
   Object.assign(pending, partial);
   clearTimeout(saveTimer);
@@ -262,6 +267,28 @@ function renderSliders(containerId, specs) {
   }
 }
 
+// ---------- Tempo-Stufen ----------
+
+function renderSpeed() {
+  const box = $("speed");
+  box.replaceChildren();
+  for (const [key, v] of Object.entries(LSS_SPEEDS)) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "speed-btn" + (s.speed === key ? " on" : "");
+    b.innerHTML = `<span class="speed-icon">${v.icon}</span><b>${v.label}</b><small>${v.hint}</small>`;
+    b.addEventListener("click", () => {
+      save(lssSpeedValues(key));
+      renderSpeed();
+      renderNumbers("tempo", TEMPO);
+      renderSliders("advanced", ADVANCED);
+    });
+    box.appendChild(b);
+  }
+  $("speed-note").textContent =
+    s.speed in LSS_SPEEDS ? "" : "Eigenes Tempo – die Werte unten weichen von allen drei Stufen ab.";
+}
+
 // ---------- Zahlenfelder ----------
 
 function renderNumbers(containerId, specs) {
@@ -292,7 +319,10 @@ function renderNumbers(containerId, specs) {
       }
       error.hidden = !msg;
       error.textContent = msg;
-      if (!msg && value !== s[key]) save({ [key]: value });
+      if (!msg && value !== s[key]) {
+        save({ [key]: value });
+        renderSpeed();
+      }
     };
     input.addEventListener("input", () => check(false));
     input.addEventListener("change", () => check(true));
@@ -310,6 +340,7 @@ function render() {
   $("plannedOwn").checked = !!s.presetPlanned;
   $("presetPlannedBox").hidden = !s.presetPlanned;
   if (s.presetPlanned) renderPreset("presetPlanned", "presetPlanned");
+  renderSpeed();
   renderNumbers("tempo", TEMPO);
   renderSliders("limits", LIMITS);
   renderSliders("filters", FILTERS);

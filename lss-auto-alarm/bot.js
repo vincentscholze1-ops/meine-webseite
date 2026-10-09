@@ -269,7 +269,7 @@
             skipped.set(mission.id, Date.now() + 10 * 60 * 1000);
             panel.log(`– ${mission.caption}: ${result.reason}`);
           }
-          await sleep(jitter(3000));
+          await sleep(jitter((settings.pauseSec ?? 3) * 1000));
         }
       }
       await persist();
@@ -288,6 +288,7 @@
     } finally {
       roundRunning = false;
       refreshView();
+      loadFleet(); // Auslastung nach jeder Prüfung auffrischen
     }
     schedule(jitter(settings.intervalSec * 1000));
   }
@@ -355,6 +356,77 @@
 
   // ---------- Live-Anzeige ----------
 
+  // Fuhrpark aus /api/vehicles: Funkstatus (FMS) je Fahrzeug -> Auslastung
+  let fleet = null;
+  let fleetError = null;
+  let fleetAt = 0;
+  let creditsToday = null;
+
+  const FMS_GROUP = { 1: "free", 2: "free", 3: "drive", 4: "scene", 5: "scene", 7: "transport", 8: "transport" };
+
+  async function loadFleet() {
+    try {
+      const res = await fetch("/api/vehicles", { credentials: "include" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      const vehicles = Array.isArray(json) ? json : json.vehicles || json.result || [];
+      const c = { free: 0, drive: 0, scene: 0, transport: 0, na: 0 };
+      const presetIds = new Set(
+        [...(settings.preset || []), ...(settings.presetPlanned || [])].flatMap((p) => p.typeIds || [])
+      );
+      let presetFree = 0;
+      let presetTotal = 0;
+      let botVehicles = 0;
+      for (const v of vehicles) {
+        const group = FMS_GROUP[v.fms_real] || "na";
+        c[group]++;
+        if (presetIds.has(v.vehicle_type) && group !== "na") {
+          presetTotal++;
+          if (group === "free") presetFree++;
+        }
+        if (v.target_type === "mission" && sent[String(v.target_id)]) botVehicles++;
+      }
+      const available = vehicles.length - c.na;
+      fleet = {
+        counts: c,
+        total: vehicles.length,
+        busyPct: available ? Math.round(((available - c.free) / available) * 100) : 0,
+        presetFree,
+        presetTotal,
+        botVehicles
+      };
+      fleetError = null;
+    } catch (e) {
+      fleetError = e.message;
+    }
+    fleetAt = Date.now();
+    refreshView();
+  }
+
+  async function loadCreditsToday() {
+    try {
+      const data = await LssStats.load();
+      creditsToday = LssStats.evaluate(data, LssStats.PERIODS.today[1]()).botCredits;
+    } catch (e) {
+      creditsToday = null;
+    }
+    refreshView();
+  }
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.statsMissions) loadCreditsToday();
+  });
+
+  // Alarmierungen der letzten 60 Minuten in 12 Abschnitten à 5 Minuten
+  function historyBins() {
+    const now = Date.now();
+    const bins = Array(12).fill(0);
+    for (const t of history) {
+      const age = now - t;
+      if (age >= 0 && age < 3600000) bins[11 - Math.floor(age / 300000)]++;
+    }
+    return bins;
+  }
+
   function refreshView() {
     const missions = listMissions();
     const { active, lastHour } = counts(missions);
@@ -363,7 +435,7 @@
       .filter(([id]) => byId[id])
       .map(([id, info]) => ({ id, ...info, state: byId[id].state }))
       .sort((a, b) => b.time - a.time);
-    panel.view({ active, lastHour, mine, total: missions.length });
+    panel.view({ active, lastHour, mine, total: missions.length, bins: historyBins(), fleet, fleetError, fleetAt, creditsToday });
   }
 
   // Einsatzliste beobachten: jede Änderung im Spiel aktualisiert die Anzeige sofort
@@ -388,34 +460,72 @@
   function createPanel() {
     const box = document.createElement("div");
     box.id = "lss-verbands-bot";
+    const speedButtons = Object.entries(LSS_SPEEDS)
+      .map(([key, v]) => `<button type="button" data-speed="${key}" title="${v.hint}">${v.icon} ${v.label}</button>`)
+      .join("");
     box.innerHTML = `
-      <div class="lssaa-head" title="Ziehen zum Verschieben · Doppelklick setzt die Position zurück">
+      <div class="lssaa-head" title="Ziehen zum Verschieben · Doppelklick setzt Position und Größe zurück">
         <span class="lssaa-logo">🚒</span>
         <span class="lssaa-title">
           <strong>Verbands-Bot<span class="lssaa-version">v${chrome.runtime.getManifest().version}</span></strong>
           <span class="lssaa-state"></span>
         </span>
         <span class="lssaa-spacer"></span>
+        <button type="button" class="lssaa-icon lssaa-stats-btn" title="Auswertung: Einsätze &amp; Credits">📊</button>
         <button type="button" class="lssaa-icon lssaa-settings" title="Einstellungen">⚙</button>
         <button type="button" class="lssaa-icon lssaa-collapse" title="Ein-/Ausklappen">▾</button>
       </div>
       <div class="lssaa-body">
         <div class="lssaa-warning"></div>
-        <button type="button" class="lssaa-toggle"></button>
-        <div class="lssaa-stats">
-          <div><b class="lssaa-active">0</b><span>aktiv</span></div>
-          <div><b class="lssaa-hour">0</b><span>letzte Stunde</span></div>
-          <div><b class="lssaa-next">–</b><span>nächste Prüfung</span></div>
+        <div class="lssaa-controls">
+          <button type="button" class="lssaa-toggle"></button>
+          <div class="lssaa-speed" role="group" aria-label="Tempo">${speedButtons}</div>
+          <div class="lssaa-speed-hint"></div>
         </div>
-        <div class="lssaa-actions">
-          <button type="button" class="lssaa-now">⟳ Jetzt prüfen</button>
-          <button type="button" class="lssaa-diag" title="Probelauf ohne Alarmierung">🔍 Diagnose</button>
-          <button type="button" class="lssaa-stats-btn" title="Abgeschlossene Einsätze und erhaltene Credits">📊 Auswertung: Einsätze &amp; Credits</button>
+        <div class="lssaa-grid">
+          <div class="lssaa-col">
+            <div class="lssaa-kpis">
+              <div class="lssaa-kpi"><b class="k-active">0</b><span>Einsätze aktiv</span></div>
+              <div class="lssaa-kpi"><b class="k-hour">0</b><span>alarmiert (60 min)</span></div>
+              <div class="lssaa-kpi"><b class="k-credits">–</b><span>Credits heute</span></div>
+              <div class="lssaa-kpi"><b class="k-next">–</b><span>nächste Prüfung</span></div>
+            </div>
+
+            <section class="lssaa-card">
+              <div class="lssaa-card-head"><span>Fuhrpark-Auslastung</span><span class="lssaa-badge f-badge"></span></div>
+              <div class="lssaa-hero"><b class="f-pct">–</b><span class="f-sub">lade Fahrzeugdaten …</span></div>
+              <div class="lssaa-meter f-meter"><i></i></div>
+              <div class="lssaa-stack f-stack"></div>
+              <ul class="lssaa-legend f-legend"></ul>
+              <div class="lssaa-foot f-foot"></div>
+            </section>
+
+            <section class="lssaa-card">
+              <div class="lssaa-card-head"><span>Deine Fahrzeugauswahl</span><span class="lssaa-badge p-badge"></span></div>
+              <div class="lssaa-hero"><b class="p-free">–</b><span class="p-sub"></span></div>
+              <div class="lssaa-meter p-meter"><i></i><em class="p-reserve" title="Reserve"></em></div>
+            </section>
+
+            <section class="lssaa-card">
+              <div class="lssaa-card-head"><span>Alarmierungen · 60 min</span><span class="lssaa-muted h-sum"></span></div>
+              <div class="lssaa-cols h-cols"></div>
+              <div class="lssaa-axis"><span>−60 min</span><span>−30</span><span>jetzt</span></div>
+            </section>
+          </div>
+
+          <div class="lssaa-col">
+            <div class="lssaa-actions">
+              <button type="button" class="lssaa-now">⟳ Jetzt prüfen</button>
+              <button type="button" class="lssaa-diag" title="Probelauf ohne Alarmierung">🔍 Diagnose</button>
+            </div>
+            <div class="lssaa-section">Vom Bot alarmiert <span class="lssaa-count"></span></div>
+            <ul class="lssaa-mine"></ul>
+            <details class="lssaa-logbox"><summary>Protokoll</summary><ul class="lssaa-log"></ul></details>
+          </div>
         </div>
-        <div class="lssaa-section">Vom Bot alarmiert <span class="lssaa-count"></span></div>
-        <ul class="lssaa-mine"></ul>
-        <details class="lssaa-logbox"><summary>Protokoll</summary><ul class="lssaa-log"></ul></details>
-      </div>`;
+      </div>
+      <div class="lssaa-tip" hidden></div>
+      <div class="lssaa-resize" title="Größe ändern"></div>`;
     document.body.appendChild(box);
     const $ = (sel) => box.querySelector(sel);
     const logEl = $(".lssaa-log");
@@ -431,8 +541,16 @@
         return null;
       }
     };
+    const fmt = (n) => (n ?? 0).toLocaleString("de-DE");
 
+    // ---- Knöpfe ----
     $(".lssaa-toggle").addEventListener("click", () => chrome.storage.sync.set({ running: !settings.running }));
+    for (const b of box.querySelectorAll("[data-speed]")) {
+      b.addEventListener("click", () => {
+        chrome.storage.sync.set(lssSpeedValues(b.dataset.speed));
+        api.log(`Tempo: ${LSS_SPEEDS[b.dataset.speed].label} (${LSS_SPEEDS[b.dataset.speed].hint})`);
+      });
+    }
     $(".lssaa-stats-btn").addEventListener("click", () => window.open(chrome.runtime.getURL("stats.html"), "_blank"));
     $(".lssaa-diag").addEventListener("click", () => {
       $(".lssaa-logbox").open = true;
@@ -444,15 +562,7 @@
     });
     $(".lssaa-settings").addEventListener("click", () => window.open(chrome.runtime.getURL("options.html"), "_blank"));
 
-    const setCollapsed = (c) => {
-      box.classList.toggle("collapsed", c);
-      $(".lssaa-collapse").textContent = c ? "▸" : "▾";
-      store("lssaa-collapsed", c ? "1" : null);
-      keepInView();
-    };
-    $(".lssaa-collapse").addEventListener("click", () => setCollapsed(!box.classList.contains("collapsed")));
-
-    // ---- Verschieben: am Kopf ziehen, Position merken ----
+    // ---- Verschieben (am Kopf ziehen) ----
     const place = (left, top) => {
       box.style.left = left + "px";
       box.style.top = top + "px";
@@ -461,9 +571,7 @@
     function keepInView() {
       if (!box.style.top) return;
       const r = box.getBoundingClientRect();
-      const left = Math.min(Math.max(0, r.left), window.innerWidth - r.width);
-      const top = Math.min(Math.max(0, r.top), window.innerHeight - 40);
-      place(left, top);
+      place(Math.min(Math.max(0, r.left), window.innerWidth - Math.min(r.width, 120)), Math.min(Math.max(0, r.top), window.innerHeight - 48));
     }
     const head = $(".lssaa-head");
     head.addEventListener("pointerdown", (e) => {
@@ -485,49 +593,196 @@
       head.addEventListener("pointerup", up);
       e.preventDefault();
     });
+
+    // ---- Größe ändern (Griff unten rechts) ----
+    const MIN_W = 300;
+    const MIN_H = 220;
+    const resize = $(".lssaa-resize");
+    resize.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      const r = box.getBoundingClientRect();
+      // Beim ersten Vergrößern an der aktuellen Position verankern (statt "bottom")
+      place(r.left, r.top);
+      const sx = e.clientX;
+      const sy = e.clientY;
+      box.classList.add("resizing");
+      resize.setPointerCapture(e.pointerId);
+      const move = (ev) => {
+        const w = Math.min(Math.max(MIN_W, r.width + ev.clientX - sx), window.innerWidth - r.left - 4);
+        const h = Math.min(Math.max(MIN_H, r.height + ev.clientY - sy), window.innerHeight - r.top - 4);
+        box.style.width = w + "px";
+        box.style.height = h + "px";
+      };
+      const up = () => {
+        resize.removeEventListener("pointermove", move);
+        resize.removeEventListener("pointerup", up);
+        box.classList.remove("resizing");
+        store("lssaa-size", JSON.stringify({ w: parseFloat(box.style.width), h: parseFloat(box.style.height) }));
+        store("lssaa-pos", JSON.stringify({ left: parseFloat(box.style.left), top: parseFloat(box.style.top) }));
+      };
+      resize.addEventListener("pointermove", move);
+      resize.addEventListener("pointerup", up);
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
     head.addEventListener("dblclick", (e) => {
       if (e.target.closest("button")) return;
       store("lssaa-pos", null);
-      box.style.left = box.style.top = box.style.bottom = "";
+      store("lssaa-size", null);
+      box.style.left = box.style.top = box.style.bottom = box.style.width = box.style.height = "";
     });
     window.addEventListener("resize", keepInView);
+
+    const setCollapsed = (c) => {
+      box.classList.toggle("collapsed", c);
+      $(".lssaa-collapse").textContent = c ? "▸" : "▾";
+      store("lssaa-collapsed", c ? "1" : null);
+      keepInView();
+    };
+    $(".lssaa-collapse").addEventListener("click", () => setCollapsed(!box.classList.contains("collapsed")));
+
     try {
       const pos = JSON.parse(load("lssaa-pos"));
       if (pos) place(pos.left, pos.top);
+      const size = JSON.parse(load("lssaa-size"));
+      if (size) {
+        box.style.width = Math.max(MIN_W, size.w) + "px";
+        box.style.height = Math.max(MIN_H, size.h) + "px";
+      }
     } catch (e) {}
     setCollapsed(!!load("lssaa-collapsed"));
+    keepInView();
+
+    // ---- Tooltip für Diagramme ----
+    const tip = $(".lssaa-tip");
+    box.addEventListener("pointermove", (e) => {
+      const t = e.target.closest("[data-tip]");
+      if (!t) return (tip.hidden = true);
+      tip.textContent = t.dataset.tip;
+      tip.hidden = false;
+      const r = box.getBoundingClientRect();
+      const x = Math.min(e.clientX - r.left + 12, r.width - tip.offsetWidth - 6);
+      tip.style.left = Math.max(6, x) + "px";
+      tip.style.top = e.clientY - r.top - tip.offsetHeight - 10 + "px";
+    });
+    box.addEventListener("pointerleave", () => (tip.hidden = true));
 
     // Countdown jede Sekunde
     setInterval(() => {
-      $(".lssaa-next").textContent = roundRunning
+      $(".k-next").textContent = roundRunning
         ? "läuft…"
         : nextRoundAt
           ? Math.max(0, Math.round((nextRoundAt - Date.now()) / 1000)) + " s"
           : "–";
     }, 1000);
 
-    // Ältere Version noch installiert? Die legt ein Panel mit der alten ID an.
-    const checkOld = () => {
-      if (document.getElementById("lss-auto-alarm")) {
-        $(".lssaa-warning").textContent =
-          "⚠ Eine ältere Version des Bots ist noch installiert und läuft parallel. " +
-          "Bitte unter chrome://extensions die alte Version entfernen und die Seite neu laden.";
+    // ---- Diagramm-Bausteine ----
+    const FLEET_PARTS = [
+      ["free", "Frei", "s1"],
+      ["drive", "Anfahrt", "s2"],
+      ["scene", "Vor Ort", "s3"],
+      ["transport", "Transport", "s4"],
+      ["na", "Nicht verfügbar", "s0"]
+    ];
+    const loadLevel = (pct) =>
+      pct >= 85 ? ["⛔ am Limit", "crit"] : pct >= 60 ? ["⚠ ausgelastet", "warn"] : ["✓ entspannt", "good"];
+
+    function renderFleet(f, error, at) {
+      if (!f) {
+        $(".f-sub").textContent = error ? `Fahrzeugdaten nicht abrufbar (${error})` : "lade Fahrzeugdaten …";
+        return;
       }
-    };
-    setTimeout(checkOld, 3000);
-    setTimeout(checkOld, 10000);
+      const [label, cls] = loadLevel(f.busyPct);
+      $(".f-pct").textContent = f.busyPct + " %";
+      $(".f-sub").textContent = `im Einsatz · ${fmt(f.total - f.counts.na - f.counts.free)} von ${fmt(f.total - f.counts.na)} Fahrzeugen`;
+      const badge = $(".f-badge");
+      badge.textContent = label;
+      badge.className = "lssaa-badge f-badge " + cls;
+      const meter = $(".f-meter i");
+      meter.style.width = f.busyPct + "%";
+      $(".f-meter").dataset.tip = `${f.busyPct} % der einsatzbereiten Fahrzeuge sind unterwegs oder vor Ort`;
+
+      const stack = $(".f-stack");
+      stack.replaceChildren();
+      const legend = $(".f-legend");
+      legend.replaceChildren();
+      for (const [key, name, color] of FLEET_PARTS) {
+        const n = f.counts[key];
+        const pct = f.total ? (n / f.total) * 100 : 0;
+        if (n) {
+          const seg = document.createElement("i");
+          seg.className = color;
+          seg.style.flexGrow = n;
+          seg.dataset.tip = `${name}: ${fmt(n)} Fahrzeuge (${Math.round(pct)} %)`;
+          stack.appendChild(seg);
+        }
+        const li = document.createElement("li");
+        li.innerHTML = `<i class="${color}"></i>${name} <b>${fmt(n)}</b>`;
+        legend.appendChild(li);
+      }
+      const age = Math.round((Date.now() - at) / 1000);
+      $(".f-foot").textContent = `${fmt(f.botVehicles)} Fahrzeuge fahren gerade für den Bot · Stand vor ${age < 60 ? age + " s" : Math.round(age / 60) + " min"}`;
+
+      // Auswahl-Fahrzeuge gegen Reserve
+      const freeAfterReserve = f.presetFree - settings.reserve;
+      $(".p-free").textContent = fmt(f.presetFree);
+      $(".p-sub").textContent = `frei von ${fmt(f.presetTotal)} passenden Fahrzeugen · Reserve ${settings.reserve}`;
+      const pBadge = $(".p-badge");
+      const [pl, pc] =
+        f.presetTotal === 0
+          ? ["⚠ keine passenden Fahrzeuge", "warn"]
+          : freeAfterReserve <= 0
+            ? ["⛔ nur noch Reserve", "crit"]
+            : freeAfterReserve <= 2
+              ? ["⚠ wird knapp", "warn"]
+              : [`✓ ${freeAfterReserve} einsetzbar`, "good"];
+      pBadge.textContent = pl;
+      pBadge.className = "lssaa-badge p-badge " + pc;
+      const pPct = f.presetTotal ? (f.presetFree / f.presetTotal) * 100 : 0;
+      $(".p-meter i").style.width = pPct + "%";
+      $(".p-meter").dataset.tip = `${f.presetFree} von ${f.presetTotal} Fahrzeugen deiner Auswahl sind frei`;
+      const reserve = $(".p-reserve");
+      reserve.style.left = f.presetTotal ? Math.min(100, (settings.reserve / f.presetTotal) * 100) + "%" : "0";
+      reserve.hidden = !f.presetTotal;
+    }
+
+    function renderBins(bins) {
+      const cols = $(".h-cols");
+      cols.replaceChildren();
+      const max = Math.max(1, ...bins);
+      bins.forEach((n, i) => {
+        const c = document.createElement("i");
+        c.style.height = n ? Math.max(6, (n / max) * 100) + "%" : "2px";
+        c.className = n ? "" : "zero";
+        const from = 60 - i * 5;
+        c.dataset.tip = `vor ${from}–${from - 5} min: ${n} Alarmierung${n === 1 ? "" : "en"}`;
+        cols.appendChild(c);
+      });
+      const sum = bins.reduce((a, b) => a + b, 0);
+      $(".h-sum").textContent = `${sum} gesamt`;
+    }
 
     const api = {
       update() {
         const waiting = settings.running && !haveLock;
-        const state = $(".lssaa-state");
-        state.textContent = waiting ? "wartet (anderer Tab)" : settings.running ? "läuft" : "gestoppt";
+        $(".lssaa-state").textContent = waiting ? "wartet (anderer Tab)" : settings.running ? "läuft" : "gestoppt";
         box.classList.toggle("running", settings.running && !waiting);
         $(".lssaa-toggle").textContent = settings.running ? "■  Stoppen" : "▶  Starten";
+        const speed = settings.speed || lssSpeedOf(settings);
+        for (const b of box.querySelectorAll("[data-speed]")) b.classList.toggle("on", b.dataset.speed === speed);
+        $(".lssaa-speed-hint").textContent =
+          speed in LSS_SPEEDS
+            ? LSS_SPEEDS[speed].hint
+            : `eigenes Tempo: alle ${settings.intervalSec} s, ${settings.maxPerRound || "beliebig viele"} je Prüfung`;
       },
-      view({ active, lastHour, mine, total }) {
-        $(".lssaa-active").textContent = active;
-        $(".lssaa-hour").textContent = lastHour;
+      view({ active, lastHour, mine, total, bins, fleet, fleetError, fleetAt, creditsToday }) {
+        $(".k-active").textContent = fmt(active);
+        $(".k-hour").textContent = fmt(lastHour);
+        $(".k-credits").textContent = creditsToday == null ? "–" : fmt(creditsToday);
+        renderFleet(fleet, fleetError, fleetAt);
+        renderBins(bins);
+
         $(".lssaa-count").textContent = mine.length ? mine.length : "";
         const list = $(".lssaa-mine");
         list.replaceChildren();
@@ -548,11 +803,11 @@
           const meta = document.createElement("div");
           meta.className = "meta";
           const badge = document.createElement("span");
-          badge.className = "lssaa-badge " + cls;
+          badge.className = "lssaa-state-pill " + cls;
           badge.textContent = m.state;
           const info = document.createElement("span");
           const mins = Math.round((Date.now() - m.time) / 60000);
-          info.textContent = `${m.credits != null ? m.credits.toLocaleString("de-DE") + " Cr · " : ""}vor ${mins} min`;
+          info.textContent = `${m.credits != null ? fmt(m.credits) + " Cr · " : ""}vor ${mins} min`;
           meta.append(badge, info);
           li.append(a, meta);
           list.appendChild(li);
@@ -564,15 +819,33 @@
         time.textContent = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
         li.append(time, " " + text);
         logEl.prepend(li);
-        while (logEl.children.length > 30) logEl.lastChild.remove();
+        while (logEl.children.length > 40) logEl.lastChild.remove();
       }
     };
+
+    // Ältere Version noch installiert? Die legt ein Panel mit der alten ID an.
+    const checkOld = () => {
+      if (document.getElementById("lss-auto-alarm")) {
+        $(".lssaa-warning").textContent =
+          "⚠ Eine ältere Version des Bots ist noch installiert und läuft parallel. " +
+          "Bitte unter chrome://extensions die alte Version entfernen und die Seite neu laden.";
+      }
+    };
+    setTimeout(checkOld, 3000);
+    setTimeout(checkOld, 10000);
+
     api.update();
     return api;
   }
 
   refreshView();
-  // Alter "vor x min" weiterzählen
+  loadFleet();
+  loadCreditsToday();
+  // Fuhrpark alle 90 s neu laden (nur wenn der Tab sichtbar ist oder der Bot läuft)
+  setInterval(() => {
+    if (!document.hidden || settings.running) loadFleet();
+  }, 90 * 1000);
+  // "vor x min" und Stand-Angaben weiterzählen
   setInterval(refreshView, 30 * 1000);
 
   function takeLock() {

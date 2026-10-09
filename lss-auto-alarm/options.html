@@ -58,10 +58,18 @@
     .number-input { display: inline-flex; align-items: center; gap: 8px; }
     .number-input span { color: var(--muted); font-size: 13px; min-width: 70px; }
     .number input { width: 110px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font: inherit; font-size: 15px; font-weight: 600; text-align: right; }
+    .number input::placeholder { font-weight: 400; font-size: 13px; }
     .number input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
     .chip-id { margin-left: 6px; font-size: 10px; opacity: .6; font-variant-numeric: tabular-nums; }
     .type-search { margin-top: 10px; }
     [hidden] { display: none !important; }
+    .speed { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    @media (max-width: 560px) { .speed { grid-template-columns: 1fr; } }
+    .speed-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--text); font: inherit; cursor: pointer; }
+    .speed-btn:hover { border-color: var(--accent); }
+    .speed-btn.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+    .speed-btn .speed-icon { font-size: 22px; }
+    .speed-btn small { color: var(--muted); font-size: 12px; }
     #saved { position: fixed; right: 16px; bottom: 16px; background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; opacity: 0; transition: opacity .2s; }
     #saved.show { opacity: 1; }
   </style>
@@ -99,7 +107,9 @@
 
   <section class="card">
     <h2>3. Tempo</h2>
-    <p class="sub">Wie oft der Bot nachschaut und wie viel er pro Stunde alarmieren darf.</p>
+    <p class="sub">Eine der drei Stufen wählen – oder die Werte darunter selbst eintragen.</p>
+    <div id="speed" class="speed"></div>
+    <p id="speed-note" class="sub" style="margin:8px 0 0"></p>
     <div id="tempo"></div>
   </section>
 

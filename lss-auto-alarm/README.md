@@ -15,20 +15,34 @@ Die lukrativsten Einsätze kommen zuerst.
 4. **Entpackte Erweiterung laden** → diesen Ordner wählen.
 5. `https://www.leitstellenspiel.de/` mit F5 neu laden.
 
-Im Popup der Erweiterung steht oben die Version (aktuell **v3.5.0**, steht auch im Kopf des Panels).
+Im Popup der Erweiterung steht oben die Version (aktuell **v4.0.0**, steht auch im Kopf des Panels).
 
-## Das Panel (unten links auf der Hauptseite)
+## Das Panel (auf der Hauptseite)
 
-- **Verschieben**: am roten Kopf festhalten und ziehen. Die Position wird gemerkt;
-  Doppelklick auf den Kopf setzt sie zurück.
-- **Starten / Stoppen**: Bot ein- und ausschalten. **⚙** öffnet die Einstellungen, **▾** klappt das Panel ein.
-- **aktiv / letzte Stunde / nächste Prüfung**: aktualisiert sich sofort, sobald sich im Spiel etwas ändert.
-- **Jetzt prüfen**: sofort einen Durchgang starten, ohne auf den Countdown zu warten.
-- **Diagnose**: Probelauf ohne Alarmierung – zeigt, was der Bot sieht und schicken würde.
-- **Vom Bot alarmiert**: alle Einsätze, zu denen der Bot Fahrzeuge geschickt hat, mit Status
-  (offen / Anfahrt / vor Ort) und Credits. 📅 = geplanter Einsatz. Ein Klick öffnet den Einsatz.
-- **📊 Auswertung**: siehe unten.
-- **Protokoll** (aufklappbar): was der Bot getan oder warum er etwas übersprungen hat.
+- **Verschieben**: am roten Kopf ziehen. **Größe ändern**: am Griff unten rechts ziehen. Ab etwa 600 px
+  Breite wird das Panel zweispaltig. Position und Größe werden gemerkt; **Doppelklick auf den Kopf**
+  setzt beides zurück. **▾** klappt das Panel ein.
+- **📊** öffnet die Auswertung, **⚙** die Einstellungen.
+- **Starten / Stoppen** und darunter die **Tempo-Knöpfe**:
+
+  | Stufe | Prüfung | Einsätze je Prüfung | Pause zwischen Alarmierungen |
+  | --- | --- | --- | --- |
+  | 🐢 Gemütlich | alle ~2 min | höchstens 2 | ~6 s |
+  | 🚗 Normal | jede Minute | höchstens 5 | ~3 s |
+  | 🚀 Schnell | alle ~25 s | alle passenden | ~1 s |
+
+  Werden die Werte in den Einstellungen von Hand geändert, zeigt das Panel „eigenes Tempo“.
+- **Kennzahlen**: Einsätze aktiv, Alarmierungen der letzten 60 min, Credits heute (aus der Auswertung),
+  Countdown bis zur nächsten Prüfung.
+- **Fuhrpark-Auslastung**: Anteil deiner einsatzbereiten Fahrzeuge, die unterwegs oder im Einsatz sind,
+  mit Einstufung (✓ entspannt < 60 %, ⚠ ausgelastet ab 60 %, ⛔ am Limit ab 85 %), dazu die Verteilung nach
+  Funkstatus (frei, Anfahrt, vor Ort, Transport, nicht verfügbar) und wie viele Fahrzeuge gerade für den
+  Bot fahren. Quelle: `/api/vehicles` des Spiels, alle 90 s und nach jeder Prüfung neu geladen.
+- **Deine Fahrzeugauswahl**: wie viele Fahrzeuge deiner Auswahl frei sind; der weiße Strich markiert die Reserve.
+- **Alarmierungen · 60 min**: Säulen in 5-Minuten-Abschnitten. Mit der Maus über Balken und Säulen
+  fahren zeigt die genauen Werte.
+- **Jetzt prüfen**, **Diagnose** (Probelauf ohne Alarmierung), **Vom Bot alarmiert** (Status je Einsatz,
+  Klick öffnet ihn) und das aufklappbare **Protokoll**.
 
 ## Auswertung
 
@@ -63,8 +77,9 @@ Alles wird sofort gespeichert. Oben steht in einem Satz, was der Bot mit den akt
    Gespeichert und erkannt wird jeder Typ über seine **feste Typ-ID** (die kleine Zahl am Knopf) – wie du
    Fahrzeuge oder Typen im Spiel benannt hast, spielt keine Rolle. Fehlt ein ganz neuer Typ, kann seine
    Typ-ID von Hand eingegeben werden. Für geplante Einsätze kann eine eigene Auswahl eingestellt werden.
-3. **Tempo** – per Zahleingabe: wie oft die Einsätze abgefragt werden (Sekunden, mind. 20) und
-   wie viele Alarmierungen pro Stunde erlaubt sind (leer = unbegrenzt).
+3. **Tempo** – die drei Stufen (Gemütlich / Normal / Schnell) oder eigene Werte per Zahleingabe:
+   Abfrage-Intervall (Sekunden, mind. 20), Pause zwischen zwei Alarmierungen und Alarmierungen pro
+   Stunde (leer = unbegrenzt).
 4. **Entfernung & Reserve** – maximale Entfernung und Reserve für eigene Einsätze.
 5. **Filter** – Mindest-Credits, Einsätze ohne bekannte Credits, Einsätze nach Namen überspringen.
 
