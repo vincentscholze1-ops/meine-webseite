@@ -2,43 +2,46 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <title>LSS Auto-Alarmierung – Einstellungen</title>
+  <title>LSS Verbands-Bot – Einstellungen</title>
   <style>
-    body { max-width: 820px; margin: 24px auto; padding: 0 16px; font: 14px/1.5 system-ui, sans-serif; }
+    body { max-width: 760px; margin: 24px auto; padding: 0 16px; font: 14px/1.5 system-ui, sans-serif; }
     h2 { margin-top: 28px; font-size: 16px; }
-    label { display: block; margin: 6px 0; }
-    input.key { width: 2.5em; text-align: center; }
-    textarea { width: 100%; font: 12px/1.4 ui-monospace, monospace; box-sizing: border-box; }
+    .row { display: grid; grid-template-columns: 1fr 110px; gap: 12px; align-items: center; margin: 8px 0; }
+    .row small { display: block; color: #666; }
+    .row input[type=number], .row input[type=text] { width: 100%; box-sizing: border-box; }
+    textarea, input.wide { width: 100%; font: 12px/1.4 ui-monospace, monospace; box-sizing: border-box; }
     .hint { color: #666; font-size: 12px; }
     #status { margin-left: 10px; }
     #status.error { color: #c5221f; }
   </style>
 </head>
 <body>
-  <h1>LSS Auto-Alarmierung</h1>
+  <h1>LSS Verbands-Bot</h1>
 
-  <h2>Allgemein</h2>
-  <label><input type="checkbox" id="enabled"> Erweiterung aktiv</label>
-  <label><input type="checkbox" id="autoSelect"> Fahrzeuge beim Öffnen eines Einsatzes automatisch anhaken</label>
-  <label><input type="checkbox" id="alarmAndNext"> Tastenkürzel nutzt „Alarmieren und zum nächsten Einsatz“</label>
-  <label>Alarmieren: Alt + <input class="key" id="alarmKey" maxlength="1"></label>
-  <label>Neu berechnen: Alt + <input class="key" id="reselectKey" maxlength="1"></label>
-
-  <h2>Standard, wenn kein Bedarf bekannt ist</h2>
-  <textarea id="fallback" rows="3"></textarea>
-  <div class="hint">Liste aus <code>{"category": "&lt;Kategorie-id&gt;", "count": n}</code>.</div>
-
-  <h2>Fahrzeugkategorien</h2>
-  <textarea id="categories" rows="22"></textarea>
+  <h2>Fahrzeugauswahl</h2>
+  <textarea id="preset" rows="8"></textarea>
   <div class="hint">
-    <code>match</code>: regulärer Ausdruck für den Text in der Fehlmeldung.
-    <code>types</code>: Fahrzeugtypen in Wunsch-Reihenfolge (genau wie im Spiel geschrieben).
-    Die erste passende Kategorie gewinnt.
+    Liste aus <code>{"count": Anzahl, "types": ["LF 20", "HLF 20", …]}</code>. Pro Eintrag wird die Anzahl
+    der nächstgelegenen freien Fahrzeuge der genannten Typen geschickt. Typnamen genau wie im Spiel.
   </div>
 
-  <h2>Zuordnung Einsatzanforderungen (einsaetze.json)</h2>
-  <textarea id="requirementMap" rows="12"></textarea>
-  <div class="hint">Schlüssel aus <code>/einsaetze.json</code> → Kategorie-id. Unbekannte Schlüssel werden im Panel mit „?“ angezeigt.</div>
+  <h2>Grenzen</h2>
+  <div class="row"><label for="intervalSec">Prüfintervall (Sekunden)<small>± 30 % Zufall</small></label><input type="number" id="intervalSec" min="20"></div>
+  <div class="row"><label for="maxPerRound">Max. Einsätze pro Durchgang</label><input type="number" id="maxPerRound" min="1"></div>
+  <div class="row"><label for="maxActive">Max. gleichzeitig beteiligte Verbandseinsätze<small>zählt alle, bei denen du schon Fahrzeuge hast</small></label><input type="number" id="maxActive" min="1"></div>
+  <div class="row"><label for="maxPerHour">Max. Alarmierungen pro Stunde</label><input type="number" id="maxPerHour" min="1"></div>
+  <div class="row"><label for="maxDistanceKm">Max. Entfernung (km)<small>weiter entfernte Einsätze sind oft fertig, bevor du ankommst – dann gibt es keine Credits</small></label><input type="number" id="maxDistanceKm" min="1" step="0.5"></div>
+  <div class="row"><label for="reserve">Reserve<small>so viele passende Fahrzeuge bleiben immer für eigene Einsätze frei</small></label><input type="number" id="reserve" min="0"></div>
+  <div class="row"><label for="minCredits">Mindest-Credits<small>Durchschnitts-Credits des Einsatztyps, 0 = egal</small></label><input type="number" id="minCredits" min="0" step="100"></div>
+  <div class="row"><label for="allowUnknownCredits">Einsätze ohne bekannte Credits anfahren</label><input type="checkbox" id="allowUnknownCredits"></div>
+  <div class="row"><label for="maxErrors">Stoppen nach so vielen Fehlern in Folge</label><input type="number" id="maxErrors" min="1"></div>
+
+  <h2>Filter</h2>
+  <label for="excludeMatch">Einsätze überspringen, deren Name passt auf (regulärer Ausdruck, leer = keiner)</label>
+  <input class="wide" id="excludeMatch" placeholder="z.B. Krankentransport|Großbrand">
+  <p></p>
+  <label for="listSelector">Welche Listen durchsucht werden (CSS-Selektor)</label>
+  <input class="wide" id="listSelector">
 
   <p>
     <button id="save">Speichern</button>

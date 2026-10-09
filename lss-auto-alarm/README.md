@@ -1,43 +1,40 @@
-# LSS Auto-Alarmierung (Chrome-Erweiterung)
+# LSS Verbands-Bot (Chrome-Erweiterung)
 
-Wählt im [Leitstellenspiel](https://www.leitstellenspiel.de) beim Öffnen eines Einsatzes
-automatisch passende freie Fahrzeuge aus, nächstgelegene zuerst. Alarmiert wird per
-**Alt+A** oder über den Knopf im kleinen Panel unten rechts.
+Schickt im [Leitstellenspiel](https://www.leitstellenspiel.de) automatisch eine vorher festgelegte
+Fahrzeugauswahl zu Verbandseinsätzen, um dort mitzuverdienen. Die lukrativsten Einsätze kommen zuerst.
+
+> ⚠️ Vollautomatisches Spielen verstößt gegen die Spielregeln des Leitstellenspiels.
+> Nutzung auf eigenes Risiko – der Account kann gesperrt werden.
 
 ## Installation
 
-1. Ordner `lss-auto-alarm` herunterladen (oder das Repo klonen).
-2. In Chrome `chrome://extensions` öffnen.
-3. Oben rechts den **Entwicklermodus** einschalten.
-4. **Entpackte Erweiterung laden** → den Ordner `lss-auto-alarm` auswählen.
-5. Leitstellenspiel neu laden und einen Einsatz öffnen.
+1. In Chrome `chrome://extensions` öffnen und oben rechts den **Entwicklermodus** einschalten.
+2. **Entpackte Erweiterung laden** → den Ordner `lss-auto-alarm` auswählen.
+3. Hauptseite `https://www.leitstellenspiel.de/` neu laden. Unten links erscheint das Bot-Panel.
+4. Zuerst in den Einstellungen die Fahrzeugauswahl und die Grenzen festlegen, dann **Start**.
 
-## Woher weiß die Erweiterung, was gebraucht wird?
+Der Bot läuft nur, solange die Hauptseite in einem Tab offen ist (bei mehreren Tabs arbeitet nur einer).
 
-In dieser Reihenfolge:
+## Ablauf pro Durchgang
 
-1. **Fehlmeldung im Einsatz** („Zusätzlich benötigte Fahrzeuge: 2 Löschfahrzeuge, 1 Drehleiter …“).
-2. **Einsatzanforderung** aus `/einsaetze.json` (bei frischen Einsätzen, wird 24 h zwischengespeichert).
-3. **Standard** (voreingestellt: 1 Löschfahrzeug).
+1. Verbandseinsätze aus der Liste lesen. Einsätze, bei denen du schon beteiligt bist, werden übersprungen.
+2. Filter anwenden (Mindest-Credits, Ausschluss nach Name) und nach Durchschnitts-Credits sortieren.
+3. Für jeden Einsatz die Einsatzseite laden, die nächstgelegenen freien Fahrzeuge der Auswahl
+   nehmen, Entfernung und Reserve prüfen und alarmieren.
+4. Übersprungene Einsätze (zu weit, keine Fahrzeuge) werden 10 Minuten lang nicht erneut geprüft.
 
-Sind schon Fahrzeuge auf Anfahrt, aber noch keine Fehlmeldung da, wird nichts angehakt.
-Fahrzeuge, die du (oder eine AAO) schon angehakt hast, werden angerechnet.
+## Grenzen (Standardwerte)
 
-## Tastenkürzel
+| Einstellung | Standard | Zweck |
+| --- | --- | --- |
+| Prüfintervall | 60 s (± 30 %) | wie oft die Liste geprüft wird |
+| Max. pro Durchgang | 3 | nicht alles auf einmal |
+| Max. gleichzeitig beteiligt | 10 | Obergrenze für parallele Verbandseinsätze |
+| Max. pro Stunde | 40 | Obergrenze für Alarmierungen |
+| Max. Entfernung | 15 km | weit entfernte Einsätze sind oft vor deiner Ankunft fertig |
+| Reserve | 3 | so viele passende Fahrzeuge bleiben für eigene Einsätze frei |
+| Mindest-Credits | 0 | z.B. 1000, um nur lukrative Einsätze anzufahren |
+| Stopp nach Fehlern | 3 | z.B. wenn du ausgeloggt wirst |
 
-| Kürzel | Aktion |
-| --- | --- |
-| Alt+A | Alarmieren (optional: „Alarmieren und nächster Einsatz“) |
-| Alt+R | Auswahl neu berechnen |
-
-## Einstellungen
-
-Klick auf das Erweiterungs-Symbol → schnelle Schalter. Unter **Weitere Einstellungen** kannst du
-die Fahrzeugkategorien (welcher Text in der Fehlmeldung welche Fahrzeugtypen bedeutet),
-die Wunsch-Reihenfolge der Typen und die Kürzel anpassen.
-
-## Hinweis
-
-Die Erweiterung hakt nur Fahrzeuge an. Das Alarmieren bleibt bewusst ein Tastendruck von dir:
-Vollautomatische Bots, die ohne Zutun Einsätze abarbeiten, verstoßen gegen die Spielregeln
-des Leitstellenspiels und können zur Sperrung des Accounts führen.
+Credits gibt es im Leitstellenspiel nur, wenn dein Fahrzeug **vor Abschluss am Einsatzort** ist.
+Die wichtigsten Stellschrauben sind daher **Max. Entfernung** und **Reserve**.

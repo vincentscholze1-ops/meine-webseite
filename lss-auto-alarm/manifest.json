@@ -1,21 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "LSS Auto-Alarmierung",
-  "version": "1.0.0",
-  "description": "Wählt im Leitstellenspiel automatisch passende Fahrzeuge für einen Einsatz aus und alarmiert per Tastenkürzel.",
+  "name": "LSS Verbands-Bot",
+  "version": "2.0.0",
+  "description": "Schickt im Leitstellenspiel automatisch eine feste Fahrzeugauswahl zu Verbandseinsätzen – mit einstellbaren Grenzen.",
   "permissions": ["storage"],
   "host_permissions": ["https://www.leitstellenspiel.de/*"],
   "content_scripts": [
     {
-      "matches": ["https://www.leitstellenspiel.de/missions/*"],
-      "js": ["config.js", "content.js"],
-      "css": ["content.css"],
-      "all_frames": true,
+      "matches": ["https://www.leitstellenspiel.de/"],
+      "js": ["config.js", "bot.js"],
+      "css": ["bot.css"],
       "run_at": "document_idle"
     }
   ],
   "action": {
-    "default_title": "LSS Auto-Alarmierung",
+    "default_title": "LSS Verbands-Bot",
     "default_popup": "popup.html"
   },
   "options_page": "options.html"

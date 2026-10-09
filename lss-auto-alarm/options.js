@@ -1,12 +1,13 @@
-const checks = ["enabled", "autoSelect", "alarmAndNext"];
-const keys = ["alarmKey", "reselectKey"];
-const jsons = ["fallback", "categories", "requirementMap"];
+const numbers = ["intervalSec", "maxPerRound", "maxActive", "maxPerHour", "maxDistanceKm", "reserve", "minCredits", "maxErrors"];
+const texts = ["excludeMatch", "listSelector"];
 const status = document.getElementById("status");
+const $ = (id) => document.getElementById(id);
 
 function fill(s) {
-  for (const id of checks) document.getElementById(id).checked = s[id];
-  for (const id of keys) document.getElementById(id).value = s[id];
-  for (const id of jsons) document.getElementById(id).value = JSON.stringify(s[id], null, 2);
+  for (const id of numbers) $(id).value = s[id];
+  for (const id of texts) $(id).value = s[id];
+  $("allowUnknownCredits").checked = s.allowUnknownCredits;
+  $("preset").value = JSON.stringify(s.preset, null, 2);
 }
 
 function show(text, isError) {
@@ -14,27 +15,39 @@ function show(text, isError) {
   status.className = isError ? "error" : "";
 }
 
-document.getElementById("save").addEventListener("click", () => {
-  const s = {};
-  for (const id of checks) s[id] = document.getElementById(id).checked;
-  for (const id of keys) s[id] = (document.getElementById(id).value || LSS_DEFAULTS[id]).toLowerCase();
+$("save").addEventListener("click", () => {
+  const s = { allowUnknownCredits: $("allowUnknownCredits").checked };
+  for (const id of numbers) {
+    const v = parseFloat($(id).value);
+    s[id] = Number.isFinite(v) ? v : LSS_DEFAULTS[id];
+  }
+  s.intervalSec = Math.max(20, s.intervalSec);
+  for (const id of texts) s[id] = $(id).value.trim();
+  if (!s.listSelector) s.listSelector = LSS_DEFAULTS.listSelector;
   try {
-    for (const id of jsons) s[id] = JSON.parse(document.getElementById(id).value);
-    for (const c of s.categories) new RegExp(c.match);
+    s.preset = JSON.parse($("preset").value);
+    if (!Array.isArray(s.preset) || !s.preset.every((p) => p.count > 0 && Array.isArray(p.types))) {
+      throw new Error("Fahrzeugauswahl: jeder Eintrag braucht count und types");
+    }
+    if (s.excludeMatch) new RegExp(s.excludeMatch);
+    document.querySelector(s.listSelector);
   } catch (e) {
     show("Fehler: " + e.message, true);
     return;
   }
   chrome.storage.sync.set(s, () => {
     if (chrome.runtime.lastError) show("Fehler: " + chrome.runtime.lastError.message, true);
-    else show("Gespeichert – Einsatzfenster neu öffnen.");
+    else show("Gespeichert – gilt sofort.");
   });
 });
 
-document.getElementById("reset").addEventListener("click", () => {
-  chrome.storage.sync.clear(() => {
-    fill(LSS_DEFAULTS);
-    show("Zurückgesetzt.");
+$("reset").addEventListener("click", () => {
+  lssLoadSettings().then(({ running }) => {
+    chrome.storage.sync.clear(() => {
+      chrome.storage.sync.set({ running });
+      fill(LSS_DEFAULTS);
+      show("Zurückgesetzt.");
+    });
   });
 });
 

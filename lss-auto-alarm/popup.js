@@ -1,9 +1,18 @@
+const toggle = document.getElementById("toggle");
+let running = false;
+
+function render() {
+  toggle.textContent = running ? "■ Stoppen" : "▶ Starten";
+}
+
 lssLoadSettings().then((s) => {
-  for (const id of ["enabled", "autoSelect", "alarmAndNext"]) {
-    const el = document.getElementById(id);
-    el.checked = s[id];
-    el.addEventListener("change", () => chrome.storage.sync.set({ [id]: el.checked }));
-  }
+  running = s.running;
+  render();
+});
+toggle.addEventListener("click", () => {
+  running = !running;
+  chrome.storage.sync.set({ running });
+  render();
 });
 document.getElementById("options").addEventListener("click", (e) => {
   e.preventDefault();
