@@ -245,26 +245,41 @@
 
   // Probelauf ohne zu alarmieren: zeigt, was der Bot sieht
   async function diagnose() {
+    const lines = [];
+    const out = (text) => {
+      lines.push(text);
+      panel.log(text);
+    };
     try {
       const missions = listMissions();
-      panel.log(
+      out(
         `Diagnose: ${missions.length} Verbandseinsätze, davon ${missions.filter((m) => m.participating).length} beteiligt` +
           ` · Lock: ${haveLock ? "ja" : "nein"} · Bot ${settings.running ? "läuft" : "gestoppt"}`
       );
       const { sent = {} } = await chrome.storage.local.get("sent");
       const candidates = await findCandidates(missions, sent);
-      panel.log(`Diagnose: ${candidates.length} Kandidaten nach Filtern.`);
+      out(`Diagnose: ${candidates.length} Kandidaten nach Filtern.`);
       const target = candidates[0] || missions[0];
-      if (!target) return;
-      const result = await dispatch(target, true);
-      panel.log(
-        `Diagnose „${target.caption}“: ` +
-          (result.ok ? `würde ${result.vehicles} schicken (${result.km} km) – ${result.info}` : result.reason)
-      );
+      if (target) {
+        const result = await dispatch(target, true);
+        out(
+          `Diagnose „${target.caption}“: ` +
+            (result.ok ? `würde ${result.vehicles} schicken (${result.km} km) – ${result.info}` : result.reason)
+        );
+      }
     } catch (e) {
-      panel.log(`Diagnose-Fehler: ${e.message}`);
+      out(`Diagnose-Fehler: ${e.message}`);
     }
+    return lines;
   }
+
+  // Diagnose auch aus dem Popup der Erweiterung heraus
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg && msg.type === "lssaa-diagnose") {
+      diagnose().then((lines) => sendResponse({ lines, panel: !!document.getElementById("lss-auto-alarm") }));
+      return true;
+    }
+  });
 
   // ---------- Panel ----------
 
