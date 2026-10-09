@@ -15,7 +15,7 @@ Die lukrativsten Einsätze kommen zuerst.
 4. **Entpackte Erweiterung laden** → diesen Ordner wählen.
 5. `https://www.leitstellenspiel.de/` mit F5 neu laden.
 
-Im Popup der Erweiterung steht oben die Version (aktuell **v3.4.0**, steht auch im Kopf des Panels).
+Im Popup der Erweiterung steht oben die Version (aktuell **v3.5.0**, steht auch im Kopf des Panels).
 
 ## Das Panel (unten links auf der Hauptseite)
 
@@ -32,7 +32,8 @@ Im Popup der Erweiterung steht oben die Version (aktuell **v3.4.0**, steht auch 
 
 ## Auswertung
 
-Über **📊 Auswertung** im Panel (oder im Popup der Erweiterung) öffnet sich ein Fenster mit:
+Über **📊 Auswertung** im Panel oder im Popup der Erweiterung öffnet sich die Auswertung als **eigene Seite**
+in einem neuen Tab. Sie zeigt:
 
 - **vom Bot alarmiert**, **erfolgreich abgeschlossen** (mit Quote), **Credits erhalten**, **Ø Credits je Einsatz**
 - wie viele Einsätze noch laufen, ohne Credits endeten oder abgebrochen wurden
@@ -47,7 +48,8 @@ Einsatzname und Zeitraum seinen Alarmierungen zu. „Erfolgreich“ heißt: Für
 Gutschrift eingegangen. Kommt 45 Minuten nach Einsatzende keine Buchung, zählt er als „ohne Credits“
 (z.B. weil das Fahrzeug zu spät ankam).
 
-Die Credits-Übersicht wird beim Öffnen der Auswertung abgerufen und, während der Bot läuft, alle
+Zum Abrufen neuer Credits muss die Hauptseite des Leitstellenspiels in einem Tab offen sein (ohne
+Spiel-Tab zeigt die Auswertung den zuletzt gespeicherten Stand). Die Credits-Übersicht wird beim Öffnen der Auswertung abgerufen und, während der Bot läuft, alle
 10 Minuten, solange noch Gutschriften erwartet werden. Gespeichert werden die letzten 60 Tage.
 Gezählt wird erst ab Version 3.4 – frühere Alarmierungen sind nicht erfasst.
 
@@ -56,9 +58,11 @@ Gezählt wird erst ab Version 3.4 – frühere Alarmierungen sind nicht erfasst.
 Alles wird sofort gespeichert. Oben steht in einem Satz, was der Bot mit den aktuellen Einstellungen tut.
 
 1. **Welche Einsätze?** – Verbandseinsätze, Events, eigene und Verbands-Sicherheitswachen an-/abwählen.
-2. **Was wird geschickt?** – Anzahl mit − / + einstellen, Fahrzeugtypen per Klick wählen
-   (oder Schnellwahl: Löschfahrzeug, RTW, Streifenwagen, GKW). Für geplante Einsätze kann
-   eine eigene Auswahl eingestellt werden.
+2. **Was wird geschickt?** – Anzahl mit − / + einstellen und aus **allen 192 Fahrzeugtypen** wählen
+   (nach Wachentyp gruppiert, mit Suchfeld, oder Schnellwahl: Löschfahrzeug, RTW, Streifenwagen, GKW).
+   Gespeichert und erkannt wird jeder Typ über seine **feste Typ-ID** (die kleine Zahl am Knopf) – wie du
+   Fahrzeuge oder Typen im Spiel benannt hast, spielt keine Rolle. Fehlt ein ganz neuer Typ, kann seine
+   Typ-ID von Hand eingegeben werden. Für geplante Einsätze kann eine eigene Auswahl eingestellt werden.
 3. **Tempo** – per Zahleingabe: wie oft die Einsätze abgefragt werden (Sekunden, mind. 20) und
    wie viele Alarmierungen pro Stunde erlaubt sind (leer = unbegrenzt).
 4. **Entfernung & Reserve** – maximale Entfernung und Reserve für eigene Einsätze.

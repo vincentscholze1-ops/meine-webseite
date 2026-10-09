@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LSS Verbands-Bot",
-  "version": "3.4.0",
+  "version": "3.5.0",
   "description": "Schickt im Leitstellenspiel automatisch eine feste Fahrzeugauswahl zu Verbands- und geplanten Einsätzen – mit einstellbaren Grenzen.",
   "permissions": [
     "storage"
@@ -16,13 +16,13 @@
         "https://www.leitstellenspiel.de/?*"
       ],
       "js": [
+        "vehicle-types.js",
         "config.js",
         "stats.js",
         "bot.js"
       ],
       "css": [
-        "bot.css",
-        "stats.css"
+        "bot.css"
       ],
       "run_at": "document_idle"
     }
@@ -35,7 +35,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "options.html"
+        "options.html",
+        "stats.html"
       ],
       "matches": [
         "https://www.leitstellenspiel.de/*"

@@ -19,12 +19,14 @@ const TEMPO = [
   ["maxPerHour", 0, 1000, "Alarmierungen pro Stunde", "Höchstens so viele Einsätze pro Stunde. Leer lassen oder 0 = unbegrenzt.", "pro Stunde", true]
 ];
 
+// Schnellwahl (Namen werden beim Laden in feste Typ-IDs umgerechnet)
 const QUICK = {
-  "🚒 Löschfahrzeug": LSS_VEHICLE_GROUPS["Löschfahrzeuge"],
-  "🚑 RTW": ["RTW"],
-  "🚓 Streifenwagen": ["FuStW", "FuStW (DGL)"],
-  "🚚 THW GKW": ["GKW"]
+  "🚒 Löschfahrzeug": lssTypeIds(["LF 20", "HLF 20", "LF 10", "LF 8/6", "LF 20/16", "LF 10/6", "LF 16-TS", "TSF-W", "MLF"]),
+  "🚑 RTW": lssTypeIds(["RTW"]),
+  "🚓 Streifenwagen": lssTypeIds(["FuStW", "FuStW (DGL)"]),
+  "🚚 THW GKW": lssTypeIds(["GKW"])
 };
+const typeLabel = (id) => LSS_TYPE_NAMES[id] || `Typ-ID ${id}`;
 
 // ---------- Speichern ----------
 
@@ -52,7 +54,8 @@ function presetText(preset) {
   if (!preset || !preset.length) return "nichts (Auswahl ist leer!)";
   return preset
     .map((p) => {
-      const t = p.types.length > 3 ? `${p.types.slice(0, 3).join("/")} und ähnliche` : p.types.join("/") || "?";
+      const names = (p.typeIds || []).map(typeLabel);
+      const t = names.length > 3 ? `${names.slice(0, 3).join("/")} und ähnliche` : names.join("/") || "?";
       return `${p.count}× ${t}`;
     })
     .join(" + ");
@@ -111,6 +114,10 @@ function renderPreset(containerId, key) {
     save({ [key]: preset });
     renderPreset(containerId, key);
   };
+  const chosenHtml = (row) =>
+    row.typeIds.length
+      ? "aus: <b>" + row.typeIds.map(typeLabel).join(", ") + "</b>"
+      : "<b>noch kein Fahrzeugtyp gewählt</b>";
 
   preset.forEach((row, i) => {
     const el = document.createElement("div");
@@ -118,10 +125,10 @@ function renderPreset(containerId, key) {
     el.innerHTML = `
       <div class="vrow-head">
         <span class="stepper"><button type="button" data-d="-1">−</button><span>${row.count}</span><button type="button" data-d="1">+</button></span>
-        <span class="chosen">${row.types.length ? "aus: <b>" + row.types.join(", ") + "</b>" : "<b>noch kein Typ gewählt</b>"}</span>
+        <span class="chosen">${chosenHtml(row)}</span>
         ${preset.length > 1 ? '<button type="button" class="icon" title="Zeile entfernen">✕ entfernen</button>' : ""}
       </div>
-      <details class="types"${row.types.length ? "" : " open"}><summary>Fahrzeugtypen wählen</summary></details>`;
+      <details class="types"${row.typeIds.length ? "" : " open"}><summary>Fahrzeugtypen wählen (${LSS_VEHICLE_TYPES.length} Typen)</summary></details>`;
     for (const b of el.querySelectorAll(".stepper button")) {
       b.addEventListener("click", () => {
         row.count = Math.max(1, Math.min(20, row.count + Number(b.dataset.d)));
@@ -135,54 +142,86 @@ function renderPreset(containerId, key) {
     });
 
     const details = el.querySelector("details");
-    const quick = document.createElement("div");
-    quick.className = "quick";
-    for (const [label, types] of Object.entries(QUICK)) {
+    const tools = document.createElement("div");
+    tools.className = "quick";
+    for (const [label, ids] of Object.entries(QUICK)) {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "btn";
       b.textContent = label;
-      b.title = types.join(", ");
+      b.title = ids.map(typeLabel).join(", ");
       b.addEventListener("click", () => {
-        row.types = [...types];
+        row.typeIds = [...ids];
         commit();
       });
-      quick.appendChild(b);
+      tools.appendChild(b);
     }
-    details.appendChild(quick);
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "btn";
+    clear.textContent = "Auswahl leeren";
+    clear.addEventListener("click", () => {
+      row.typeIds = [];
+      commit();
+    });
+    tools.appendChild(clear);
+    details.appendChild(tools);
 
-    const known = new Set(Object.values(LSS_VEHICLE_GROUPS).flat());
-    const groups = { ...LSS_VEHICLE_GROUPS };
-    const custom = row.types.filter((t) => !known.has(t));
-    if (custom.length) groups["Eigene"] = custom;
-    for (const [g, types] of Object.entries(groups)) {
+    const search = document.createElement("input");
+    search.type = "text";
+    search.className = "type-search";
+    search.placeholder = "Fahrzeugtyp suchen, z.B. „HLF“, „GW“ oder Typ-ID „30“ …";
+    details.appendChild(search);
+
+    // Bekannte Typen nach Gruppe, dazu unbekannte IDs aus der Auswahl (z.B. neue Fahrzeuge im Spiel)
+    const known = new Set(LSS_VEHICLE_TYPES.map(([id]) => id));
+    const entries = [...LSS_VEHICLE_TYPES];
+    for (const id of row.typeIds) if (!known.has(id)) entries.push([id, typeLabel(id), "Eigene Typ-IDs"]);
+    const groups = [...LSS_VEHICLE_GROUP_ORDER, "Eigene Typ-IDs"];
+    const chips = [];
+    for (const g of groups) {
+      const list = entries.filter((e) => e[2] === g);
+      if (!list.length) continue;
       const gEl = document.createElement("div");
       gEl.className = "group";
       gEl.innerHTML = `<div class="group-title">${g}</div><div class="chips"></div>`;
-      for (const t of types) {
+      for (const [id, name] of list) {
         const c = document.createElement("button");
         c.type = "button";
-        c.className = "chip" + (row.types.includes(t) ? " on" : "");
-        c.textContent = t;
+        c.className = "chip" + (row.typeIds.includes(id) ? " on" : "");
+        c.innerHTML = `${name}<span class="chip-id">${id}</span>`;
+        c.title = `${name} – Typ-ID ${id}`;
+        c.dataset.search = `${name} ${id}`.toLowerCase();
         c.addEventListener("click", () => {
-          row.types = row.types.includes(t) ? row.types.filter((x) => x !== t) : [...row.types, t];
+          row.typeIds = row.typeIds.includes(id) ? row.typeIds.filter((x) => x !== id) : [...row.typeIds, id];
           save({ [key]: preset });
           c.classList.toggle("on");
-          el.querySelector(".chosen").innerHTML = row.types.length
-            ? "aus: <b>" + row.types.join(", ") + "</b>"
-            : "<b>noch kein Typ gewählt</b>";
+          el.querySelector(".chosen").innerHTML = chosenHtml(row);
         });
         gEl.querySelector(".chips").appendChild(c);
+        chips.push([c, gEl]);
       }
       details.appendChild(gEl);
     }
+    search.addEventListener("input", () => {
+      const q = search.value.trim().toLowerCase();
+      const visibleGroups = new Set();
+      for (const [c, gEl] of chips) {
+        const show = !q || c.dataset.search.includes(q);
+        c.hidden = !show;
+        if (show) visibleGroups.add(gEl);
+      }
+      for (const [, gEl] of chips) gEl.hidden = !visibleGroups.has(gEl);
+    });
+
     const own = document.createElement("div");
     own.className = "group";
-    own.innerHTML = `<div class="group-title">Typ fehlt? Genau wie im Spiel eintippen und Enter drücken</div><input type="text" placeholder="z.B. AB-Rüst">`;
+    own.innerHTML = `<div class="group-title">Typ fehlt in der Liste (z.B. ganz neues Fahrzeug)? Typ-ID eingeben und Enter drücken</div>
+      <input type="number" min="0" step="1" placeholder="Typ-ID, z.B. 192">`;
     own.querySelector("input").addEventListener("keydown", (e) => {
-      const v = e.target.value.trim();
-      if (e.key !== "Enter" || !v) return;
-      if (!row.types.includes(v)) row.types.push(v);
+      const v = Number(e.target.value);
+      if (e.key !== "Enter" || e.target.value === "" || !Number.isInteger(v) || v < 0) return;
+      if (!row.typeIds.includes(v)) row.typeIds.push(v);
       commit();
     });
     details.appendChild(own);
@@ -194,7 +233,7 @@ function renderPreset(containerId, key) {
   add.className = "btn";
   add.textContent = "+ weitere Fahrzeugzeile";
   add.addEventListener("click", () => {
-    preset.push({ count: 1, types: [] });
+    preset.push({ count: 1, typeIds: [] });
     commit();
   });
   box.appendChild(add);

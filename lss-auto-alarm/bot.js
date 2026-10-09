@@ -106,6 +106,8 @@
     return mission.planned && settings.presetPlanned ? settings.presetPlanned : settings.preset;
   }
 
+  const typeName = (id) => (id === null ? "unbekannter Typ" : LSS_TYPE_NAMES[id] || `Typ-ID ${id}`);
+
   // Entfernung zellenweise lesen, sonst verschmilzt z.B. "LF 20" + "2,5 km" zu "202,5 km"
   function parseKm(row) {
     for (const cell of row.querySelectorAll("td")) {
@@ -133,26 +135,28 @@
       .filter((cb) => !cb.disabled)
       .map((cb) => {
         const tr = cb.closest("tr") || cb;
-        const type = tr.getAttribute("vehicle_type") || LSS_TYPE_IDS[cb.getAttribute("vehicle_type_id")] || "";
-        return { cb, type: type.trim(), km: parseKm(tr) };
+        // Feste Typ-ID statt angezeigtem Namen – umbenannte Fahrzeuge/Typen spielen keine Rolle
+        const raw = cb.getAttribute("vehicle_type_id") ?? tr.getAttribute("vehicle_type_id");
+        const typeId = raw === null || raw === "" ? null : Number(raw);
+        return { cb, typeId, name: typeName(typeId), km: parseKm(tr) };
       });
 
     if (!rows.length) return { ok: false, reason: "keine freien Fahrzeuge in der Einsatzseite gefunden" };
 
     const preset = presetFor(mission);
     const chosen = [];
-    for (const item of preset.filter((p) => p.types.length)) {
-      const fitting = rows.filter((r) => item.types.includes(r.type) && !chosen.includes(r));
+    for (const item of preset.filter((p) => p.typeIds && p.typeIds.length)) {
+      const fitting = rows.filter((r) => item.typeIds.includes(r.typeId) && !chosen.includes(r));
       if (fitting.length < item.count) {
-        const seen = [...new Set(rows.map((r) => r.type || "?"))].slice(0, 6).join(", ");
-        return { ok: false, reason: `nicht genug freie ${item.types[0]} o.ä. (frei: ${seen})` };
+        const seen = [...new Set(rows.map((r) => r.name))].slice(0, 6).join(", ");
+        return { ok: false, reason: `nicht genug freie ${typeName(item.typeIds[0])} o.ä. (frei: ${seen})` };
       }
       chosen.push(...fitting.slice(0, item.count));
     }
     if (!chosen.length) return { ok: false, reason: "Fahrzeugauswahl ist leer" };
 
-    const allTypes = new Set(preset.flatMap((p) => p.types));
-    const freeAfter = rows.filter((r) => allTypes.has(r.type)).length - chosen.length;
+    const allTypes = new Set(preset.flatMap((p) => p.typeIds || []));
+    const freeAfter = rows.filter((r) => allTypes.has(r.typeId)).length - chosen.length;
     if (freeAfter < settings.reserve) {
       return { ok: false, reason: `Reserve: nur noch ${freeAfter} frei` };
     }
@@ -162,7 +166,7 @@
       return { ok: false, reason: `zu weit (${farthest} km)` };
     }
 
-    const vehicles = chosen.map((r) => r.type).join(", ");
+    const vehicles = chosen.map((r) => r.name).join(", ");
     if (dryRun) {
       return {
         ok: true,
@@ -336,10 +340,12 @@
 
   // Diagnose auch aus dem Popup der Erweiterung heraus
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg && msg.type === "lssaa-stats") {
-      LssStats.open();
-      sendResponse({ ok: true });
-      return;
+    // Auswertungsseite bittet um Abruf der Credits-Übersicht (geht nur hier im Spiel-Tab)
+    if (msg && msg.type === "lssaa-sync") {
+      LssStats.sync()
+        .then((added) => sendResponse({ added }))
+        .catch((e) => sendResponse({ error: e.message }));
+      return true;
     }
     if (msg && msg.type === "lssaa-diagnose") {
       diagnose().then((lines) => sendResponse({ lines, panel: !!document.getElementById("lss-verbands-bot") }));
@@ -427,7 +433,7 @@
     };
 
     $(".lssaa-toggle").addEventListener("click", () => chrome.storage.sync.set({ running: !settings.running }));
-    $(".lssaa-stats-btn").addEventListener("click", () => LssStats.open());
+    $(".lssaa-stats-btn").addEventListener("click", () => window.open(chrome.runtime.getURL("stats.html"), "_blank"));
     $(".lssaa-diag").addEventListener("click", () => {
       $(".lssaa-logbox").open = true;
       diagnose();

@@ -1,10 +1,11 @@
-// Auswertung: Welche vom Bot alarmierten Einsätze wurden abgeschlossen, und wie viele Credits
+// Auswertung (Daten): Welche vom Bot alarmierten Einsätze wurden abgeschlossen, und wie viele Credits
 // hat das Spiel dafür tatsächlich gutgeschrieben?
 //
 // Grundlage ist die Credits-Übersicht des Spiels (/credits). Jede Zeile dort hat Betrag,
 // Beschreibung und Zeitpunkt; Verbandseinsätze heißen "[Verband] <Einsatzname>".
 // Die Buchungen werden zwischengespeichert und den alarmierten Einsätzen über Name und
-// Zeitraum zugeordnet.
+// Zeitraum zugeordnet. Läuft im Spiel-Tab (Abruf von /credits braucht die Spiel-Anmeldung);
+// die Anzeige übernimmt die eigene Seite stats.html (stats-page.js).
 const LssStats = (() => {
   const KEEP_DAYS = 60;
   const MATCH_AFTER_END_MS = 20 * 60 * 1000; // Buchung darf bis 20 min nach Verschwinden kommen
@@ -15,8 +16,6 @@ const LssStats = (() => {
   // Schreibzugriffe nacheinander ausführen, damit sich Bot und Abgleich nicht überschreiben
   let chain = Promise.resolve();
   const exclusive = (fn) => (chain = chain.then(fn, fn));
-  let modal = null;
-  let period = "today";
 
   // ---------- Speicher ----------
 
@@ -265,169 +264,5 @@ const LssStats = (() => {
     return [...days.values()].filter((d) => d.t >= new Date(from).setHours(0, 0, 0, 0)).sort((a, b) => b.t - a.t);
   }
 
-  // ---------- Fenster ----------
-
-  const fmt = (n) => (n ?? 0).toLocaleString("de-DE");
-  const ago = (t) => {
-    const min = Math.round((Date.now() - t) / 60000);
-    return min < 1 ? "gerade eben" : min < 60 ? `vor ${min} min` : `vor ${Math.round(min / 60)} h`;
-  };
-  const time = (t) =>
-    new Date(t).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-  const STATUS_CLASS = {
-    erfolgreich: "ok",
-    "ohne Credits": "bad",
-    abgebrochen: "bad",
-    läuft: "run",
-    "wartet auf Credits": "run"
-  };
-
-  function el(tag, cls, text) {
-    const e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (text !== undefined) e.textContent = text;
-    return e;
-  }
-
-  async function render(message) {
-    if (!modal) return;
-    const data = await load();
-    const r = evaluate(data, PERIODS[period][1]());
-    const body = modal.querySelector(".lssst-content");
-    body.replaceChildren();
-
-    const tabs = el("div", "lssst-tabs");
-    for (const [key, [label]] of Object.entries(PERIODS)) {
-      const b = el("button", key === period ? "on" : "", label);
-      b.type = "button";
-      b.addEventListener("click", () => {
-        period = key;
-        render();
-      });
-      tabs.appendChild(b);
-    }
-    body.appendChild(tabs);
-
-    const kpis = el("div", "lssst-kpis");
-    const kpi = (value, label, cls) => {
-      const k = el("div", "lssst-kpi " + (cls || ""));
-      k.append(el("b", "", value), el("span", "", label));
-      kpis.appendChild(k);
-    };
-    kpi(fmt(r.sent), "vom Bot alarmiert");
-    kpi(
-      fmt(r.success),
-      `erfolgreich abgeschlossen${r.sent ? ` (${Math.round((r.success / r.sent) * 100)} %)` : ""}`,
-      "ok"
-    );
-    kpi(fmt(r.botCredits), "Credits erhalten", "money");
-    kpi(fmt(r.avg), "Ø Credits je Einsatz");
-    body.appendChild(kpis);
-
-    const states = el("div", "lssst-states");
-    states.append(
-      el("span", "run", `⏳ ${r.running} laufen noch / warten auf Credits`),
-      el("span", "bad", `✖ ${r.without} ohne Credits`),
-      el("span", "bad", `⊘ ${r.cancelled} abgebrochen`)
-    );
-    body.appendChild(states);
-
-    const all = el("div", "lssst-note");
-    all.innerHTML =
-      `<b>Alle Verbandseinsätze mit deiner Beteiligung</b> laut Credits-Übersicht (auch von Hand alarmierte): ` +
-      `<b>${fmt(r.allianceCount)}</b> Einsätze, <b>${fmt(r.allianceCredits)}</b> Credits` +
-      (r.eventCredits ? ` · Verbands-Event-Belohnungen: <b>${fmt(r.eventCredits)}</b> Credits` : "");
-    body.appendChild(all);
-
-    if (r.days.length > 1) {
-      body.appendChild(el("h4", "", "Pro Tag (vom Bot)"));
-      const t = el("table", "lssst-table");
-      t.innerHTML = "<thead><tr><th>Tag</th><th>Einsätze</th><th>Credits</th></tr></thead>";
-      const tb = el("tbody");
-      for (const d of r.days) {
-        const tr = el("tr");
-        tr.append(el("td", "", d.label), el("td", "num", fmt(d.count)), el("td", "num", fmt(d.credits)));
-        tb.appendChild(tr);
-      }
-      t.appendChild(tb);
-      body.appendChild(t);
-    }
-
-    body.appendChild(el("h4", "", "Einsätze"));
-    if (!r.mine.length) {
-      body.appendChild(el("p", "lssst-empty", "In diesem Zeitraum hat der Bot noch nichts alarmiert."));
-    } else {
-      const t = el("table", "lssst-table");
-      t.innerHTML = "<thead><tr><th>Alarmiert</th><th>Einsatz</th><th>Status</th><th>Credits</th></tr></thead>";
-      const tb = el("tbody");
-      for (const m of r.mine.slice(0, 100)) {
-        const tr = el("tr");
-        const name = el("td", "name", (m.planned ? "📅 " : "") + m.caption);
-        name.title = m.vehicles ? "Geschickt: " + m.vehicles : "";
-        tr.append(
-          el("td", "", time(m.sentAt)),
-          name,
-          el("td", "", ""),
-          el("td", "num", m.credits != null ? fmt(m.credits) : m.expected ? `~${fmt(m.expected)}` : "–")
-        );
-        tr.children[2].appendChild(el("span", "lssst-pill " + (STATUS_CLASS[m.status] || ""), m.status));
-        tb.appendChild(tr);
-      }
-      t.appendChild(tb);
-      body.appendChild(t);
-      if (r.mine.length > 100) body.appendChild(el("p", "lssst-empty", `… und ${r.mine.length - 100} weitere`));
-    }
-
-    modal.querySelector(".lssst-sync").textContent =
-      message || (data.meta.lastSync ? `Credits-Stand: ${ago(data.meta.lastSync)}` : "Credits noch nicht abgefragt");
-  }
-
-  async function refresh() {
-    const btn = modal && modal.querySelector(".lssst-refresh");
-    if (btn) btn.disabled = true;
-    render("Lese Credits-Übersicht …");
-    try {
-      const added = await sync();
-      await render();
-      if (added) modal.querySelector(".lssst-sync").textContent += ` · ${added} neue Buchungen`;
-    } catch (e) {
-      render("⚠ " + e.message);
-    } finally {
-      if (btn) btn.disabled = false;
-    }
-  }
-
-  function open() {
-    if (modal) return refresh();
-    modal = el("div");
-    modal.id = "lss-verbands-bot-stats";
-    modal.innerHTML = `
-      <div class="lssst-backdrop"></div>
-      <div class="lssst-window" role="dialog" aria-label="Auswertung">
-        <div class="lssst-head">
-          <span>📊</span><strong>Auswertung Verbands-Bot</strong>
-          <span class="lssst-spacer"></span>
-          <button type="button" class="lssst-refresh">⟳ Credits abrufen</button>
-          <button type="button" class="lssst-close" title="Schließen">✕</button>
-        </div>
-        <div class="lssst-sync"></div>
-        <div class="lssst-content"></div>
-        <div class="lssst-foot">„Erfolgreich“ heißt: Für den Einsatz ist in deiner Credits-Übersicht eine Gutschrift eingegangen.
-          Die Zuordnung erfolgt über Einsatzname und Zeitraum.</div>
-      </div>`;
-    document.body.appendChild(modal);
-    const close = () => {
-      modal.remove();
-      modal = null;
-      document.removeEventListener("keydown", onKey);
-    };
-    const onKey = (e) => e.key === "Escape" && close();
-    document.addEventListener("keydown", onKey);
-    modal.querySelector(".lssst-close").addEventListener("click", close);
-    modal.querySelector(".lssst-backdrop").addEventListener("click", close);
-    modal.querySelector(".lssst-refresh").addEventListener("click", refresh);
-    refresh();
-  }
-
-  return { recordDispatch, markEnded, sync, maybeSync, open };
+  return { load, recordDispatch, markEnded, sync, maybeSync, evaluate, PERIODS };
 })();

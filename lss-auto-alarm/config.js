@@ -5,9 +5,10 @@ const LSS_DEFAULTS = {
   // Bot läuft (Start/Stopp im Panel oder Popup)
   running: false,
 
-  // Welche Fahrzeuge geschickt werden. Pro Eintrag: Anzahl + erlaubte Typen.
+  // Welche Fahrzeuge geschickt werden. Pro Eintrag: Anzahl + erlaubte Fahrzeugtypen.
   // Von den erlaubten Typen wird immer das nächstgelegene freie Fahrzeug genommen.
-  preset: [{ count: 1, types: ["LF 20", "HLF 20", "LF 10", "LF 8/6", "LF 20/16", "LF 10/6", "LF 16-TS", "TSF-W", "MLF"] }],
+  // Gespeichert werden die festen Typ-IDs (vehicle_type_id), nicht die Namen.
+  preset: [{ count: 1, typeIds: lssTypeIds(["LF 20", "HLF 20", "LF 10", "LF 8/6", "LF 20/16", "LF 10/6", "LF 16-TS", "TSF-W", "MLF"]) }],
 
   // ---------- Grenzen ----------
   // Prüfintervall in Sekunden (± 30 % Zufall)
@@ -33,7 +34,7 @@ const LSS_DEFAULTS = {
   // Nach so vielen Fehlern hintereinander stoppt der Bot
   maxErrors: 3,
   // Version der gespeicherten Einstellungen (für Umstellungen bei Updates)
-  settingsVersion: 4
+  settingsVersion: 5
 };
 
 // Einsatzlisten auf der Hauptseite: Schlüssel -> [Element-ID, Anzeigename, geplant?]
@@ -44,27 +45,17 @@ const LSS_LISTS = {
   sicherheitswache_alliance: ["mission_list_sicherheitswache_alliance", "Geplante Verbandseinsätze (Sicherheitswachen)", true]
 };
 
-// Fahrzeugtypen für die Auswahl auf der Einstellungsseite
-const LSS_VEHICLE_GROUPS = {
-  "Löschfahrzeuge": ["LF 20", "HLF 20", "LF 10", "HLF 10", "LF 8/6", "LF 20/16", "LF 10/6", "LF 16-TS", "TSF-W", "MLF", "KLF"],
-  "Tanklöschfahrzeuge": ["TLF 2000", "TLF 3000", "TLF 4000", "TLF 8/8", "TLF 8/18", "TLF 16/24-Tr", "TLF 16/25", "TLF 16/45", "TLF 20/40", "TLF 20/40-SL", "TLF 16"],
-  "Feuerwehr-Sonderfahrzeuge": ["DLK 23", "RW", "ELW 1", "ELW 2", "GW-A", "GW-Öl", "GW-Messtechnik", "GW-Gefahrgut", "GW-Höhenrettung", "GW-L2-Wasser", "SW 1000", "SW 2000", "SW 2000-Tr", "SW Kats", "MTW", "Dekon-P", "FwK"],
-  "Rettungsdienst": ["RTW", "NEF", "KTW", "KTW Typ B", "RTH"],
-  "Polizei": ["FuStW", "FuStW (DGL)", "GruKw", "leBefKw"],
-  "THW": ["GKW", "MTW-TZ", "MzGW (FGr N)"]
-};
+// Fahrzeugtyp-Namen -> feste Typ-IDs (benötigt vehicle-types.js, das vorher geladen wird)
+function lssTypeIds(names) {
+  const byName = Object.fromEntries(LSS_VEHICLE_TYPES.map(([id, name]) => [name, id]));
+  return names.map((n) => byName[n]).filter((id) => id !== undefined);
+}
 
-// Fallback, falls eine Tabellenzeile keinen Typnamen trägt, nur die vehicle_type_id.
-const LSS_TYPE_IDS = {
-  0: "LF 20", 1: "LF 10", 2: "DLK 23", 3: "ELW 1", 4: "RW", 5: "GW-A", 6: "LF 8/6",
-  7: "LF 20/16", 8: "LF 10/6", 9: "LF 16-TS", 10: "GW-Öl", 11: "GW-L2-Wasser",
-  12: "GW-Messtechnik", 13: "SW 1000", 14: "SW 2000", 15: "SW 2000-Tr", 16: "SW Kats",
-  17: "TLF 2000", 18: "TLF 3000", 19: "TLF 8/8", 20: "TLF 8/18", 21: "TLF 16/24-Tr",
-  22: "TLF 16/25", 23: "TLF 16/45", 24: "TLF 20/40", 25: "TLF 20/40-SL", 26: "TLF 16",
-  27: "GW-Gefahrgut", 28: "RTW", 29: "NEF", 30: "HLF 20", 31: "RTH", 32: "FuStW",
-  33: "GW-Höhenrettung", 34: "ELW 2", 36: "MTW", 37: "TSF-W", 38: "KTW", 39: "GKW",
-  53: "Dekon-P", 57: "FwK"
-};
+// Alte Auswahl (Typnamen) auf Typ-IDs umstellen
+function lssMigratePreset(preset) {
+  if (!Array.isArray(preset)) return preset;
+  return preset.map((p) => (p.typeIds ? p : { count: p.count || 1, typeIds: lssTypeIds(p.types || []) }));
+}
 
 function lssLoadSettings() {
   return new Promise((resolve) => {
@@ -73,6 +64,13 @@ function lssLoadSettings() {
       if (s.settingsVersion < 4) {
         Object.assign(s, { maxPerRound: 0, maxActive: 0, maxPerHour: 0, settingsVersion: 4 });
         chrome.storage.sync.set({ maxPerRound: 0, maxActive: 0, maxPerHour: 0, settingsVersion: 4 });
+      }
+      // Ab Version 5 wird die Fahrzeugauswahl über feste Typ-IDs gespeichert
+      if (s.settingsVersion < 5) {
+        s.preset = lssMigratePreset(s.preset);
+        s.presetPlanned = lssMigratePreset(s.presetPlanned);
+        s.settingsVersion = 5;
+        chrome.storage.sync.set({ preset: s.preset, presetPlanned: s.presetPlanned, settingsVersion: 5 });
       }
       resolve(s);
     });

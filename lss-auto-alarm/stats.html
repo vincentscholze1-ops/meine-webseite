@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verbands-Bot – Auswertung</title>
+  <style>
+    :root {
+      --bg: #f6f7f9; --card: #fff; --text: #1f2329; --muted: #5f6368; --line: #e3e5e8;
+      --green: #188038; --green-soft: #e6f4ea; --gold: #b06000; --red: #c5221f; --red-soft: #fce8e6;
+      --yellow-soft: #fef7e0; --yellow: #8a5a00; --tab: #e8eaed;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16191d; --card: #20252b; --text: #eef0f2; --muted: #97a0a9; --line: #2c3238;
+        --green: #6fe08f; --green-soft: rgba(52,199,89,.16); --gold: #ffd84d; --red: #ff8a80; --red-soft: rgba(255,69,58,.16);
+        --yellow-soft: rgba(255,204,0,.16); --yellow: #ffd84d; --tab: #2c3238;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    header {
+      background: linear-gradient(135deg, #b3261e 0%, #e8453c 55%, #f07a3a 100%); color: #fff;
+    }
+    .head { max-width: 900px; margin: 0 auto; padding: 18px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .head h1 { font-size: 20px; margin: 0; }
+    .head small { opacity: .8; }
+    .head .spacer { flex: 1; }
+    .head button {
+      border: 0; border-radius: 8px; background: rgba(255,255,255,.2); color: #fff; padding: 8px 14px;
+      font: inherit; font-weight: 600; cursor: pointer;
+    }
+    .head button:hover { background: rgba(255,255,255,.32); }
+    .head button:disabled { opacity: .6; cursor: wait; }
+    main { max-width: 900px; margin: 0 auto; padding: 16px 16px 48px; }
+    #sync { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+
+    .tabs { display: inline-flex; background: var(--tab); border-radius: 10px; padding: 3px; gap: 2px; margin-bottom: 14px; }
+    .tabs button { border: 0; background: transparent; color: var(--muted); padding: 6px 16px; border-radius: 8px; font: inherit; cursor: pointer; }
+    .tabs button.on { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    @media (max-width: 640px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+    .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .kpi b { display: block; font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
+    .kpi span { color: var(--muted); font-size: 13px; }
+    .kpi.ok b { color: var(--green); }
+    .kpi.money b { color: var(--gold); }
+
+    .states { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 14px 0; color: var(--muted); font-size: 13px; }
+    .note { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+    h2 { margin: 22px 0 8px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+    .empty { color: var(--muted); }
+
+    table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 13px; }
+    th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--line); }
+    tr:last-child td { border-bottom: 0; }
+    td.num, th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+    td.when { color: var(--muted); white-space: nowrap; }
+    td.name { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pill { border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .pill.ok { background: var(--green-soft); color: var(--green); }
+    .pill.bad { background: var(--red-soft); color: var(--red); }
+    .pill.run { background: var(--yellow-soft); color: var(--yellow); }
+    footer { color: var(--muted); font-size: 12.5px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="head">
+      <span style="font-size:22px">📊</span>
+      <h1>Auswertung Verbands-Bot <small id="version"></small></h1>
+      <span class="spacer"></span>
+      <button id="refresh" type="button">⟳ Credits abrufen</button>
+    </div>
+  </header>
+  <main>
+    <div id="sync"></div>
+    <div id="content"></div>
+    <footer>
+      „Erfolgreich“ heißt: Für den Einsatz ist in deiner Credits-Übersicht im Spiel eine Gutschrift eingegangen.
+      Die Zuordnung erfolgt über Einsatzname und Zeitraum. Zum Abrufen neuer Credits muss die Hauptseite des
+      Leitstellenspiels in einem Tab geöffnet sein; ohne Spiel-Tab wird der zuletzt gespeicherte Stand angezeigt.
+    </footer>
+  </main>
+  <script src="stats.js"></script>
+  <script src="stats-page.js"></script>
+</body>
+</html>

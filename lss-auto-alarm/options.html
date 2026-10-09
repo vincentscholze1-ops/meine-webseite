@@ -59,6 +59,9 @@
     .number-input span { color: var(--muted); font-size: 13px; min-width: 70px; }
     .number input { width: 110px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font: inherit; font-size: 15px; font-weight: 600; text-align: right; }
     .number input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .chip-id { margin-left: 6px; font-size: 10px; opacity: .6; font-variant-numeric: tabular-nums; }
+    .type-search { margin-top: 10px; }
+    [hidden] { display: none !important; }
     #saved { position: fixed; right: 16px; bottom: 16px; background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; opacity: 0; transition: opacity .2s; }
     #saved.show { opacity: 1; }
   </style>
@@ -127,7 +130,8 @@
   </section>
 </main>
 <div id="saved">✓ Gespeichert</div>
-<script src="config.js"></script>
+<script src="vehicle-types.js"></script>
+  <script src="config.js"></script>
 <script src="options.js"></script>
 </body>
 </html>
