@@ -3,14 +3,15 @@
 // die voreingestellte Fahrzeugauswahl – innerhalb der Grenzen aus den Einstellungen.
 (async () => {
   if (window.top !== window) return;
-  if (!document.querySelector("#mission_list_alliance, #mission_list_alliance_event")) return;
 
   let settings = await lssLoadSettings();
   let timer = null;
   let errors = 0;
   let haveLock = false;
+  let lastSummary = "";
   const skipped = new Map(); // missionId -> Zeitpunkt, bis wann übersprungen wird
   const panel = createPanel();
+  panel.log(`Geladen – ${listMissions().length} Verbandseinsätze in der Liste gefunden.`);
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "sync") return;
@@ -75,7 +76,7 @@
 
   // ---------- Einen Einsatz alarmieren ----------
 
-  async function dispatch(mission) {
+  async function dispatch(mission, dryRun = false) {
     const res = await fetch(`/missions/${mission.id}`, { credentials: "include" });
     if (!res.ok) throw new Error(`Einsatz ${mission.id}: HTTP ${res.status}`);
     if (/sign_in/.test(res.url)) throw new Error("Nicht eingeloggt");
@@ -95,11 +96,14 @@
         return { cb, type: type.trim(), km: parseKm(tr) };
       });
 
+    if (!rows.length) return { ok: false, reason: "keine freien Fahrzeuge in der Einsatzseite gefunden" };
+
     const chosen = [];
     for (const item of settings.preset) {
       const fitting = rows.filter((r) => item.types.includes(r.type) && !chosen.includes(r));
       if (fitting.length < item.count) {
-        return { ok: false, reason: `nicht genug freie ${item.types[0]} o.ä.` };
+        const seen = [...new Set(rows.map((r) => r.type || "?"))].slice(0, 6).join(", ");
+        return { ok: false, reason: `nicht genug freie ${item.types[0]} o.ä. (frei: ${seen})` };
       }
       chosen.push(...fitting.slice(0, item.count));
     }
@@ -114,6 +118,16 @@
     const farthest = Math.max(...chosen.map((r) => r.km ?? 0));
     if (farthest > settings.maxDistanceKm) {
       return { ok: false, reason: `zu weit (${farthest} km)` };
+    }
+
+    if (dryRun) {
+      return {
+        ok: true,
+        dry: true,
+        vehicles: chosen.map((r) => r.type).join(", "),
+        km: farthest,
+        info: `${rows.length} freie Fahrzeuge, Entfernung ${chosen.some((r) => r.km !== null) ? "lesbar" : "nicht lesbar"}`
+      };
     }
 
     // Formular so nachbauen, wie der Browser es beim Klick auf "Alarmieren" senden würde
@@ -161,15 +175,21 @@
       );
       panel.status(`aktiv ${active}/${settings.maxActive} · letzte Stunde ${history.length}/${settings.maxPerHour}`);
 
-      if (budget > 0) {
-        const credits = await loadCredits();
-        const exclude = settings.excludeMatch ? new RegExp(settings.excludeMatch, "i") : null;
-        const candidates = missions
-          .filter((m) => !m.participating && !sent[m.id] && !skipped.has(m.id))
-          .filter((m) => !exclude || !exclude.test(m.caption))
-          .map((m) => ({ ...m, credits: credits[m.typeId] ?? null }))
-          .filter((m) => (m.credits === null ? settings.allowUnknownCredits : m.credits >= settings.minCredits))
-          .sort((a, b) => (b.credits ?? -1) - (a.credits ?? -1)); // lukrativste zuerst
+      if (budget <= 0) {
+        summarize(
+          `Grenze erreicht (aktiv ${active}/${settings.maxActive}, Stunde ${history.length}/${settings.maxPerHour}) – warte.`
+        );
+      } else {
+        const candidates = await findCandidates(missions, sent);
+        if (!candidates.length) {
+          const open = missions.filter((m) => !m.participating && !sent[m.id]).length;
+          summarize(
+            missions.length
+              ? `Nichts zu tun: ${missions.length} Verbandseinsätze, ${missions.length - open} schon beteiligt, ` +
+                  `${open} offen (gefiltert oder kürzlich übersprungen).`
+              : "Keine Verbandseinsätze in der Liste gefunden."
+          );
+        }
 
         for (const mission of candidates) {
           if (budget <= 0 || !settings.running) break;
@@ -206,6 +226,46 @@
     schedule(jitter(settings.intervalSec * 1000));
   }
 
+  async function findCandidates(missions, sent) {
+    const credits = await loadCredits();
+    const exclude = settings.excludeMatch ? new RegExp(settings.excludeMatch, "i") : null;
+    return missions
+      .filter((m) => !m.participating && !sent[m.id] && !skipped.has(m.id))
+      .filter((m) => !exclude || !exclude.test(m.caption))
+      .map((m) => ({ ...m, credits: credits[m.typeId] ?? null }))
+      .filter((m) => (m.credits === null ? settings.allowUnknownCredits : m.credits >= settings.minCredits))
+      .sort((a, b) => (b.credits ?? -1) - (a.credits ?? -1)); // lukrativste zuerst
+  }
+
+  // Gleiche Statusmeldung nicht jede Runde neu ins Protokoll schreiben
+  function summarize(text) {
+    if (text !== lastSummary) panel.log(text);
+    lastSummary = text;
+  }
+
+  // Probelauf ohne zu alarmieren: zeigt, was der Bot sieht
+  async function diagnose() {
+    try {
+      const missions = listMissions();
+      panel.log(
+        `Diagnose: ${missions.length} Verbandseinsätze, davon ${missions.filter((m) => m.participating).length} beteiligt` +
+          ` · Lock: ${haveLock ? "ja" : "nein"} · Bot ${settings.running ? "läuft" : "gestoppt"}`
+      );
+      const { sent = {} } = await chrome.storage.local.get("sent");
+      const candidates = await findCandidates(missions, sent);
+      panel.log(`Diagnose: ${candidates.length} Kandidaten nach Filtern.`);
+      const target = candidates[0] || missions[0];
+      if (!target) return;
+      const result = await dispatch(target, true);
+      panel.log(
+        `Diagnose „${target.caption}“: ` +
+          (result.ok ? `würde ${result.vehicles} schicken (${result.km} km) – ${result.info}` : result.reason)
+      );
+    } catch (e) {
+      panel.log(`Diagnose-Fehler: ${e.message}`);
+    }
+  }
+
   // ---------- Panel ----------
 
   function createPanel() {
@@ -214,7 +274,10 @@
     box.innerHTML = `
       <div class="lssaa-head">
         <span>Verbands-Bot <span class="lssaa-state"></span></span>
-        <button type="button" class="lssaa-toggle"></button>
+        <span>
+          <button type="button" class="lssaa-diag" title="Probelauf ohne Alarmierung">Diagnose</button>
+          <button type="button" class="lssaa-toggle"></button>
+        </span>
       </div>
       <div class="lssaa-status"></div>
       <ul class="lssaa-log"></ul>`;
@@ -224,6 +287,7 @@
     const statusEl = box.querySelector(".lssaa-status");
     const logEl = box.querySelector(".lssaa-log");
     toggle.addEventListener("click", () => chrome.storage.sync.set({ running: !settings.running }));
+    box.querySelector(".lssaa-diag").addEventListener("click", () => diagnose());
 
     const api = {
       update() {
@@ -246,11 +310,19 @@
     return api;
   }
 
-  // Nur ein Tab darf gleichzeitig alarmieren
-  navigator.locks.request("lss-auto-alarm-bot", () => {
+  function takeLock() {
     haveLock = true;
     panel.update();
     schedule(3000);
-    return new Promise(() => {}); // Lock halten, solange der Tab offen ist
-  });
+  }
+
+  // Nur ein Tab darf gleichzeitig alarmieren
+  if (navigator.locks) {
+    navigator.locks.request("lss-auto-alarm-bot", () => {
+      takeLock();
+      return new Promise(() => {}); // Lock halten, solange der Tab offen ist
+    });
+  } else {
+    takeLock();
+  }
 })();
