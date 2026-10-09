@@ -1,17 +1,30 @@
 // Läuft auf der Hauptseite des Leitstellenspiels.
-// Schaut regelmäßig in die Liste der Verbandseinsätze und schickt zu jedem neuen Einsatz
-// die voreingestellte Fahrzeugauswahl – innerhalb der Grenzen aus den Einstellungen.
+// Schaut regelmäßig in die gewählten Einsatzlisten (Verband, Events, geplante Einsätze) und
+// schickt zu jedem neuen Einsatz die voreingestellte Fahrzeugauswahl – innerhalb der Grenzen.
 (async () => {
   if (window.top !== window) return;
 
   let settings = await lssLoadSettings();
   let timer = null;
+  let nextRoundAt = null;
+  let roundRunning = false;
   let errors = 0;
   let haveLock = false;
   let lastSummary = "";
   const skipped = new Map(); // missionId -> Zeitpunkt, bis wann übersprungen wird
+
+  // Vom Bot alarmierte Einsätze und Alarmierungen der letzten Stunde – im Speicher gehalten,
+  // damit die Anzeige sofort stimmt, und zusätzlich gesichert für Neuladen der Seite.
+  const stored = await chrome.storage.local.get(["sent", "history"]);
+  const sent = {};
+  for (const [id, v] of Object.entries(stored.sent || {})) {
+    sent[id] = typeof v === "number" ? { time: v, caption: "Einsatz " + id } : v;
+  }
+  let history = stored.history || [];
+  const persist = () => chrome.storage.local.set({ sent, history });
+
   const panel = createPanel();
-  panel.log(`Geladen – ${listMissions().length} Verbandseinsätze in der Liste gefunden.`);
+  panel.log(`Geladen – ${listMissions().length} Einsätze in den gewählten Listen gefunden.`);
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "sync") return;
@@ -23,6 +36,7 @@
       settings.running ? schedule(2000) : stop();
     }
     panel.update();
+    refreshView();
   });
 
   // ---------- Hilfsfunktionen ----------
@@ -32,12 +46,18 @@
 
   function schedule(ms) {
     clearTimeout(timer);
-    if (settings.running && haveLock) timer = setTimeout(round, ms);
+    nextRoundAt = null;
+    if (settings.running && haveLock) {
+      nextRoundAt = Date.now() + ms;
+      timer = setTimeout(round, ms);
+    }
+    panel.update();
   }
 
   function stop() {
     clearTimeout(timer);
     timer = null;
+    nextRoundAt = null;
   }
 
   async function loadCredits() {
@@ -51,18 +71,36 @@
     return byId;
   }
 
+  function activeListKeys() {
+    return Object.keys(LSS_LISTS).filter((k) => settings.lists && settings.lists[k]);
+  }
+
   function listMissions() {
-    return [...document.querySelectorAll(settings.listSelector)].map((el) => {
-      const id = el.getAttribute("mission_id") || el.id.replace(/^mission_/, "");
-      const marker = el.querySelector(`#mission_participant_${id}`);
-      const caption = el.querySelector(`#mission_caption_${id}`) || el.querySelector("a[id^=mission_caption_]");
-      return {
-        id,
-        typeId: el.getAttribute("mission_type_id"),
-        caption: (caption ? caption.textContent : "Einsatz " + id).replace(/\s+/g, " ").trim(),
-        participating: !!marker && !marker.classList.contains("hidden")
-      };
-    });
+    const missions = [];
+    for (const key of activeListKeys()) {
+      const [elementId, , planned] = LSS_LISTS[key];
+      for (const el of document.querySelectorAll(`#${elementId} .missionSideBarEntry`)) {
+        const id = el.getAttribute("mission_id") || el.id.replace(/^mission_/, "");
+        const marker = el.querySelector(`#mission_participant_${id}`);
+        const caption = el.querySelector(`#mission_caption_${id}`) || el.querySelector("a[id^=mission_caption_]");
+        const panelEl = el.querySelector(`#mission_panel_${id}`) || el;
+        const cls = panelEl.className || "";
+        missions.push({
+          id,
+          list: key,
+          planned,
+          typeId: el.getAttribute("mission_type_id"),
+          caption: (caption ? caption.textContent : "Einsatz " + id).replace(/\s+/g, " ").trim(),
+          participating: !!marker && !marker.classList.contains("hidden"),
+          state: /green/.test(cls) ? "vor Ort" : /yellow/.test(cls) ? "Anfahrt" : "offen"
+        });
+      }
+    }
+    return missions;
+  }
+
+  function presetFor(mission) {
+    return mission.planned && settings.presetPlanned ? settings.presetPlanned : settings.preset;
   }
 
   // Entfernung zellenweise lesen, sonst verschmilzt z.B. "LF 20" + "2,5 km" zu "202,5 km"
@@ -98,8 +136,9 @@
 
     if (!rows.length) return { ok: false, reason: "keine freien Fahrzeuge in der Einsatzseite gefunden" };
 
+    const preset = presetFor(mission);
     const chosen = [];
-    for (const item of settings.preset) {
+    for (const item of preset.filter((p) => p.types.length)) {
       const fitting = rows.filter((r) => item.types.includes(r.type) && !chosen.includes(r));
       if (fitting.length < item.count) {
         const seen = [...new Set(rows.map((r) => r.type || "?"))].slice(0, 6).join(", ");
@@ -107,9 +146,9 @@
       }
       chosen.push(...fitting.slice(0, item.count));
     }
-    if (!chosen.length) return { ok: false, reason: "Auswahl ist leer" };
+    if (!chosen.length) return { ok: false, reason: "Fahrzeugauswahl ist leer" };
 
-    const allTypes = new Set(settings.preset.flatMap((p) => p.types));
+    const allTypes = new Set(preset.flatMap((p) => p.types));
     const freeAfter = rows.filter((r) => allTypes.has(r.type)).length - chosen.length;
     if (freeAfter < settings.reserve) {
       return { ok: false, reason: `Reserve: nur noch ${freeAfter} frei` };
@@ -120,11 +159,11 @@
       return { ok: false, reason: `zu weit (${farthest} km)` };
     }
 
+    const vehicles = chosen.map((r) => r.type).join(", ");
     if (dryRun) {
       return {
         ok: true,
-        dry: true,
-        vehicles: chosen.map((r) => r.type).join(", "),
+        vehicles,
         km: farthest,
         info: `${rows.length} freie Fahrzeuge, Entfernung ${chosen.some((r) => r.km !== null) ? "lesbar" : "nicht lesbar"}`
       };
@@ -150,44 +189,49 @@
       body
     });
     if (!post.ok) throw new Error(`Alarmieren ${mission.id}: HTTP ${post.status}`);
-    return { ok: true, vehicles: chosen.map((r) => r.type).join(", "), km: farthest };
+    return { ok: true, vehicles, km: farthest };
   }
 
   // ---------- Ein Durchgang ----------
 
+  function counts(missions) {
+    const hourAgo = Date.now() - 3600 * 1000;
+    history = history.filter((t) => t > hourAgo);
+    return {
+      active: missions.filter((m) => m.participating || sent[m.id]).length,
+      lastHour: history.length
+    };
+  }
+
   async function round() {
-    if (!settings.running) return;
+    if (!settings.running || roundRunning) return;
+    roundRunning = true;
+    nextRoundAt = null;
+    panel.update();
     const now = Date.now();
     try {
-      const store = await chrome.storage.local.get(["sent", "history"]);
-      const sent = store.sent || {};
-      const history = (store.history || []).filter((t) => now - t < 3600 * 1000);
       const missions = listMissions();
       const inList = new Set(missions.map((m) => m.id));
-      for (const id of Object.keys(sent)) if (!inList.has(id)) delete sent[id];
+      // Erledigte Einsätze verschwinden aus der Liste – dann auch hier vergessen
+      if (missions.length || !document.querySelector(".missionSideBarEntry")) {
+        for (const id of Object.keys(sent)) if (!inList.has(id)) delete sent[id];
+      }
       for (const [id, until] of skipped) if (until < now || !inList.has(id)) skipped.delete(id);
 
-      const active = missions.filter((m) => m.participating || sent[m.id]).length;
-      let budget = Math.min(
-        settings.maxPerRound,
-        settings.maxActive - active,
-        settings.maxPerHour - history.length
-      );
-      panel.status(`aktiv ${active}/${settings.maxActive} · letzte Stunde ${history.length}/${settings.maxPerHour}`);
+      const { active, lastHour } = counts(missions);
+      let budget = Math.min(settings.maxPerRound, settings.maxActive - active, settings.maxPerHour - lastHour);
 
       if (budget <= 0) {
-        summarize(
-          `Grenze erreicht (aktiv ${active}/${settings.maxActive}, Stunde ${history.length}/${settings.maxPerHour}) – warte.`
-        );
+        summarize(`Grenze erreicht (aktiv ${active}/${settings.maxActive}, Stunde ${lastHour}/${settings.maxPerHour}) – warte.`);
       } else {
-        const candidates = await findCandidates(missions, sent);
+        const candidates = await findCandidates(missions);
         if (!candidates.length) {
           const open = missions.filter((m) => !m.participating && !sent[m.id]).length;
           summarize(
             missions.length
-              ? `Nichts zu tun: ${missions.length} Verbandseinsätze, ${missions.length - open} schon beteiligt, ` +
+              ? `Nichts zu tun: ${missions.length} Einsätze, ${missions.length - open} schon beteiligt, ` +
                   `${open} offen (gefiltert oder kürzlich übersprungen).`
-              : "Keine Verbandseinsätze in der Liste gefunden."
+              : "Keine Einsätze in den gewählten Listen."
           );
         }
 
@@ -195,10 +239,18 @@
           if (budget <= 0 || !settings.running) break;
           const result = await dispatch(mission);
           if (result.ok) {
-            sent[mission.id] = Date.now();
+            sent[mission.id] = {
+              time: Date.now(),
+              caption: mission.caption,
+              credits: mission.credits,
+              vehicles: result.vehicles,
+              planned: mission.planned
+            };
             history.push(Date.now());
             budget--;
-            panel.log(`✔ ${mission.caption} (${mission.credits ?? "?"} Cr) ← ${result.vehicles}, ${result.km} km`);
+            persist();
+            refreshView(); // sofort anzeigen, nicht erst nach dem Durchgang
+            panel.log(`✔ ${mission.planned ? "[geplant] " : ""}${mission.caption} ← ${result.vehicles}, ${result.km} km`);
           } else {
             skipped.set(mission.id, Date.now() + 10 * 60 * 1000);
             panel.log(`– ${mission.caption}: ${result.reason}`);
@@ -206,12 +258,7 @@
           await sleep(jitter(3000));
         }
       }
-
-      await chrome.storage.local.set({ sent, history });
-      panel.status(
-        `aktiv ${missions.filter((m) => m.participating || sent[m.id]).length}/${settings.maxActive}` +
-          ` · letzte Stunde ${history.length}/${settings.maxPerHour}`
-      );
+      await persist();
       errors = 0;
     } catch (e) {
       errors++;
@@ -219,19 +266,23 @@
       console.warn("[LSS Auto-Alarm]", e);
       if (errors >= settings.maxErrors) {
         panel.log(`Gestoppt nach ${errors} Fehlern.`);
+        roundRunning = false;
         chrome.storage.sync.set({ running: false });
         return;
       }
+    } finally {
+      roundRunning = false;
+      refreshView();
     }
     schedule(jitter(settings.intervalSec * 1000));
   }
 
-  async function findCandidates(missions, sent) {
+  async function findCandidates(missions) {
     const credits = await loadCredits();
-    const exclude = settings.excludeMatch ? new RegExp(settings.excludeMatch, "i") : null;
+    const words = (settings.excludeWords || []).map((w) => w.toLowerCase()).filter(Boolean);
     return missions
       .filter((m) => !m.participating && !sent[m.id] && !skipped.has(m.id))
-      .filter((m) => !exclude || !exclude.test(m.caption))
+      .filter((m) => !words.some((w) => m.caption.toLowerCase().includes(w)))
       .map((m) => ({ ...m, credits: credits[m.typeId] ?? null }))
       .filter((m) => (m.credits === null ? settings.allowUnknownCredits : m.credits >= settings.minCredits))
       .sort((a, b) => (b.credits ?? -1) - (a.credits ?? -1)); // lukrativste zuerst
@@ -252,12 +303,11 @@
     };
     try {
       const missions = listMissions();
-      out(
-        `Diagnose: ${missions.length} Verbandseinsätze, davon ${missions.filter((m) => m.participating).length} beteiligt` +
-          ` · Lock: ${haveLock ? "ja" : "nein"} · Bot ${settings.running ? "läuft" : "gestoppt"}`
-      );
-      const { sent = {} } = await chrome.storage.local.get("sent");
-      const candidates = await findCandidates(missions, sent);
+      const perList = activeListKeys()
+        .map((k) => `${LSS_LISTS[k][1]}: ${missions.filter((m) => m.list === k).length}`)
+        .join(", ");
+      out(`Diagnose: ${perList || "keine Liste gewählt"} · Lock: ${haveLock ? "ja" : "nein"} · Bot ${settings.running ? "läuft" : "gestoppt"}`);
+      const candidates = await findCandidates(missions);
       out(`Diagnose: ${candidates.length} Kandidaten nach Filtern.`);
       const target = candidates[0] || missions[0];
       if (target) {
@@ -281,6 +331,36 @@
     }
   });
 
+  // ---------- Live-Anzeige ----------
+
+  function refreshView() {
+    const missions = listMissions();
+    const { active, lastHour } = counts(missions);
+    const byId = Object.fromEntries(missions.map((m) => [m.id, m]));
+    const mine = Object.entries(sent)
+      .filter(([id]) => byId[id])
+      .map(([id, info]) => ({ id, ...info, state: byId[id].state }))
+      .sort((a, b) => b.time - a.time);
+    panel.view({ active, lastHour, mine, total: missions.length });
+  }
+
+  // Einsatzliste beobachten: jede Änderung im Spiel aktualisiert die Anzeige sofort
+  let refreshPending = false;
+  new MutationObserver((mutations) => {
+    const own = document.getElementById("lss-auto-alarm");
+    if (refreshPending || mutations.every((m) => own && own.contains(m.target))) return;
+    refreshPending = true;
+    setTimeout(() => {
+      refreshPending = false;
+      refreshView();
+    }, 300);
+  }).observe(document.getElementById("missions-panel-body") || document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["class"]
+  });
+
   // ---------- Panel ----------
 
   function createPanel() {
@@ -288,42 +368,113 @@
     box.id = "lss-auto-alarm";
     box.innerHTML = `
       <div class="lssaa-head">
-        <span>Verbands-Bot <span class="lssaa-state"></span></span>
-        <span>
-          <button type="button" class="lssaa-diag" title="Probelauf ohne Alarmierung">Diagnose</button>
-          <button type="button" class="lssaa-toggle"></button>
-        </span>
+        <button type="button" class="lssaa-collapse" title="Ein-/Ausklappen">▾</button>
+        <strong>Verbands-Bot</strong>
+        <span class="lssaa-state"></span>
+        <span class="lssaa-spacer"></span>
+        <button type="button" class="lssaa-settings" title="Einstellungen">⚙</button>
+        <button type="button" class="lssaa-toggle"></button>
       </div>
-      <div class="lssaa-status"></div>
-      <ul class="lssaa-log"></ul>`;
+      <div class="lssaa-body">
+        <div class="lssaa-stats">
+          <div><b class="lssaa-active">0</b><span>aktiv</span></div>
+          <div><b class="lssaa-hour">0</b><span>letzte Stunde</span></div>
+          <div><b class="lssaa-next">–</b><span>nächste Prüfung</span></div>
+        </div>
+        <div class="lssaa-actions">
+          <button type="button" class="lssaa-now">Jetzt prüfen</button>
+          <button type="button" class="lssaa-diag" title="Probelauf ohne Alarmierung">Diagnose</button>
+        </div>
+        <div class="lssaa-section">Vom Bot alarmiert</div>
+        <ul class="lssaa-mine"></ul>
+        <details class="lssaa-logbox"><summary>Protokoll</summary><ul class="lssaa-log"></ul></details>
+      </div>`;
     document.body.appendChild(box);
-    const state = box.querySelector(".lssaa-state");
-    const toggle = box.querySelector(".lssaa-toggle");
-    const statusEl = box.querySelector(".lssaa-status");
-    const logEl = box.querySelector(".lssaa-log");
-    toggle.addEventListener("click", () => chrome.storage.sync.set({ running: !settings.running }));
-    box.querySelector(".lssaa-diag").addEventListener("click", () => diagnose());
+    const $ = (sel) => box.querySelector(sel);
+    const logEl = $(".lssaa-log");
+
+    $(".lssaa-toggle").addEventListener("click", () => chrome.storage.sync.set({ running: !settings.running }));
+    $(".lssaa-diag").addEventListener("click", () => {
+      $(".lssaa-logbox").open = true;
+      diagnose();
+    });
+    $(".lssaa-now").addEventListener("click", () => {
+      if (!settings.running) return api.log("Erst „Start“ drücken.");
+      if (!roundRunning) schedule(0);
+    });
+    $(".lssaa-settings").addEventListener("click", () => window.open(chrome.runtime.getURL("options.html"), "_blank"));
+
+    const setCollapsed = (c) => {
+      box.classList.toggle("collapsed", c);
+      $(".lssaa-collapse").textContent = c ? "▸" : "▾";
+      try {
+        localStorage.setItem("lssaa-collapsed", c ? "1" : "");
+      } catch (e) {}
+    };
+    $(".lssaa-collapse").addEventListener("click", () => setCollapsed(!box.classList.contains("collapsed")));
+    try {
+      setCollapsed(!!localStorage.getItem("lssaa-collapsed"));
+    } catch (e) {}
+
+    // Countdown jede Sekunde
+    setInterval(() => {
+      $(".lssaa-next").textContent = roundRunning
+        ? "läuft…"
+        : nextRoundAt
+          ? Math.max(0, Math.round((nextRoundAt - Date.now()) / 1000)) + " s"
+          : "–";
+    }, 1000);
 
     const api = {
       update() {
         const waiting = settings.running && !haveLock;
-        state.textContent = waiting ? "(wartet – läuft in anderem Tab)" : settings.running ? "● läuft" : "○ gestoppt";
+        const state = $(".lssaa-state");
+        state.textContent = waiting ? "wartet (anderer Tab)" : settings.running ? "● läuft" : "○ gestoppt";
         state.className = "lssaa-state " + (settings.running ? "on" : "off");
-        toggle.textContent = settings.running ? "Stopp" : "Start";
+        $(".lssaa-toggle").textContent = settings.running ? "Stopp" : "Start";
+        $(".lssaa-toggle").classList.toggle("on", settings.running);
       },
-      status(text) {
-        statusEl.textContent = text;
+      view({ active, lastHour, mine, total }) {
+        $(".lssaa-active").textContent = `${active}/${settings.maxActive}`;
+        $(".lssaa-hour").textContent = `${lastHour}/${settings.maxPerHour}`;
+        const list = $(".lssaa-mine");
+        list.replaceChildren();
+        if (!mine.length) {
+          const li = document.createElement("li");
+          li.className = "empty";
+          li.textContent = total ? "Noch keine – " + total + " Einsätze in den Listen." : "Noch keine.";
+          list.appendChild(li);
+        }
+        for (const m of mine) {
+          const li = document.createElement("li");
+          const dot = document.createElement("span");
+          dot.className = "dot " + (m.state === "vor Ort" ? "green" : m.state === "Anfahrt" ? "yellow" : "red");
+          dot.title = m.state;
+          const a = document.createElement("a");
+          a.href = `/missions/${m.id}`;
+          a.className = "lightbox-open";
+          a.textContent = (m.planned ? "📅 " : "") + m.caption;
+          const meta = document.createElement("small");
+          const mins = Math.round((Date.now() - m.time) / 60000);
+          meta.textContent = `${m.credits != null ? m.credits + " Cr · " : ""}${m.state} · vor ${mins} min`;
+          li.append(dot, a, meta);
+          list.appendChild(li);
+        }
       },
       log(text) {
         const li = document.createElement("li");
         li.textContent = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " " + text;
         logEl.prepend(li);
-        while (logEl.children.length > 8) logEl.lastChild.remove();
+        while (logEl.children.length > 30) logEl.lastChild.remove();
       }
     };
     api.update();
     return api;
   }
+
+  refreshView();
+  // Alter "vor x min" weiterzählen
+  setInterval(refreshView, 30 * 1000);
 
   function takeLock() {
     haveLock = true;

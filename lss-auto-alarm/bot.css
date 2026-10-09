@@ -1,18 +1,42 @@
 #lss-auto-alarm {
   position: fixed; left: 12px; bottom: 12px; z-index: 2147483647;
-  width: 320px; padding: 10px 12px;
-  background: #1f2329; color: #e8eaed; border-radius: 8px;
+  width: 340px; padding: 10px 12px;
+  background: #1f2329; color: #e8eaed; border-radius: 10px;
   font: 12px/1.4 system-ui, sans-serif; box-shadow: 0 4px 16px rgba(0,0,0,.35);
 }
-#lss-auto-alarm .lssaa-head { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 13px; }
-#lss-auto-alarm .lssaa-state { font-weight: 400; font-size: 12px; }
+#lss-auto-alarm.collapsed .lssaa-body { display: none; }
+#lss-auto-alarm .lssaa-head { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+#lss-auto-alarm .lssaa-spacer { flex: 1; }
+#lss-auto-alarm .lssaa-state { font-size: 12px; }
 #lss-auto-alarm .lssaa-state.on { color: #5bd37a; }
 #lss-auto-alarm .lssaa-state.off { color: #9aa0a6; }
-#lss-auto-alarm .lssaa-status { color: #9aa0a6; margin: 4px 0; }
-#lss-auto-alarm .lssaa-log { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow: auto; }
-#lss-auto-alarm .lssaa-log li { margin-bottom: 2px; overflow-wrap: anywhere; }
 #lss-auto-alarm button {
-  padding: 3px 12px; border: 0; border-radius: 5px; cursor: pointer;
+  padding: 3px 10px; border: 0; border-radius: 5px; cursor: pointer;
   background: #3c4043; color: #e8eaed; font: inherit;
 }
-#lss-auto-alarm .lssaa-diag { margin-right: 4px; }
+#lss-auto-alarm button:hover { background: #4a4f54; }
+#lss-auto-alarm .lssaa-collapse, #lss-auto-alarm .lssaa-settings { padding: 3px 7px; }
+#lss-auto-alarm .lssaa-toggle { background: #1e8e3e; font-weight: 600; }
+#lss-auto-alarm .lssaa-toggle.on { background: #c5221f; }
+#lss-auto-alarm .lssaa-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0 8px; }
+#lss-auto-alarm .lssaa-stats div { background: #2a2f35; border-radius: 6px; padding: 5px 6px; text-align: center; }
+#lss-auto-alarm .lssaa-stats b { display: block; font-size: 15px; }
+#lss-auto-alarm .lssaa-stats span { color: #9aa0a6; font-size: 11px; }
+#lss-auto-alarm .lssaa-actions { display: flex; gap: 6px; }
+#lss-auto-alarm .lssaa-actions button { flex: 1; }
+#lss-auto-alarm .lssaa-section { margin: 10px 0 4px; color: #9aa0a6; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+#lss-auto-alarm ul { list-style: none; margin: 0; padding: 0; }
+#lss-auto-alarm .lssaa-mine { max-height: 180px; overflow: auto; }
+#lss-auto-alarm .lssaa-mine li { display: grid; grid-template-columns: 12px 1fr; column-gap: 6px; padding: 3px 0; border-bottom: 1px solid #2f343a; }
+#lss-auto-alarm .lssaa-mine li.empty { display: block; color: #9aa0a6; border: 0; }
+#lss-auto-alarm .lssaa-mine a { color: #e8eaed; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#lss-auto-alarm .lssaa-mine a:hover { text-decoration: underline; }
+#lss-auto-alarm .lssaa-mine small { grid-column: 2; color: #9aa0a6; }
+#lss-auto-alarm .dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 4px; }
+#lss-auto-alarm .dot.red { background: #ea4335; }
+#lss-auto-alarm .dot.yellow { background: #fbbc04; }
+#lss-auto-alarm .dot.green { background: #34a853; }
+#lss-auto-alarm .lssaa-logbox { margin-top: 8px; }
+#lss-auto-alarm .lssaa-logbox summary { cursor: pointer; color: #9aa0a6; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+#lss-auto-alarm .lssaa-log { max-height: 160px; overflow: auto; margin-top: 4px; }
+#lss-auto-alarm .lssaa-log li { margin-bottom: 2px; overflow-wrap: anywhere; color: #c4c7c5; }

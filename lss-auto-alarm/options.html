@@ -2,54 +2,117 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <title>LSS Verbands-Bot – Einstellungen</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verbands-Bot – Einstellungen</title>
   <style>
-    body { max-width: 760px; margin: 24px auto; padding: 0 16px; font: 14px/1.5 system-ui, sans-serif; }
-    h2 { margin-top: 28px; font-size: 16px; }
-    .row { display: grid; grid-template-columns: 1fr 110px; gap: 12px; align-items: center; margin: 8px 0; }
-    .row small { display: block; color: #666; }
-    .row input[type=number], .row input[type=text] { width: 100%; box-sizing: border-box; }
-    textarea, input.wide { width: 100%; font: 12px/1.4 ui-monospace, monospace; box-sizing: border-box; }
-    .hint { color: #666; font-size: 12px; }
-    #status { margin-left: 10px; }
-    #status.error { color: #c5221f; }
+    :root { --bg: #f6f7f9; --card: #fff; --text: #1f2329; --muted: #5f6368; --line: #e3e5e8; --accent: #1a73e8; --accent-soft: #e8f0fe; --red: #c5221f; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #17191c; --card: #1f2329; --text: #e8eaed; --muted: #9aa0a6; --line: #33373c; --accent: #8ab4f8; --accent-soft: #263449; --red: #f28b82; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 24px 16px 80px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    h2 { font-size: 16px; margin: 0 0 4px; }
+    .sub { color: var(--muted); margin: 0 0 12px; font-size: 13px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-top: 16px; }
+    .summary { background: var(--accent-soft); border-color: transparent; }
+    .summary p { margin: 0; }
+    label.check { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; cursor: pointer; }
+    label.check input { margin-top: 3px; }
+    label.check small { display: block; color: var(--muted); }
+
+    .vrow { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+    .vrow-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .stepper button { border: 0; background: transparent; color: var(--text); width: 28px; height: 28px; cursor: pointer; font-size: 16px; }
+    .stepper span { min-width: 26px; text-align: center; font-weight: 600; }
+    .chosen { color: var(--muted); font-size: 13px; flex: 1; min-width: 160px; }
+    .chosen b { color: var(--text); font-weight: 500; }
+    .icon { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; }
+    .icon:hover { color: var(--red); }
+    details.types { margin-top: 8px; }
+    details.types summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+    .group { margin-top: 8px; }
+    .group-title { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 999px; padding: 3px 10px; cursor: pointer; font: inherit; font-size: 12px; }
+    .chip.on { background: var(--accent); border-color: var(--accent); color: var(--card); }
+    .quick { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    button.btn { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 13px; }
+    button.btn:hover { border-color: var(--accent); }
+
+    .slider { display: grid; grid-template-columns: 1fr 90px; gap: 2px 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+    .slider:last-child { border-bottom: 0; }
+    .slider label { font-weight: 500; }
+    .slider output { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .slider input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+    .slider small { grid-column: 1 / -1; color: var(--muted); }
+    input[type=text] { width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font: inherit; }
+
+    #saved { position: fixed; right: 16px; bottom: 16px; background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; opacity: 0; transition: opacity .2s; }
+    #saved.show { opacity: 1; }
   </style>
 </head>
 <body>
-  <h1>LSS Verbands-Bot</h1>
+<main>
+  <h1>Verbands-Bot</h1>
+  <p class="sub">Änderungen werden sofort gespeichert und gelten ohne Neuladen.</p>
 
-  <h2>Fahrzeugauswahl</h2>
-  <textarea id="preset" rows="8"></textarea>
-  <div class="hint">
-    Liste aus <code>{"count": Anzahl, "types": ["LF 20", "HLF 20", …]}</code>. Pro Eintrag wird die Anzahl
-    der nächstgelegenen freien Fahrzeuge der genannten Typen geschickt. Typnamen genau wie im Spiel.
-  </div>
+  <section class="card summary">
+    <h2>So arbeitet der Bot gerade</h2>
+    <p id="summary"></p>
+  </section>
 
-  <h2>Grenzen</h2>
-  <div class="row"><label for="intervalSec">Prüfintervall (Sekunden)<small>± 30 % Zufall</small></label><input type="number" id="intervalSec" min="20"></div>
-  <div class="row"><label for="maxPerRound">Max. Einsätze pro Durchgang</label><input type="number" id="maxPerRound" min="1"></div>
-  <div class="row"><label for="maxActive">Max. gleichzeitig beteiligte Verbandseinsätze<small>zählt alle, bei denen du schon Fahrzeuge hast</small></label><input type="number" id="maxActive" min="1"></div>
-  <div class="row"><label for="maxPerHour">Max. Alarmierungen pro Stunde</label><input type="number" id="maxPerHour" min="1"></div>
-  <div class="row"><label for="maxDistanceKm">Max. Entfernung (km)<small>weiter entfernte Einsätze sind oft fertig, bevor du ankommst – dann gibt es keine Credits</small></label><input type="number" id="maxDistanceKm" min="1" step="0.5"></div>
-  <div class="row"><label for="reserve">Reserve<small>so viele passende Fahrzeuge bleiben immer für eigene Einsätze frei</small></label><input type="number" id="reserve" min="0"></div>
-  <div class="row"><label for="minCredits">Mindest-Credits<small>Durchschnitts-Credits des Einsatztyps, 0 = egal</small></label><input type="number" id="minCredits" min="0" step="100"></div>
-  <div class="row"><label for="allowUnknownCredits">Einsätze ohne bekannte Credits anfahren</label><input type="checkbox" id="allowUnknownCredits"></div>
-  <div class="row"><label for="maxErrors">Stoppen nach so vielen Fehlern in Folge</label><input type="number" id="maxErrors" min="1"></div>
+  <section class="card">
+    <h2>1. Welche Einsätze?</h2>
+    <p class="sub">Aus diesen Listen der Hauptseite sucht sich der Bot Einsätze aus.</p>
+    <div id="lists"></div>
+  </section>
 
-  <h2>Filter</h2>
-  <label for="excludeMatch">Einsätze überspringen, deren Name passt auf (regulärer Ausdruck, leer = keiner)</label>
-  <input class="wide" id="excludeMatch" placeholder="z.B. Krankentransport|Großbrand">
-  <p></p>
-  <label for="listSelector">Welche Listen durchsucht werden (CSS-Selektor)</label>
-  <input class="wide" id="listSelector">
+  <section class="card">
+    <h2>2. Was wird geschickt?</h2>
+    <p class="sub">Pro Zeile: wie viele Fahrzeuge und welche Typen in Frage kommen. Es fährt immer das nächstgelegene passende Fahrzeug.</p>
+    <div id="preset"></div>
+    <label class="check">
+      <input type="checkbox" id="plannedOwn">
+      <span>Für geplante Einsätze eine eigene Auswahl verwenden
+        <small>Sicherheitswachen verlangen oft bestimmte Fahrzeuge.</small></span>
+    </label>
+    <div id="presetPlannedBox" hidden>
+      <h2 style="margin-top:8px">Auswahl für geplante Einsätze</h2>
+      <div id="presetPlanned"></div>
+    </div>
+  </section>
 
-  <p>
-    <button id="save">Speichern</button>
-    <button id="reset">Auf Standard zurücksetzen</button>
-    <span id="status"></span>
-  </p>
+  <section class="card">
+    <h2>3. Grenzen</h2>
+    <p class="sub">Damit der Bot nicht deinen ganzen Fuhrpark verplant.</p>
+    <div id="limits"></div>
+  </section>
 
-  <script src="config.js"></script>
-  <script src="options.js"></script>
+  <section class="card">
+    <h2>4. Filter</h2>
+    <div id="filters"></div>
+    <label class="check">
+      <input type="checkbox" id="allowUnknownCredits">
+      <span>Auch Einsätze ohne bekannte Credits anfahren
+        <small>z.B. Events und manche geplanten Einsätze haben keinen Durchschnittswert.</small></span>
+    </label>
+    <p style="margin:10px 0 4px"><b>Einsätze überspringen, deren Name enthält:</b></p>
+    <input type="text" id="excludeWords" placeholder="z.B. Krankentransport, Großbrand  (mit Komma trennen)">
+  </section>
+
+  <section class="card">
+    <details>
+      <summary><b>Erweitert</b></summary>
+      <div id="advanced"></div>
+      <p><button class="btn" id="reset">Alles auf Standard zurücksetzen</button></p>
+    </details>
+  </section>
+</main>
+<div id="saved">✓ Gespeichert</div>
+<script src="config.js"></script>
+<script src="options.js"></script>
 </body>
 </html>

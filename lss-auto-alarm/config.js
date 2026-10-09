@@ -26,12 +26,32 @@ const LSS_DEFAULTS = {
   minCredits: 0,
   // Einsätze ohne bekannte Credits (z.B. Events) trotzdem anfahren?
   allowUnknownCredits: true,
-  // Einsätze, deren Name auf diesen regulären Ausdruck passt, überspringen (leer = keiner)
-  excludeMatch: "",
-  // Welche Listen auf der Hauptseite durchsucht werden
-  listSelector: "#mission_list_alliance .missionSideBarEntry, #mission_list_alliance_event .missionSideBarEntry",
+  // Einsätze überspringen, deren Name eines dieser Wörter enthält
+  excludeWords: [],
+  // Welche Einsatzlisten der Hauptseite der Bot abarbeitet (siehe LSS_LISTS)
+  lists: { alliance: true, alliance_event: true, sicherheitswache: true, sicherheitswache_alliance: true },
+  // Eigene Fahrzeugauswahl für geplante Einsätze (Sicherheitswachen); null = gleiche wie oben
+  presetPlanned: null,
   // Nach so vielen Fehlern hintereinander stoppt der Bot
   maxErrors: 3
+};
+
+// Einsatzlisten auf der Hauptseite: Schlüssel -> [Element-ID, Anzeigename, geplant?]
+const LSS_LISTS = {
+  alliance: ["mission_list_alliance", "Verbandseinsätze", false],
+  alliance_event: ["mission_list_alliance_event", "Verbands-Großschadenslagen / Events", false],
+  sicherheitswache: ["mission_list_sicherheitswache", "Eigene geplante Einsätze (Sicherheitswachen)", true],
+  sicherheitswache_alliance: ["mission_list_sicherheitswache_alliance", "Geplante Verbandseinsätze (Sicherheitswachen)", true]
+};
+
+// Fahrzeugtypen für die Auswahl auf der Einstellungsseite
+const LSS_VEHICLE_GROUPS = {
+  "Löschfahrzeuge": ["LF 20", "HLF 20", "LF 10", "HLF 10", "LF 8/6", "LF 20/16", "LF 10/6", "LF 16-TS", "TSF-W", "MLF", "KLF"],
+  "Tanklöschfahrzeuge": ["TLF 2000", "TLF 3000", "TLF 4000", "TLF 8/8", "TLF 8/18", "TLF 16/24-Tr", "TLF 16/25", "TLF 16/45", "TLF 20/40", "TLF 20/40-SL", "TLF 16"],
+  "Feuerwehr-Sonderfahrzeuge": ["DLK 23", "RW", "ELW 1", "ELW 2", "GW-A", "GW-Öl", "GW-Messtechnik", "GW-Gefahrgut", "GW-Höhenrettung", "GW-L2-Wasser", "SW 1000", "SW 2000", "SW 2000-Tr", "SW Kats", "MTW", "Dekon-P", "FwK"],
+  "Rettungsdienst": ["RTW", "NEF", "KTW", "KTW Typ B", "RTH"],
+  "Polizei": ["FuStW", "FuStW (DGL)", "GruKw", "leBefKw"],
+  "THW": ["GKW", "MTW-TZ", "MzGW (FGr N)"]
 };
 
 // Fallback, falls eine Tabellenzeile keinen Typnamen trägt, nur die vehicle_type_id.
