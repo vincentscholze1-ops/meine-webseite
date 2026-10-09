@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "LSS Auto-Alarmierung",
+  "version": "1.0.0",
+  "description": "Wählt im Leitstellenspiel automatisch passende Fahrzeuge für einen Einsatz aus und alarmiert per Tastenkürzel.",
+  "permissions": ["storage"],
+  "host_permissions": ["https://www.leitstellenspiel.de/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.leitstellenspiel.de/missions/*"],
+      "js": ["config.js", "content.js"],
+      "css": ["content.css"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "LSS Auto-Alarmierung",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html"
+}

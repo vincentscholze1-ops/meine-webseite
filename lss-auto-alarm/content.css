@@ -1,0 +1,20 @@
+#lss-auto-alarm {
+  position: fixed; right: 12px; bottom: 12px; z-index: 99999;
+  width: 230px; padding: 10px 12px;
+  background: #1f2329; color: #e8eaed; border-radius: 8px;
+  font: 13px/1.4 system-ui, sans-serif; box-shadow: 0 4px 16px rgba(0,0,0,.35);
+}
+#lss-auto-alarm .lssaa-head { font-weight: 600; margin-bottom: 6px; }
+#lss-auto-alarm .lssaa-src { font-weight: 400; color: #9aa0a6; font-size: 11px; }
+#lss-auto-alarm .lssaa-list { list-style: none; margin: 0 0 6px; padding: 0; }
+#lss-auto-alarm li.ok::before { content: "✔ "; color: #5bd37a; }
+#lss-auto-alarm li.missing { color: #ffb4a8; }
+#lss-auto-alarm li.missing::before { content: "✖ "; }
+#lss-auto-alarm li.unknown { color: #fdd663; }
+#lss-auto-alarm .lssaa-msg { color: #9aa0a6; font-size: 12px; min-height: 0; }
+#lss-auto-alarm .lssaa-actions { display: flex; gap: 6px; margin-top: 6px; }
+#lss-auto-alarm button {
+  flex: 1; padding: 5px 0; border: 0; border-radius: 5px; cursor: pointer;
+  background: #3c4043; color: #e8eaed; font: inherit;
+}
+#lss-auto-alarm button.lssaa-alarm { background: #c5221f; font-weight: 600; }

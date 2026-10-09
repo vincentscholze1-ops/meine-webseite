@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>LSS Auto-Alarmierung – Einstellungen</title>
+  <style>
+    body { max-width: 820px; margin: 24px auto; padding: 0 16px; font: 14px/1.5 system-ui, sans-serif; }
+    h2 { margin-top: 28px; font-size: 16px; }
+    label { display: block; margin: 6px 0; }
+    input.key { width: 2.5em; text-align: center; }
+    textarea { width: 100%; font: 12px/1.4 ui-monospace, monospace; box-sizing: border-box; }
+    .hint { color: #666; font-size: 12px; }
+    #status { margin-left: 10px; }
+    #status.error { color: #c5221f; }
+  </style>
+</head>
+<body>
+  <h1>LSS Auto-Alarmierung</h1>
+
+  <h2>Allgemein</h2>
+  <label><input type="checkbox" id="enabled"> Erweiterung aktiv</label>
+  <label><input type="checkbox" id="autoSelect"> Fahrzeuge beim Öffnen eines Einsatzes automatisch anhaken</label>
+  <label><input type="checkbox" id="alarmAndNext"> Tastenkürzel nutzt „Alarmieren und zum nächsten Einsatz“</label>
+  <label>Alarmieren: Alt + <input class="key" id="alarmKey" maxlength="1"></label>
+  <label>Neu berechnen: Alt + <input class="key" id="reselectKey" maxlength="1"></label>
+
+  <h2>Standard, wenn kein Bedarf bekannt ist</h2>
+  <textarea id="fallback" rows="3"></textarea>
+  <div class="hint">Liste aus <code>{"category": "&lt;Kategorie-id&gt;", "count": n}</code>.</div>
+
+  <h2>Fahrzeugkategorien</h2>
+  <textarea id="categories" rows="22"></textarea>
+  <div class="hint">
+    <code>match</code>: regulärer Ausdruck für den Text in der Fehlmeldung.
+    <code>types</code>: Fahrzeugtypen in Wunsch-Reihenfolge (genau wie im Spiel geschrieben).
+    Die erste passende Kategorie gewinnt.
+  </div>
+
+  <h2>Zuordnung Einsatzanforderungen (einsaetze.json)</h2>
+  <textarea id="requirementMap" rows="12"></textarea>
+  <div class="hint">Schlüssel aus <code>/einsaetze.json</code> → Kategorie-id. Unbekannte Schlüssel werden im Panel mit „?“ angezeigt.</div>
+
+  <p>
+    <button id="save">Speichern</button>
+    <button id="reset">Auf Standard zurücksetzen</button>
+    <span id="status"></span>
+  </p>
+
+  <script src="config.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
