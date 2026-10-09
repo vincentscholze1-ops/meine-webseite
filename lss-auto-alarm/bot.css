@@ -1,4 +1,4 @@
-#lss-auto-alarm {
+#lss-verbands-bot {
   --lssaa-bg: #16191d;
   --lssaa-card: #20252b;
   --lssaa-line: #2c3238;
@@ -18,100 +18,110 @@
   box-shadow: 0 12px 32px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.3);
   user-select: none;
 }
-#lss-auto-alarm * { box-sizing: border-box; }
-#lss-auto-alarm.dragging { opacity: .92; box-shadow: 0 18px 44px rgba(0,0,0,.55); }
+#lss-verbands-bot * { box-sizing: border-box; }
+#lss-verbands-bot.dragging { opacity: .92; box-shadow: 0 18px 44px rgba(0,0,0,.55); }
 
 /* Kopf – Griff zum Verschieben */
-#lss-auto-alarm .lssaa-head {
+#lss-verbands-bot .lssaa-head {
   display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 14px;
   background: linear-gradient(135deg, #b3261e 0%, #e8453c 55%, #f07a3a 100%);
   cursor: grab;
 }
-#lss-auto-alarm.dragging .lssaa-head { cursor: grabbing; }
-#lss-auto-alarm .lssaa-logo {
+#lss-verbands-bot.dragging .lssaa-head { cursor: grabbing; }
+#lss-verbands-bot .lssaa-logo {
   width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center;
   background: rgba(255,255,255,.18); font-size: 17px;
 }
-#lss-auto-alarm .lssaa-title { display: flex; flex-direction: column; line-height: 1.2; }
-#lss-auto-alarm .lssaa-title strong { font-size: 14px; letter-spacing: .01em; }
-#lss-auto-alarm .lssaa-state { font-size: 11.5px; opacity: .9; display: flex; align-items: center; gap: 5px; }
-#lss-auto-alarm .lssaa-state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.55); }
-#lss-auto-alarm.running .lssaa-state::before { background: #7dff9b; box-shadow: 0 0 0 0 rgba(125,255,155,.7); animation: lssaa-pulse 1.8s infinite; }
+#lss-verbands-bot .lssaa-title { display: flex; flex-direction: column; line-height: 1.2; }
+#lss-verbands-bot .lssaa-title strong { font-size: 14px; letter-spacing: .01em; }
+#lss-verbands-bot .lssaa-state { font-size: 11.5px; opacity: .9; display: flex; align-items: center; gap: 5px; }
+#lss-verbands-bot .lssaa-state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.55); }
+#lss-verbands-bot.running .lssaa-state::before { background: #7dff9b; box-shadow: 0 0 0 0 rgba(125,255,155,.7); animation: lssaa-pulse 1.8s infinite; }
 @keyframes lssaa-pulse { 70% { box-shadow: 0 0 0 6px rgba(125,255,155,0); } 100% { box-shadow: 0 0 0 0 rgba(125,255,155,0); } }
-#lss-auto-alarm .lssaa-spacer { flex: 1; }
+#lss-verbands-bot .lssaa-spacer { flex: 1; }
 
-#lss-auto-alarm button {
+#lss-verbands-bot button {
   border: 0; cursor: pointer; font: inherit; color: var(--lssaa-text);
   transition: background .15s, transform .05s;
 }
-#lss-auto-alarm button:active { transform: scale(.97); }
-#lss-auto-alarm .lssaa-icon {
+#lss-verbands-bot button:active { transform: scale(.97); }
+#lss-verbands-bot .lssaa-icon {
   width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,.16); font-size: 14px; padding: 0;
 }
-#lss-auto-alarm .lssaa-icon:hover { background: rgba(255,255,255,.28); }
+#lss-verbands-bot .lssaa-icon:hover { background: rgba(255,255,255,.28); }
 
 /* Inhalt */
-#lss-auto-alarm .lssaa-body { padding: 12px 14px 14px; overflow: auto; }
-#lss-auto-alarm.collapsed .lssaa-body { display: none; }
+#lss-verbands-bot .lssaa-body { padding: 12px 14px 14px; overflow: auto; }
+#lss-verbands-bot.collapsed .lssaa-body { display: none; }
 
-#lss-auto-alarm .lssaa-toggle {
+#lss-verbands-bot .lssaa-toggle {
   width: 100%; padding: 9px 0; border-radius: 10px; font-weight: 650; font-size: 13px;
   background: var(--lssaa-green); color: #0b2913;
 }
-#lss-auto-alarm .lssaa-toggle:hover { filter: brightness(1.08); }
-#lss-auto-alarm.running .lssaa-toggle { background: #3a2022; color: #ff8a80; box-shadow: inset 0 0 0 1px #5c2b2e; }
+#lss-verbands-bot .lssaa-toggle:hover { filter: brightness(1.08); }
+#lss-verbands-bot.running .lssaa-toggle { background: #3a2022; color: #ff8a80; box-shadow: inset 0 0 0 1px #5c2b2e; }
 
-#lss-auto-alarm .lssaa-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 10px; }
-#lss-auto-alarm .lssaa-stats div {
+#lss-verbands-bot .lssaa-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 10px; }
+#lss-verbands-bot .lssaa-stats div {
   background: var(--lssaa-card); border: 1px solid var(--lssaa-line); border-radius: 10px;
   padding: 8px 6px 7px; text-align: center;
 }
-#lss-auto-alarm .lssaa-stats b { display: block; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
-#lss-auto-alarm .lssaa-stats span { color: var(--lssaa-muted); font-size: 10.5px; }
+#lss-verbands-bot .lssaa-stats b { display: block; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+#lss-verbands-bot .lssaa-stats span { color: var(--lssaa-muted); font-size: 10.5px; }
 
-#lss-auto-alarm .lssaa-actions { display: flex; gap: 8px; }
-#lss-auto-alarm .lssaa-actions button {
+#lss-verbands-bot .lssaa-actions { display: flex; gap: 8px; }
+#lss-verbands-bot .lssaa-actions button {
   flex: 1; padding: 7px 0; border-radius: 9px; background: var(--lssaa-card);
   box-shadow: inset 0 0 0 1px var(--lssaa-line);
 }
-#lss-auto-alarm .lssaa-actions button:hover { background: #2a3037; }
+#lss-verbands-bot .lssaa-actions button:hover { background: #2a3037; }
 
-#lss-auto-alarm .lssaa-section {
+#lss-verbands-bot .lssaa-section {
   display: flex; align-items: center; gap: 6px; margin: 14px 0 6px;
   color: var(--lssaa-muted); font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em;
 }
-#lss-auto-alarm .lssaa-count:not(:empty) {
+#lss-verbands-bot .lssaa-count:not(:empty) {
   background: var(--lssaa-card); color: var(--lssaa-text); border-radius: 999px; padding: 0 7px; letter-spacing: 0;
 }
 
-#lss-auto-alarm ul { list-style: none; margin: 0; padding: 0; }
-#lss-auto-alarm .lssaa-mine { display: flex; flex-direction: column; gap: 6px; max-height: 210px; overflow: auto; }
-#lss-auto-alarm .lssaa-mine li {
+#lss-verbands-bot ul { list-style: none; margin: 0; padding: 0; }
+#lss-verbands-bot .lssaa-mine { display: flex; flex-direction: column; gap: 6px; max-height: 210px; overflow: auto; }
+#lss-verbands-bot .lssaa-mine li {
   background: var(--lssaa-card); border: 1px solid var(--lssaa-line); border-left: 3px solid var(--lssaa-red);
   border-radius: 9px; padding: 6px 9px;
 }
-#lss-auto-alarm .lssaa-mine li.yellow { border-left-color: var(--lssaa-yellow); }
-#lss-auto-alarm .lssaa-mine li.green { border-left-color: var(--lssaa-green); }
-#lss-auto-alarm .lssaa-mine li.empty { border: 1px dashed var(--lssaa-line); color: var(--lssaa-muted); text-align: center; }
-#lss-auto-alarm .lssaa-mine a {
+#lss-verbands-bot .lssaa-mine li.yellow { border-left-color: var(--lssaa-yellow); }
+#lss-verbands-bot .lssaa-mine li.green { border-left-color: var(--lssaa-green); }
+#lss-verbands-bot .lssaa-mine li.empty { border: 1px dashed var(--lssaa-line); color: var(--lssaa-muted); text-align: center; }
+#lss-verbands-bot .lssaa-mine a {
   display: block; color: var(--lssaa-text); text-decoration: none; font-weight: 550;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-#lss-auto-alarm .lssaa-mine a:hover { text-decoration: underline; }
-#lss-auto-alarm .lssaa-mine .meta { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--lssaa-muted); font-size: 11px; }
-#lss-auto-alarm .lssaa-badge { border-radius: 999px; padding: 0 7px; font-size: 10.5px; font-weight: 600; }
-#lss-auto-alarm .lssaa-badge.red { background: rgba(255,69,58,.16); color: #ff8a80; }
-#lss-auto-alarm .lssaa-badge.yellow { background: rgba(255,204,0,.16); color: #ffd84d; }
-#lss-auto-alarm .lssaa-badge.green { background: rgba(52,199,89,.16); color: #6fe08f; }
+#lss-verbands-bot .lssaa-mine a:hover { text-decoration: underline; }
+#lss-verbands-bot .lssaa-mine .meta { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--lssaa-muted); font-size: 11px; }
+#lss-verbands-bot .lssaa-badge { border-radius: 999px; padding: 0 7px; font-size: 10.5px; font-weight: 600; }
+#lss-verbands-bot .lssaa-badge.red { background: rgba(255,69,58,.16); color: #ff8a80; }
+#lss-verbands-bot .lssaa-badge.yellow { background: rgba(255,204,0,.16); color: #ffd84d; }
+#lss-verbands-bot .lssaa-badge.green { background: rgba(52,199,89,.16); color: #6fe08f; }
 
-#lss-auto-alarm .lssaa-logbox { margin-top: 12px; }
-#lss-auto-alarm .lssaa-logbox summary {
+#lss-verbands-bot .lssaa-logbox { margin-top: 12px; }
+#lss-verbands-bot .lssaa-logbox summary {
   display: list-item;
   cursor: pointer; color: var(--lssaa-muted); font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em;
 }
-#lss-auto-alarm .lssaa-log { max-height: 160px; overflow: auto; margin-top: 6px; user-select: text; }
-#lss-auto-alarm .lssaa-log li { padding: 3px 0; border-bottom: 1px solid var(--lssaa-line); overflow-wrap: anywhere; color: #c9ced3; }
-#lss-auto-alarm .lssaa-log time { color: var(--lssaa-muted); font-variant-numeric: tabular-nums; }
+#lss-verbands-bot .lssaa-log { max-height: 160px; overflow: auto; margin-top: 6px; user-select: text; }
+#lss-verbands-bot .lssaa-log li { padding: 3px 0; border-bottom: 1px solid var(--lssaa-line); overflow-wrap: anywhere; color: #c9ced3; }
+#lss-verbands-bot .lssaa-log time { color: var(--lssaa-muted); font-variant-numeric: tabular-nums; }
 
-#lss-auto-alarm ::-webkit-scrollbar { width: 6px; }
-#lss-auto-alarm ::-webkit-scrollbar-thumb { background: #3a4047; border-radius: 3px; }
+#lss-verbands-bot ::-webkit-scrollbar { width: 6px; }
+#lss-verbands-bot ::-webkit-scrollbar-thumb { background: #3a4047; border-radius: 3px; }
+
+/* Panel einer alten Version (bis 3.0) ausblenden, falls sie noch installiert ist */
+#lss-auto-alarm { display: none !important; }
+
+#lss-verbands-bot .lssaa-version { font-size: 10.5px; opacity: .75; font-weight: 400; margin-left: 4px; }
+#lss-verbands-bot .lssaa-warning {
+  margin: 0 0 10px; padding: 8px 10px; border-radius: 9px;
+  background: rgba(255,204,0,.14); color: #ffd84d; border: 1px solid rgba(255,204,0,.35);
+}
+#lss-verbands-bot .lssaa-warning:empty { display: none; }

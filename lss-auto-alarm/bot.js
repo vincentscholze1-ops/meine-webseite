@@ -327,7 +327,7 @@
   // Diagnose auch aus dem Popup der Erweiterung heraus
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg && msg.type === "lssaa-diagnose") {
-      diagnose().then((lines) => sendResponse({ lines, panel: !!document.getElementById("lss-auto-alarm") }));
+      diagnose().then((lines) => sendResponse({ lines, panel: !!document.getElementById("lss-verbands-bot") }));
       return true;
     }
   });
@@ -348,7 +348,7 @@
   // Einsatzliste beobachten: jede Änderung im Spiel aktualisiert die Anzeige sofort
   let refreshPending = false;
   new MutationObserver((mutations) => {
-    const own = document.getElementById("lss-auto-alarm");
+    const own = document.getElementById("lss-verbands-bot");
     if (refreshPending || mutations.every((m) => own && own.contains(m.target))) return;
     refreshPending = true;
     setTimeout(() => {
@@ -366,12 +366,12 @@
 
   function createPanel() {
     const box = document.createElement("div");
-    box.id = "lss-auto-alarm";
+    box.id = "lss-verbands-bot";
     box.innerHTML = `
       <div class="lssaa-head" title="Ziehen zum Verschieben · Doppelklick setzt die Position zurück">
         <span class="lssaa-logo">🚒</span>
         <span class="lssaa-title">
-          <strong>Verbands-Bot</strong>
+          <strong>Verbands-Bot<span class="lssaa-version">v${chrome.runtime.getManifest().version}</span></strong>
           <span class="lssaa-state"></span>
         </span>
         <span class="lssaa-spacer"></span>
@@ -379,6 +379,7 @@
         <button type="button" class="lssaa-icon lssaa-collapse" title="Ein-/Ausklappen">▾</button>
       </div>
       <div class="lssaa-body">
+        <div class="lssaa-warning"></div>
         <button type="button" class="lssaa-toggle"></button>
         <div class="lssaa-stats">
           <div><b class="lssaa-active">0</b><span>aktiv</span></div>
@@ -481,6 +482,17 @@
           ? Math.max(0, Math.round((nextRoundAt - Date.now()) / 1000)) + " s"
           : "–";
     }, 1000);
+
+    // Ältere Version noch installiert? Die legt ein Panel mit der alten ID an.
+    const checkOld = () => {
+      if (document.getElementById("lss-auto-alarm")) {
+        $(".lssaa-warning").textContent =
+          "⚠ Eine ältere Version des Bots ist noch installiert und läuft parallel. " +
+          "Bitte unter chrome://extensions die alte Version entfernen und die Seite neu laden.";
+      }
+    };
+    setTimeout(checkOld, 3000);
+    setTimeout(checkOld, 10000);
 
     const api = {
       update() {

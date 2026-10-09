@@ -15,7 +15,7 @@ Die lukrativsten Einsätze kommen zuerst.
 4. **Entpackte Erweiterung laden** → diesen Ordner wählen.
 5. `https://www.leitstellenspiel.de/` mit F5 neu laden.
 
-Im Popup der Erweiterung steht oben die Version (aktuell **v3.1.0**).
+Im Popup der Erweiterung steht oben die Version (aktuell **v3.2.0**, steht auch im Kopf des Panels).
 
 ## Das Panel (unten links auf der Hauptseite)
 
