@@ -39,6 +39,16 @@ document.getElementById("diag").addEventListener("click", async () => {
   }
 });
 
+document.getElementById("stats").addEventListener("click", async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  try {
+    await chrome.tabs.sendMessage(tab.id, { type: "lssaa-stats" });
+    window.close();
+  } catch (e) {
+    diagOut.textContent = "Die Auswertung öffnet sich auf der Hauptseite des Leitstellenspiels. Öffne den Tab und versuche es erneut.";
+  }
+});
+
 document.getElementById("options").addEventListener("click", (e) => {
   e.preventDefault();
   chrome.runtime.openOptionsPage();

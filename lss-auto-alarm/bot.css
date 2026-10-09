@@ -69,7 +69,9 @@
 #lss-verbands-bot .lssaa-stats b { display: block; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 #lss-verbands-bot .lssaa-stats span { color: var(--lssaa-muted); font-size: 10.5px; }
 
-#lss-verbands-bot .lssaa-actions { display: flex; gap: 8px; }
+#lss-verbands-bot .lssaa-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#lss-verbands-bot .lssaa-actions .lssaa-stats-btn { grid-column: 1 / -1; background: #2b2a1d; box-shadow: inset 0 0 0 1px #4d4626; color: #ffd84d; font-weight: 600; }
+#lss-verbands-bot .lssaa-actions .lssaa-stats-btn:hover { background: #363421; }
 #lss-verbands-bot .lssaa-actions button {
   flex: 1; padding: 7px 0; border-radius: 9px; background: var(--lssaa-card);
   box-shadow: inset 0 0 0 1px var(--lssaa-line);

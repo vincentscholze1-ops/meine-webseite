@@ -1,0 +1,58 @@
+#lss-verbands-bot-stats {
+  --st-bg: #16191d; --st-card: #20252b; --st-line: #2c3238; --st-text: #eef0f2; --st-muted: #97a0a9;
+  --st-green: #34c759; --st-yellow: #ffcc00; --st-red: #ff453a;
+  position: fixed; inset: 0; z-index: 2147483647;
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--st-text);
+}
+#lss-verbands-bot-stats * { box-sizing: border-box; }
+#lss-verbands-bot-stats .lssst-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
+#lss-verbands-bot-stats .lssst-window {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 48px);
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--st-bg); border: 1px solid rgba(255,255,255,.06); border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+}
+#lss-verbands-bot-stats .lssst-head {
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+  background: linear-gradient(135deg, #b3261e 0%, #e8453c 55%, #f07a3a 100%); font-size: 15px;
+}
+#lss-verbands-bot-stats .lssst-spacer { flex: 1; }
+#lss-verbands-bot-stats button {
+  border: 0; cursor: pointer; font: inherit; color: var(--st-text); border-radius: 8px;
+}
+#lss-verbands-bot-stats .lssst-head button { background: rgba(255,255,255,.18); padding: 5px 12px; }
+#lss-verbands-bot-stats .lssst-head button:hover { background: rgba(255,255,255,.3); }
+#lss-verbands-bot-stats .lssst-head button:disabled { opacity: .5; cursor: wait; }
+#lss-verbands-bot-stats .lssst-close { width: 30px; padding: 5px 0 !important; }
+#lss-verbands-bot-stats .lssst-sync { padding: 8px 16px 0; color: var(--st-muted); font-size: 12px; }
+#lss-verbands-bot-stats .lssst-content { padding: 10px 16px 6px; overflow: auto; }
+#lss-verbands-bot-stats .lssst-foot { padding: 10px 16px 14px; color: var(--st-muted); font-size: 11.5px; border-top: 1px solid var(--st-line); }
+
+#lss-verbands-bot-stats .lssst-tabs { display: inline-flex; background: var(--st-card); border-radius: 10px; padding: 3px; gap: 2px; margin-bottom: 12px; }
+#lss-verbands-bot-stats .lssst-tabs button { background: transparent; padding: 5px 14px; color: var(--st-muted); }
+#lss-verbands-bot-stats .lssst-tabs button.on { background: #3a4047; color: var(--st-text); font-weight: 600; }
+
+#lss-verbands-bot-stats .lssst-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+@media (max-width: 600px) { #lss-verbands-bot-stats .lssst-kpis { grid-template-columns: repeat(2, 1fr); } }
+#lss-verbands-bot-stats .lssst-kpi { background: var(--st-card); border: 1px solid var(--st-line); border-radius: 12px; padding: 12px; }
+#lss-verbands-bot-stats .lssst-kpi b { display: block; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+#lss-verbands-bot-stats .lssst-kpi span { color: var(--st-muted); font-size: 12px; }
+#lss-verbands-bot-stats .lssst-kpi.ok b { color: var(--st-green); }
+#lss-verbands-bot-stats .lssst-kpi.money b { color: #ffd84d; }
+
+#lss-verbands-bot-stats .lssst-states { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 12px 0; font-size: 12px; color: var(--st-muted); }
+#lss-verbands-bot-stats .lssst-note { background: var(--st-card); border: 1px solid var(--st-line); border-radius: 10px; padding: 10px 12px; color: #c9ced3; }
+#lss-verbands-bot-stats h4 { margin: 16px 0 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--st-muted); }
+#lss-verbands-bot-stats .lssst-empty { color: var(--st-muted); margin: 4px 0; }
+
+#lss-verbands-bot-stats .lssst-table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: transparent; }
+#lss-verbands-bot-stats .lssst-table th { text-align: left; color: var(--st-muted); font-weight: 600; font-size: 11px; padding: 6px 8px; border-bottom: 1px solid var(--st-line); }
+#lss-verbands-bot-stats .lssst-table td { color: var(--st-text); padding: 6px 8px; border-bottom: 1px solid var(--st-line); vertical-align: middle; }
+#lss-verbands-bot-stats .lssst-table td.num, #lss-verbands-bot-stats .lssst-table th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+#lss-verbands-bot-stats .lssst-table td:first-child { color: var(--st-muted); white-space: nowrap; }
+#lss-verbands-bot-stats .lssst-table td.name { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#lss-verbands-bot-stats .lssst-pill { border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+#lss-verbands-bot-stats .lssst-pill.ok { background: rgba(52,199,89,.16); color: #6fe08f; }
+#lss-verbands-bot-stats .lssst-pill.bad { background: rgba(255,69,58,.16); color: #ff8a80; }
+#lss-verbands-bot-stats .lssst-pill.run { background: rgba(255,204,0,.16); color: #ffd84d; }

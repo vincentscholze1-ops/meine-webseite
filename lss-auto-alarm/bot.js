@@ -218,6 +218,11 @@
       // Erledigte Einsätze verschwinden aus der Liste – dann auch hier vergessen
       if (missions.length || !document.querySelector(".missionSideBarEntry")) {
         for (const id of Object.keys(sent)) if (!inList.has(id)) delete sent[id];
+        // Alle Einsätze der Seite berücksichtigen, nicht nur die gewählten Listen
+        const onPage = [...document.querySelectorAll(".missionSideBarEntry")].map(
+          (el) => el.getAttribute("mission_id") || el.id.replace(/^mission_/, "")
+        );
+        await LssStats.markEnded(new Set(onPage));
       }
       for (const [id, until] of skipped) if (until < now || !inList.has(id)) skipped.delete(id);
 
@@ -251,6 +256,7 @@
               planned: mission.planned
             };
             history.push(Date.now());
+            LssStats.recordDispatch(mission, result.vehicles);
             budget--;
             persist();
             refreshView(); // sofort anzeigen, nicht erst nach dem Durchgang
@@ -264,6 +270,7 @@
       }
       await persist();
       errors = 0;
+      LssStats.maybeSync().catch((e) => console.warn("[LSS Auto-Alarm] Auswertung", e));
     } catch (e) {
       errors++;
       panel.log(`⚠ ${e.message}`);
@@ -329,6 +336,11 @@
 
   // Diagnose auch aus dem Popup der Erweiterung heraus
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg && msg.type === "lssaa-stats") {
+      LssStats.open();
+      sendResponse({ ok: true });
+      return;
+    }
     if (msg && msg.type === "lssaa-diagnose") {
       diagnose().then((lines) => sendResponse({ lines, panel: !!document.getElementById("lss-verbands-bot") }));
       return true;
@@ -392,6 +404,7 @@
         <div class="lssaa-actions">
           <button type="button" class="lssaa-now">⟳ Jetzt prüfen</button>
           <button type="button" class="lssaa-diag" title="Probelauf ohne Alarmierung">🔍 Diagnose</button>
+          <button type="button" class="lssaa-stats-btn" title="Abgeschlossene Einsätze und erhaltene Credits">📊 Auswertung: Einsätze &amp; Credits</button>
         </div>
         <div class="lssaa-section">Vom Bot alarmiert <span class="lssaa-count"></span></div>
         <ul class="lssaa-mine"></ul>
@@ -414,6 +427,7 @@
     };
 
     $(".lssaa-toggle").addEventListener("click", () => chrome.storage.sync.set({ running: !settings.running }));
+    $(".lssaa-stats-btn").addEventListener("click", () => LssStats.open());
     $(".lssaa-diag").addEventListener("click", () => {
       $(".lssaa-logbox").open = true;
       diagnose();

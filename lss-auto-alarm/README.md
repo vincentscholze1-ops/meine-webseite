@@ -15,7 +15,7 @@ Die lukrativsten Einsätze kommen zuerst.
 4. **Entpackte Erweiterung laden** → diesen Ordner wählen.
 5. `https://www.leitstellenspiel.de/` mit F5 neu laden.
 
-Im Popup der Erweiterung steht oben die Version (aktuell **v3.3.0**, steht auch im Kopf des Panels).
+Im Popup der Erweiterung steht oben die Version (aktuell **v3.4.0**, steht auch im Kopf des Panels).
 
 ## Das Panel (unten links auf der Hauptseite)
 
@@ -27,7 +27,29 @@ Im Popup der Erweiterung steht oben die Version (aktuell **v3.3.0**, steht auch 
 - **Diagnose**: Probelauf ohne Alarmierung – zeigt, was der Bot sieht und schicken würde.
 - **Vom Bot alarmiert**: alle Einsätze, zu denen der Bot Fahrzeuge geschickt hat, mit Status
   (offen / Anfahrt / vor Ort) und Credits. 📅 = geplanter Einsatz. Ein Klick öffnet den Einsatz.
+- **📊 Auswertung**: siehe unten.
 - **Protokoll** (aufklappbar): was der Bot getan oder warum er etwas übersprungen hat.
+
+## Auswertung
+
+Über **📊 Auswertung** im Panel (oder im Popup der Erweiterung) öffnet sich ein Fenster mit:
+
+- **vom Bot alarmiert**, **erfolgreich abgeschlossen** (mit Quote), **Credits erhalten**, **Ø Credits je Einsatz**
+- wie viele Einsätze noch laufen, ohne Credits endeten oder abgebrochen wurden
+- **alle Verbandseinsätze mit deiner Beteiligung** laut Credits-Übersicht, auch von Hand alarmierte,
+  sowie Verbands-Event-Belohnungen
+- Credits pro Tag und eine Liste der Einsätze mit Status und tatsächlich erhaltenen Credits
+- Zeitraum wählbar: Heute, 7 Tage, 30 Tage, Alles
+
+Die Zahlen kommen aus deiner **Credits-Übersicht** im Spiel (`/credits`). Dort steht für jeden
+abgeschlossenen Verbandseinsatz eine Buchung „[Verband] Einsatzname“. Der Bot ordnet die Buchungen über
+Einsatzname und Zeitraum seinen Alarmierungen zu. „Erfolgreich“ heißt: Für den Einsatz ist eine
+Gutschrift eingegangen. Kommt 45 Minuten nach Einsatzende keine Buchung, zählt er als „ohne Credits“
+(z.B. weil das Fahrzeug zu spät ankam).
+
+Die Credits-Übersicht wird beim Öffnen der Auswertung abgerufen und, während der Bot läuft, alle
+10 Minuten, solange noch Gutschriften erwartet werden. Gespeichert werden die letzten 60 Tage.
+Gezählt wird erst ab Version 3.4 – frühere Alarmierungen sind nicht erfasst.
 
 ## Einstellungen
 
