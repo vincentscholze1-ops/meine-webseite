@@ -11,6 +11,9 @@
   let errors = 0;
   let haveLock = false;
   let lastSummary = "";
+  const loadedAt = Date.now();
+  const logLines = []; // letzte Protokollzeilen, auch für das Popup
+  const isPaused = () => settings.pausedUntil > Date.now();
   const skipped = new Map(); // missionId -> Zeitpunkt, bis wann übersprungen wird
 
   // Vom Bot alarmierte Einsätze und Alarmierungen der letzten Stunde – im Speicher gehalten,
@@ -31,9 +34,9 @@
     for (const [key, { newValue }] of Object.entries(changes)) {
       settings[key] = newValue === undefined ? LSS_DEFAULTS[key] : newValue;
     }
-    if ("running" in changes) {
+    if ("running" in changes || "pausedUntil" in changes) {
       errors = 0;
-      settings.running ? schedule(2000) : stop();
+      settings.running ? schedule(isPaused() ? settings.pausedUntil - Date.now() + 500 : 2000) : stop();
     } else if ("intervalSec" in changes && nextRoundAt && !roundRunning) {
       // Neues Intervall sofort übernehmen, nicht erst nach dem alten Countdown
       schedule(jitter(settings.intervalSec * 1000));
@@ -212,6 +215,7 @@
 
   async function round() {
     if (!settings.running || roundRunning) return;
+    if (isPaused()) return schedule(settings.pausedUntil - Date.now() + 500);
     roundRunning = true;
     nextRoundAt = null;
     panel.update();
@@ -222,12 +226,8 @@
       // Erledigte Einsätze verschwinden aus der Liste – dann auch hier vergessen
       if (missions.length || !document.querySelector(".missionSideBarEntry")) {
         for (const id of Object.keys(sent)) if (!inList.has(id)) delete sent[id];
-        // Alle Einsätze der Seite berücksichtigen, nicht nur die gewählten Listen
-        const onPage = [...document.querySelectorAll(".missionSideBarEntry")].map(
-          (el) => el.getAttribute("mission_id") || el.id.replace(/^mission_/, "")
-        );
-        await LssStats.markEnded(new Set(onPage));
       }
+      await observeStats();
       for (const [id, until] of skipped) if (until < now || !inList.has(id)) skipped.delete(id);
 
       const { active, lastHour } = counts(missions);
@@ -260,7 +260,7 @@
               planned: mission.planned
             };
             history.push(Date.now());
-            LssStats.recordDispatch(mission, result.vehicles);
+            await LssStats.recordDispatch(mission, result.vehicles);
             budget--;
             persist();
             refreshView(); // sofort anzeigen, nicht erst nach dem Durchgang
@@ -348,6 +348,16 @@
         .catch((e) => sendResponse({ error: e.message }));
       return true;
     }
+    // Popup: sofort prüfen
+    if (msg && msg.type === "lssaa-now") {
+      if (!settings.running) sendResponse({ ok: false, reason: "Bot ist gestoppt" });
+      else if (isPaused()) sendResponse({ ok: false, reason: "Bot ist pausiert" });
+      else {
+        if (!roundRunning) schedule(0);
+        sendResponse({ ok: true });
+      }
+      return;
+    }
     if (msg && msg.type === "lssaa-diagnose") {
       diagnose().then((lines) => sendResponse({ lines, panel: !!document.getElementById("lss-verbands-bot") }));
       return true;
@@ -416,6 +426,16 @@
     if (area === "local" && changes.statsMissions) loadCreditsToday();
   });
 
+  // Einsatzende für die Auswertung erkennen – laufend, auch wenn der Bot gestoppt ist.
+  // Direkt nach dem Laden der Seite ist die Einsatzliste evtl. noch leer: dann kurz warten,
+  // sonst würden alle laufenden Einsätze fälschlich als beendet gelten.
+  function observeStats() {
+    const entries = document.querySelectorAll(".missionSideBarEntry");
+    if (!entries.length && Date.now() - loadedAt < 20000) return Promise.resolve(0);
+    const ids = new Set([...entries].map((el) => el.getAttribute("mission_id") || el.id.replace(/^mission_/, "")));
+    return LssStats.observe(ids).catch((e) => console.warn("[LSS Verbands-Bot] Auswertung", e));
+  }
+
   // Alarmierungen der letzten 60 Minuten in 12 Abschnitten à 5 Minuten
   function historyBins() {
     const now = Date.now();
@@ -427,6 +447,44 @@
     return bins;
   }
 
+  // Kurzfassung für Popup und Symbol-Badge (gedrosselt gespeichert)
+  let liveTimer = null;
+  let liveData = null;
+  function publishLive(data) {
+    liveData = data;
+    if (liveTimer) return;
+    liveTimer = setTimeout(() => {
+      liveTimer = null;
+      const d = liveData;
+      chrome.storage.local.set({
+        liveStatus: {
+          at: Date.now(),
+          version: chrome.runtime.getManifest().version,
+          running: settings.running,
+          pausedUntil: settings.pausedUntil || 0,
+          haveLock,
+          active: d.active,
+          lastHour: d.lastHour,
+          nextRoundAt,
+          roundRunning,
+          creditsToday: d.creditsToday,
+          fleet: d.fleet
+            ? {
+                busyPct: d.fleet.busyPct,
+                free: d.fleet.counts.free,
+                total: d.fleet.total,
+                presetFree: d.fleet.presetFree,
+                presetTotal: d.fleet.presetTotal,
+                botVehicles: d.fleet.botVehicles
+              }
+            : null,
+          mine: d.mine.slice(0, 5).map((m) => ({ id: m.id, caption: m.caption, state: m.state, planned: !!m.planned })),
+          log: logLines.slice(0, 6)
+        }
+      });
+    }, 1500);
+  }
+
   function refreshView() {
     const missions = listMissions();
     const { active, lastHour } = counts(missions);
@@ -435,10 +493,12 @@
       .filter(([id]) => byId[id])
       .map(([id, info]) => ({ id, ...info, state: byId[id].state }))
       .sort((a, b) => b.time - a.time);
-    panel.view({ active, lastHour, mine, total: missions.length, bins: historyBins(), fleet, fleetError, fleetAt, creditsToday });
+    const data = { active, lastHour, mine, total: missions.length, bins: historyBins(), fleet, fleetError, fleetAt, creditsToday };
+    panel.view(data);
+    publishLive(data);
   }
 
-  // Einsatzliste beobachten: jede Änderung im Spiel aktualisiert die Anzeige sofort
+  // Einsatzliste beobachten: jede Änderung im Spiel aktualisiert Anzeige und Auswertung sofort
   let refreshPending = false;
   new MutationObserver((mutations) => {
     const own = document.getElementById("lss-verbands-bot");
@@ -447,7 +507,8 @@
     setTimeout(() => {
       refreshPending = false;
       refreshView();
-    }, 300);
+      observeStats();
+    }, 400);
   }).observe(document.getElementById("missions-panel-body") || document.body, {
     childList: true,
     subtree: true,
@@ -464,12 +525,14 @@
       .map(([key, v]) => `<button type="button" data-speed="${key}" title="${v.hint}">${v.icon} ${v.label}</button>`)
       .join("");
     box.innerHTML = `
+      <div class="lssaa-progress"><i></i></div>
       <div class="lssaa-head" title="Ziehen zum Verschieben · Doppelklick setzt Position und Größe zurück">
         <span class="lssaa-logo">🚒</span>
         <span class="lssaa-title">
-          <strong>Verbands-Bot<span class="lssaa-version">v${chrome.runtime.getManifest().version}</span></strong>
+          <strong>Verbands-Bot <span class="lssaa-version">v${chrome.runtime.getManifest().version}</span></strong>
           <span class="lssaa-state"></span>
         </span>
+        <span class="lssaa-mini"><b class="m-active">0</b> aktiv · <b class="m-next">–</b></span>
         <span class="lssaa-spacer"></span>
         <button type="button" class="lssaa-icon lssaa-stats-btn" title="Auswertung: Einsätze &amp; Credits">📊</button>
         <button type="button" class="lssaa-icon lssaa-settings" title="Einstellungen">⚙</button>
@@ -478,17 +541,27 @@
       <div class="lssaa-body">
         <div class="lssaa-warning"></div>
         <div class="lssaa-controls">
-          <button type="button" class="lssaa-toggle"></button>
+          <div class="lssaa-mainrow">
+            <button type="button" class="lssaa-toggle"></button>
+            <button type="button" class="lssaa-pausebtn" title="Pause einlegen">❚❚</button>
+          </div>
+          <div class="lssaa-pausemenu" hidden>
+            <span>Pause für</span>
+            <button type="button" data-pause="15">15 min</button>
+            <button type="button" data-pause="30">30 min</button>
+            <button type="button" data-pause="60">1 h</button>
+            <button type="button" data-pause="180">3 h</button>
+          </div>
           <div class="lssaa-speed" role="group" aria-label="Tempo">${speedButtons}</div>
           <div class="lssaa-speed-hint"></div>
         </div>
         <div class="lssaa-grid">
           <div class="lssaa-col">
             <div class="lssaa-kpis">
-              <div class="lssaa-kpi"><b class="k-active">0</b><span>Einsätze aktiv</span></div>
-              <div class="lssaa-kpi"><b class="k-hour">0</b><span>alarmiert (60 min)</span></div>
-              <div class="lssaa-kpi"><b class="k-credits">–</b><span>Credits heute</span></div>
-              <div class="lssaa-kpi"><b class="k-next">–</b><span>nächste Prüfung</span></div>
+              <div class="lssaa-kpi"><span class="ico">🚨</span><b class="k-active">0</b><span>Einsätze aktiv</span></div>
+              <div class="lssaa-kpi"><span class="ico">📤</span><b class="k-hour">0</b><span>alarmiert (60 min)</span></div>
+              <div class="lssaa-kpi"><span class="ico">💰</span><b class="k-credits">–</b><span>Credits heute</span></div>
+              <div class="lssaa-kpi"><span class="ico">⏱</span><b class="k-next">–</b><span>nächste Prüfung</span></div>
             </div>
 
             <section class="lssaa-card">
@@ -542,9 +615,23 @@
       }
     };
     const fmt = (n) => (n ?? 0).toLocaleString("de-DE");
+    const clock = (t) => new Date(t).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
     // ---- Knöpfe ----
-    $(".lssaa-toggle").addEventListener("click", () => chrome.storage.sync.set({ running: !settings.running }));
+    $(".lssaa-toggle").addEventListener("click", () => {
+      // Pausiert: Klick setzt fort; sonst Start/Stopp
+      if (settings.running && isPaused()) chrome.storage.sync.set({ pausedUntil: 0 });
+      else chrome.storage.sync.set({ running: !settings.running, pausedUntil: 0 });
+    });
+    $(".lssaa-pausebtn").addEventListener("click", () => ($(".lssaa-pausemenu").hidden = !$(".lssaa-pausemenu").hidden));
+    for (const b of box.querySelectorAll("[data-pause]")) {
+      b.addEventListener("click", () => {
+        const until = Date.now() + Number(b.dataset.pause) * 60000;
+        chrome.storage.sync.set({ running: true, pausedUntil: until });
+        $(".lssaa-pausemenu").hidden = true;
+        api.log(`Pause bis ${clock(until)} Uhr.`);
+      });
+    }
     for (const b of box.querySelectorAll("[data-speed]")) {
       b.addEventListener("click", () => {
         chrome.storage.sync.set(lssSpeedValues(b.dataset.speed));
@@ -557,7 +644,8 @@
       diagnose();
     });
     $(".lssaa-now").addEventListener("click", () => {
-      if (!settings.running) return api.log("Erst „Start“ drücken.");
+      if (!settings.running) return api.log("Erst „Starten“ drücken.");
+      if (isPaused()) return api.log("Bot ist pausiert – zum Fortsetzen auf „Fortsetzen“ klicken.");
       if (!roundRunning) schedule(0);
     });
     $(".lssaa-settings").addEventListener("click", () => window.open(chrome.runtime.getURL("options.html"), "_blank"));
@@ -571,7 +659,10 @@
     function keepInView() {
       if (!box.style.top) return;
       const r = box.getBoundingClientRect();
-      place(Math.min(Math.max(0, r.left), window.innerWidth - Math.min(r.width, 120)), Math.min(Math.max(0, r.top), window.innerHeight - 48));
+      place(
+        Math.min(Math.max(0, r.left), window.innerWidth - Math.min(r.width, 120)),
+        Math.min(Math.max(0, r.top), window.innerHeight - 48)
+      );
     }
     const head = $(".lssaa-head");
     head.addEventListener("pointerdown", (e) => {
@@ -595,23 +686,20 @@
     });
 
     // ---- Größe ändern (Griff unten rechts) ----
-    const MIN_W = 300;
-    const MIN_H = 220;
+    const MIN_W = 320;
+    const MIN_H = 240;
     const resize = $(".lssaa-resize");
     resize.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       const r = box.getBoundingClientRect();
-      // Beim ersten Vergrößern an der aktuellen Position verankern (statt "bottom")
-      place(r.left, r.top);
+      place(r.left, r.top); // an der aktuellen Position verankern (statt "bottom")
       const sx = e.clientX;
       const sy = e.clientY;
       box.classList.add("resizing");
       resize.setPointerCapture(e.pointerId);
       const move = (ev) => {
-        const w = Math.min(Math.max(MIN_W, r.width + ev.clientX - sx), window.innerWidth - r.left - 4);
-        const h = Math.min(Math.max(MIN_H, r.height + ev.clientY - sy), window.innerHeight - r.top - 4);
-        box.style.width = w + "px";
-        box.style.height = h + "px";
+        box.style.width = Math.min(Math.max(MIN_W, r.width + ev.clientX - sx), window.innerWidth - r.left - 4) + "px";
+        box.style.height = Math.min(Math.max(MIN_H, r.height + ev.clientY - sy), window.innerHeight - r.top - 4) + "px";
       };
       const up = () => {
         resize.removeEventListener("pointermove", move);
@@ -662,19 +750,31 @@
       tip.textContent = t.dataset.tip;
       tip.hidden = false;
       const r = box.getBoundingClientRect();
-      const x = Math.min(e.clientX - r.left + 12, r.width - tip.offsetWidth - 6);
-      tip.style.left = Math.max(6, x) + "px";
+      tip.style.left = Math.max(6, Math.min(e.clientX - r.left + 12, r.width - tip.offsetWidth - 6)) + "px";
       tip.style.top = e.clientY - r.top - tip.offsetHeight - 10 + "px";
     });
     box.addEventListener("pointerleave", () => (tip.hidden = true));
 
-    // Countdown jede Sekunde
+    // Countdown + Fortschrittslinie oben jede Sekunde
+    let cycleStart = Date.now();
+    let cycleEnd = null;
     setInterval(() => {
-      $(".k-next").textContent = roundRunning
+      if (nextRoundAt !== cycleEnd) {
+        cycleEnd = nextRoundAt;
+        cycleStart = Date.now();
+      }
+      const text = roundRunning
         ? "läuft…"
-        : nextRoundAt
-          ? Math.max(0, Math.round((nextRoundAt - Date.now()) / 1000)) + " s"
-          : "–";
+        : isPaused()
+          ? "Pause"
+          : nextRoundAt
+            ? Math.max(0, Math.round((nextRoundAt - Date.now()) / 1000)) + " s"
+            : "–";
+      $(".k-next").textContent = text;
+      $(".m-next").textContent = text;
+      const pct = roundRunning ? 100 : nextRoundAt ? ((Date.now() - cycleStart) / Math.max(1, nextRoundAt - cycleStart)) * 100 : 0;
+      $(".lssaa-progress i").style.width = Math.min(100, Math.max(0, pct)) + "%";
+      box.classList.toggle("busy", roundRunning);
     }, 1000);
 
     // ---- Diagramm-Bausteine ----
@@ -696,11 +796,9 @@
       const [label, cls] = loadLevel(f.busyPct);
       $(".f-pct").textContent = f.busyPct + " %";
       $(".f-sub").textContent = `im Einsatz · ${fmt(f.total - f.counts.na - f.counts.free)} von ${fmt(f.total - f.counts.na)} Fahrzeugen`;
-      const badge = $(".f-badge");
-      badge.textContent = label;
-      badge.className = "lssaa-badge f-badge " + cls;
-      const meter = $(".f-meter i");
-      meter.style.width = f.busyPct + "%";
+      $(".f-badge").textContent = label;
+      $(".f-badge").className = "lssaa-badge f-badge " + cls;
+      $(".f-meter i").style.width = f.busyPct + "%";
       $(".f-meter").dataset.tip = `${f.busyPct} % der einsatzbereiten Fahrzeuge sind unterwegs oder vor Ort`;
 
       const stack = $(".f-stack");
@@ -709,12 +807,11 @@
       legend.replaceChildren();
       for (const [key, name, color] of FLEET_PARTS) {
         const n = f.counts[key];
-        const pct = f.total ? (n / f.total) * 100 : 0;
         if (n) {
           const seg = document.createElement("i");
           seg.className = color;
           seg.style.flexGrow = n;
-          seg.dataset.tip = `${name}: ${fmt(n)} Fahrzeuge (${Math.round(pct)} %)`;
+          seg.dataset.tip = `${name}: ${fmt(n)} Fahrzeuge (${Math.round(f.total ? (n / f.total) * 100 : 0)} %)`;
           stack.appendChild(seg);
         }
         const li = document.createElement("li");
@@ -724,11 +821,9 @@
       const age = Math.round((Date.now() - at) / 1000);
       $(".f-foot").textContent = `${fmt(f.botVehicles)} Fahrzeuge fahren gerade für den Bot · Stand vor ${age < 60 ? age + " s" : Math.round(age / 60) + " min"}`;
 
-      // Auswahl-Fahrzeuge gegen Reserve
       const freeAfterReserve = f.presetFree - settings.reserve;
       $(".p-free").textContent = fmt(f.presetFree);
       $(".p-sub").textContent = `frei von ${fmt(f.presetTotal)} passenden Fahrzeugen · Reserve ${settings.reserve}`;
-      const pBadge = $(".p-badge");
       const [pl, pc] =
         f.presetTotal === 0
           ? ["⚠ keine passenden Fahrzeuge", "warn"]
@@ -737,10 +832,9 @@
             : freeAfterReserve <= 2
               ? ["⚠ wird knapp", "warn"]
               : [`✓ ${freeAfterReserve} einsetzbar`, "good"];
-      pBadge.textContent = pl;
-      pBadge.className = "lssaa-badge p-badge " + pc;
-      const pPct = f.presetTotal ? (f.presetFree / f.presetTotal) * 100 : 0;
-      $(".p-meter i").style.width = pPct + "%";
+      $(".p-badge").textContent = pl;
+      $(".p-badge").className = "lssaa-badge p-badge " + pc;
+      $(".p-meter i").style.width = (f.presetTotal ? (f.presetFree / f.presetTotal) * 100 : 0) + "%";
       $(".p-meter").dataset.tip = `${f.presetFree} von ${f.presetTotal} Fahrzeugen deiner Auswahl sind frei`;
       const reserve = $(".p-reserve");
       reserve.style.left = f.presetTotal ? Math.min(100, (settings.reserve / f.presetTotal) * 100) + "%" : "0";
@@ -759,16 +853,24 @@
         c.dataset.tip = `vor ${from}–${from - 5} min: ${n} Alarmierung${n === 1 ? "" : "en"}`;
         cols.appendChild(c);
       });
-      const sum = bins.reduce((a, b) => a + b, 0);
-      $(".h-sum").textContent = `${sum} gesamt`;
+      $(".h-sum").textContent = `${bins.reduce((a, b) => a + b, 0)} gesamt`;
     }
 
     const api = {
       update() {
         const waiting = settings.running && !haveLock;
-        $(".lssaa-state").textContent = waiting ? "wartet (anderer Tab)" : settings.running ? "läuft" : "gestoppt";
-        box.classList.toggle("running", settings.running && !waiting);
-        $(".lssaa-toggle").textContent = settings.running ? "■  Stoppen" : "▶  Starten";
+        const paused = settings.running && isPaused();
+        const state = $(".lssaa-state");
+        state.textContent = waiting
+          ? "wartet (anderer Tab)"
+          : paused
+            ? `pausiert bis ${clock(settings.pausedUntil)}`
+            : settings.running
+              ? "läuft"
+              : "gestoppt";
+        box.classList.toggle("running", settings.running && !waiting && !paused);
+        box.classList.toggle("paused", paused);
+        $(".lssaa-toggle").textContent = paused ? "▶  Fortsetzen" : settings.running ? "■  Stoppen" : "▶  Starten";
         const speed = settings.speed || lssSpeedOf(settings);
         for (const b of box.querySelectorAll("[data-speed]")) b.classList.toggle("on", b.dataset.speed === speed);
         $(".lssaa-speed-hint").textContent =
@@ -778,6 +880,7 @@
       },
       view({ active, lastHour, mine, total, bins, fleet, fleetError, fleetAt, creditsToday }) {
         $(".k-active").textContent = fmt(active);
+        $(".m-active").textContent = fmt(active);
         $(".k-hour").textContent = fmt(lastHour);
         $(".k-credits").textContent = creditsToday == null ? "–" : fmt(creditsToday);
         renderFleet(fleet, fleetError, fleetAt);
@@ -807,16 +910,18 @@
           badge.textContent = m.state;
           const info = document.createElement("span");
           const mins = Math.round((Date.now() - m.time) / 60000);
-          info.textContent = `${m.credits != null ? fmt(m.credits) + " Cr · " : ""}vor ${mins} min`;
+          info.textContent = `${m.credits != null ? "~" + fmt(m.credits) + " Cr · " : ""}vor ${mins} min`;
           meta.append(badge, info);
           li.append(a, meta);
           list.appendChild(li);
         }
       },
       log(text) {
+        logLines.unshift({ t: Date.now(), text });
+        logLines.length = Math.min(logLines.length, 40);
         const li = document.createElement("li");
         const time = document.createElement("time");
-        time.textContent = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+        time.textContent = clock(Date.now());
         li.append(time, " " + text);
         logEl.prepend(li);
         while (logEl.children.length > 40) logEl.lastChild.remove();
@@ -840,13 +945,23 @@
 
   refreshView();
   loadFleet();
-  loadCreditsToday();
+  LssStats.migrate()
+    .then((changed) => changed && panel.log("Auswertung: Zuordnung der Credits nach dem Update neu berechnet."))
+    .catch(() => {})
+    .then(loadCreditsToday);
   // Fuhrpark alle 90 s neu laden (nur wenn der Tab sichtbar ist oder der Bot läuft)
   setInterval(() => {
     if (!document.hidden || settings.running) loadFleet();
   }, 90 * 1000);
-  // "vor x min" und Stand-Angaben weiterzählen
-  setInterval(refreshView, 30 * 1000);
+  // Anzeige, Einsatzende und Pausen-Ende regelmäßig prüfen
+  setInterval(() => {
+    refreshView();
+    observeStats();
+    panel.update();
+  }, 30 * 1000);
+  // Credits-Übersicht lesen, solange Gutschriften erwartet werden (auch bei gestopptem Bot)
+  setTimeout(() => LssStats.maybeSync().catch(() => {}), 25 * 1000);
+  setInterval(() => LssStats.maybeSync().catch(() => {}), 5 * 60 * 1000);
 
   function takeLock() {
     haveLock = true;

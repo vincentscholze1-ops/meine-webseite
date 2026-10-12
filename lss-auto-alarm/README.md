@@ -15,7 +15,7 @@ Die lukrativsten Einsätze kommen zuerst.
 4. **Entpackte Erweiterung laden** → diesen Ordner wählen.
 5. `https://www.leitstellenspiel.de/` mit F5 neu laden.
 
-Im Popup der Erweiterung steht oben die Version (aktuell **v4.0.0**, steht auch im Kopf des Panels).
+Im Popup der Erweiterung steht oben die Version (aktuell **v5.0.0**, steht auch im Kopf des Panels).
 
 ## Das Panel (auf der Hauptseite)
 
@@ -23,7 +23,10 @@ Im Popup der Erweiterung steht oben die Version (aktuell **v4.0.0**, steht auch 
   Breite wird das Panel zweispaltig. Position und Größe werden gemerkt; **Doppelklick auf den Kopf**
   setzt beides zurück. **▾** klappt das Panel ein.
 - **📊** öffnet die Auswertung, **⚙** die Einstellungen.
-- **Starten / Stoppen** und darunter die **Tempo-Knöpfe**:
+- Die dünne Linie ganz oben zeigt, wie lange es bis zur nächsten Prüfung dauert. Eingeklappt (**▾**) bleibt
+  eine kompakte Leiste mit Status, aktiven Einsätzen und Countdown.
+- **Starten / Stoppen**, daneben **❚❚ Pause** (15 min, 30 min, 1 h, 3 h – danach geht es automatisch weiter;
+  „Fortsetzen“ beendet die Pause sofort), darunter die **Tempo-Knöpfe**:
 
   | Stufe | Prüfung | Einsätze je Prüfung | Pause zwischen Alarmierungen |
   | --- | --- | --- | --- |
@@ -44,6 +47,18 @@ Im Popup der Erweiterung steht oben die Version (aktuell **v4.0.0**, steht auch 
 - **Jetzt prüfen**, **Diagnose** (Probelauf ohne Alarmierung), **Vom Bot alarmiert** (Status je Einsatz,
   Klick öffnet ihn) und das aufklappbare **Protokoll**.
 
+## Popup (Klick auf das Erweiterungs-Symbol)
+
+- Status mit Countdown, **Starten / Stoppen / Fortsetzen**, **⟳ Jetzt prüfen**
+- **Pause** 15 min / 30 min / 1 h / 3 h, **Tempo** Gemütlich / Normal / Schnell
+- Kennzahlen live: Einsätze aktiv, nächste Prüfung, Credits heute, Fuhrpark-Auslastung
+- **Einsatzlisten** direkt an-/ausschalten: Verband, Events, Geplant
+- **Zuletzt alarmiert** und **Aktivität** (letzte Protokollzeilen)
+- **Zum Spiel** (holt den Spiel-Tab nach vorn oder öffnet ihn), **Diagnose**, **Auswertung**, **Einstellungen**
+
+Am Symbol zeigt ein kleiner Zähler den Zustand: grüne Zahl = läuft (aktive Einsätze), gelbes „II“ = pausiert,
+rotes „!“ = Bot ist an, aber die Hauptseite des Spiels ist nicht geöffnet.
+
 ## Auswertung
 
 Über **📊 Auswertung** im Panel oder im Popup der Erweiterung öffnet sich die Auswertung als **eigene Seite**
@@ -56,9 +71,17 @@ in einem neuen Tab. Sie zeigt:
 - Credits pro Tag und eine Liste der Einsätze mit Status und tatsächlich erhaltenen Credits
 - Zeitraum wählbar: Heute, 7 Tage, 30 Tage, Alles
 
+**So wird gezählt:** Credits nach dem Zeitpunkt der Gutschrift, Alarmierungen nach dem Zeitpunkt der
+Alarmierung. Die Erfolgsquote bezieht sich nur auf bereits beendete Einsätze. Unter **🔎 Zahlen nachprüfen**
+stehen alle Verbands-Buchungen ohne Bot-Einsatz sowie die Knöpfe „Zuordnung neu berechnen“ und
+„Auswertung zurücksetzen“.
+
 Die Zahlen kommen aus deiner **Credits-Übersicht** im Spiel (`/credits`). Dort steht für jeden
-abgeschlossenen Verbandseinsatz eine Buchung „[Verband] Einsatzname“. Der Bot ordnet die Buchungen über
-Einsatzname und Zeitraum seinen Alarmierungen zu. „Erfolgreich“ heißt: Für den Einsatz ist eine
+abgeschlossenen Verbandseinsatz eine Buchung „[Verband] Einsatzname“. Der Bot erkennt das Ende eines
+Einsatzes daran, dass er aus der Liste verschwindet – laufend, auch wenn der Bot gerade gestoppt ist – und ordnet
+die Buchung mit demselben Einsatznamen zu, die zwischen „zuletzt noch gesehen“ und kurz nach dem Ende gebucht
+wurde. Laufende Einsätze bekommen nie eine Buchung (sonst würden sie Gutschriften anderer, gleichnamiger
+Einsätze übernehmen). „Erfolgreich“ heißt: Für den Einsatz ist eine
 Gutschrift eingegangen. Kommt 45 Minuten nach Einsatzende keine Buchung, zählt er als „ohne Credits“
 (z.B. weil das Fahrzeug zu spät ankam).
 

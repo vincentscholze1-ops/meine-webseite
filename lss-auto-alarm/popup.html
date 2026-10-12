@@ -3,24 +3,130 @@
 <head>
   <meta charset="utf-8">
   <style>
-    body { width: 300px; margin: 0; padding: 12px; font: 13px system-ui, sans-serif; }
-    h1 { font-size: 14px; margin: 0 0 10px; }
-    h1 small { font-weight: 400; color: #666; }
-    button { width: 100%; padding: 6px; margin-bottom: 6px; font: inherit; cursor: pointer; }
-    p { color: #666; font-size: 12px; }
-    #diag-out { font-size: 12px; white-space: pre-wrap; background: #f1f3f4; padding: 6px; border-radius: 4px; }
+    :root {
+      --bg: #11141a; --tile: rgba(255,255,255,.05); --tile-hover: rgba(255,255,255,.09); --line: rgba(255,255,255,.08);
+      --text: #f1f3f6; --muted: #9aa3ae; --accent: linear-gradient(120deg, #ff5a4e, #ff9f43);
+      --good: #0ca30c; --warn: #fab219; --crit: #d03b3b; --meter: #3987e5; --meter-track: rgba(57,135,229,.18);
+    }
+    * { box-sizing: border-box; }
+    body { width: 360px; margin: 0; background: var(--bg); color: var(--text); font: 12.5px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    button { border: 0; cursor: pointer; font: inherit; color: var(--text); transition: background .15s, transform .06s; }
+    button:active { transform: scale(.97); }
+    .progress { height: 3px; background: rgba(255,255,255,.05); }
+    .progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 1s linear; }
+    header { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; }
+    .logo { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; background: var(--accent); font-size: 18px; box-shadow: 0 6px 18px rgba(255,90,78,.35); }
+    .title { display: flex; flex-direction: column; line-height: 1.25; flex: 1; min-width: 0; }
+    .title strong { font-size: 14.5px; }
+    .title small { color: var(--muted); font-weight: 500; font-size: 10.5px; }
+    #state { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+    #state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #6b7380; }
+    body.running #state { color: #8ff0aa; } body.running #state::before { background: #3ddc6b; }
+    body.paused #state { color: #ffd36b; } body.paused #state::before { background: var(--warn); }
+    body.offline #state { color: #ff8a80; } body.offline #state::before { background: var(--crit); }
+    .icons { display: flex; gap: 6px; }
+    .icon { width: 30px; height: 30px; border-radius: 10px; background: var(--tile); font-size: 14px; }
+    .icon:hover { background: var(--tile-hover); }
+    main { padding: 4px 14px 14px; display: grid; gap: 10px; }
+
+    .mainrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    #toggle { padding: 11px 0; border-radius: 14px; font-weight: 700; font-size: 13.5px; background: linear-gradient(120deg, #22c55e, #16a34a); color: #04210f; box-shadow: 0 8px 20px rgba(34,197,94,.3); }
+    body.running #toggle { background: rgba(255,90,78,.12); color: #ff8a80; box-shadow: inset 0 0 0 1px rgba(255,90,78,.35); }
+    body.paused #toggle { background: linear-gradient(120deg, #fbbf24, #f59e0b); color: #2b1a00; }
+    #now { width: 46px; border-radius: 14px; background: var(--tile); box-shadow: inset 0 0 0 1px var(--line); font-size: 15px; }
+    #now:hover { background: var(--tile-hover); }
+    .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--muted); font-size: 11.5px; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--tile); color: var(--muted); font-weight: 600; font-size: 11.5px; box-shadow: inset 0 0 0 1px var(--line); }
+    .chip:hover { color: var(--text); }
+    .chip.pause { background: rgba(250,178,25,.12); color: #ffd36b; box-shadow: none; }
+    .chip.on { background: rgba(79,124,255,.2); color: #c9d6ff; box-shadow: inset 0 0 0 1px rgba(79,124,255,.55); }
+
+    .speed { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: rgba(0,0,0,.25); border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line); }
+    .speed button { padding: 7px 4px; border-radius: 10px; background: transparent; color: var(--muted); font-weight: 600; white-space: nowrap; }
+    .speed button:hover { color: var(--text); background: var(--tile); }
+    .speed button.on { background: linear-gradient(120deg, #4f7cff, #7c5cff); color: #fff; box-shadow: 0 6px 16px rgba(92,108,255,.35); }
+
+    .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .kpi { background: var(--tile); border-radius: 14px; padding: 10px 11px; box-shadow: inset 0 0 0 1px var(--line); position: relative; }
+    .kpi b { display: block; font-size: 20px; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.2; }
+    .kpi span { color: var(--muted); font-size: 11px; }
+    .kpi .ico { position: absolute; right: 9px; top: 8px; font-size: 13px; }
+    .meter { height: 6px; border-radius: 3px; background: var(--meter-track); margin-top: 6px; }
+    .meter i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--meter); transition: width .5s; }
+
+    h2 { margin: 2px 0 0; color: var(--muted); font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .06em; }
+    ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+    .mine li { position: relative; background: var(--tile); border-radius: 10px; padding: 6px 10px 6px 13px; overflow: hidden; display: flex; justify-content: space-between; gap: 8px; }
+    .mine li::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--crit); }
+    .mine li.yellow::before { background: var(--warn); } .mine li.green::before { background: var(--good); }
+    .mine li span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mine li span:last-child { color: var(--muted); white-space: nowrap; font-size: 11px; }
+    .log li { color: #cfd4da; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .log time { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 4px; }
+    .empty { color: var(--muted); }
+
+    .actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .actions button { padding: 8px 2px; border-radius: 12px; background: var(--tile); box-shadow: inset 0 0 0 1px var(--line); font-size: 11px; display: grid; gap: 2px; justify-items: center; }
+    .actions button b { font-size: 16px; font-weight: 400; }
+    .actions button:hover { background: var(--tile-hover); }
+    #notice { border-radius: 12px; padding: 8px 10px; background: rgba(255,90,78,.12); color: #ffb3ab; }
+    #notice:empty { display: none; }
+    #diag-out { font-size: 11.5px; white-space: pre-wrap; background: rgba(0,0,0,.3); padding: 8px 10px; border-radius: 10px; color: #cfd4da; }
     #diag-out:empty { display: none; }
-    a { display: block; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h1>LSS Verbands-Bot <small id="version"></small></h1>
-  <button id="toggle"></button>
-  <button id="stats">📊 Auswertung</button>
-  <button id="diag">Diagnose (ohne Alarmierung)</button>
-  <div id="diag-out"></div>
-  <p>Fährt Verbands- und geplante Einsätze an. Läuft nur, solange die Hauptseite des Leitstellenspiels in einem Tab geöffnet ist.</p>
-  <a href="#" id="options">Auswahl &amp; Grenzen einstellen…</a>
+  <div class="progress"><i id="progress"></i></div>
+  <header>
+    <span class="logo">🚒</span>
+    <span class="title">
+      <strong>Verbands-Bot <small id="version"></small></strong>
+      <span id="state">…</span>
+    </span>
+    <span class="icons">
+      <button class="icon" id="stats" title="Auswertung">📊</button>
+      <button class="icon" id="options" title="Einstellungen">⚙</button>
+    </span>
+  </header>
+  <main>
+    <div id="notice"></div>
+    <div class="mainrow">
+      <button id="toggle"></button>
+      <button id="now" title="Jetzt prüfen">⟳</button>
+    </div>
+    <div class="chips" id="pause-row">
+      <span>❚❚ Pause:</span>
+      <button class="chip pause" data-pause="15">15 min</button>
+      <button class="chip pause" data-pause="30">30 min</button>
+      <button class="chip pause" data-pause="60">1 h</button>
+      <button class="chip pause" data-pause="180">3 h</button>
+    </div>
+    <div class="speed" id="speed"></div>
+
+    <div class="kpis">
+      <div class="kpi"><span class="ico">🚨</span><b id="k-active">–</b><span>Einsätze aktiv</span></div>
+      <div class="kpi"><span class="ico">⏱</span><b id="k-next">–</b><span>nächste Prüfung</span></div>
+      <div class="kpi"><span class="ico">💰</span><b id="k-credits">–</b><span id="k-credits-sub">Credits heute</span></div>
+      <div class="kpi"><span class="ico">🚒</span><b id="k-load">–</b><span id="k-load-sub">Fuhrpark-Auslastung</span><div class="meter"><i id="k-load-meter"></i></div></div>
+    </div>
+
+    <h2>Einsatzlisten</h2>
+    <div class="chips" id="lists"></div>
+
+    <h2>Zuletzt alarmiert</h2>
+    <ul class="mine" id="mine"></ul>
+
+    <h2>Aktivität</h2>
+    <ul class="log" id="log"></ul>
+
+    <div class="actions">
+      <button id="game"><b>🎮</b>Zum Spiel</button>
+      <button id="diag"><b>🔍</b>Diagnose</button>
+      <button id="stats2"><b>📊</b>Auswertung</button>
+      <button id="options2"><b>⚙</b>Einstellungen</button>
+    </div>
+    <div id="diag-out"></div>
+  </main>
   <script src="vehicle-types.js"></script>
   <script src="config.js"></script>
   <script src="popup.js"></script>

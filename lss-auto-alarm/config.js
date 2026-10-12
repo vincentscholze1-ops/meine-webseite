@@ -4,6 +4,8 @@
 const LSS_DEFAULTS = {
   // Bot läuft (Start/Stopp im Panel oder Popup)
   running: false,
+  // Pause bis zu diesem Zeitpunkt (ms seit 1970), 0 = keine Pause
+  pausedUntil: 0,
 
   // Welche Fahrzeuge geschickt werden. Pro Eintrag: Anzahl + erlaubte Fahrzeugtypen.
   // Von den erlaubten Typen wird immer das nächstgelegene freie Fahrzeug genommen.
