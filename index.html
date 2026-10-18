@@ -2025,10 +2025,11 @@ body{font-family:var(--v-font)}
 /* --- Inhalt: Karten flach, Kopfband je Bereich --- */
 .app-shell{border-radius:14px!important;box-shadow:0 1px 0 rgba(0,26,64,.05)!important}
 :root:not([data-theme=dark]) .app-shell{border-color:var(--v-line)!important}
-.app-shell>.app-header:first-child{position:relative;overflow:hidden;margin:-24px -26px 22px;padding:30px 26px 24px;min-height:96px;align-items:flex-end;border-radius:14px 14px 0 0;border-bottom:none!important;
+.app-shell>.app-header:first-child{position:relative;overflow:visible;margin:-24px -26px 22px;padding:30px 26px 24px;min-height:96px;align-items:flex-end;border-radius:14px 14px 0 0;border-bottom:none!important;
   background:var(--v-hatch),linear-gradient(115deg,var(--v-deep) 0%,var(--v-navy) 40%,var(--v-blue) 100%)}
-.app-shell>.app-header:first-child::after{content:'';position:absolute;right:18px;bottom:-6px;width:290px;height:150px;background:#00214f;opacity:.55;-webkit-mask:var(--v-sky) right bottom/contain no-repeat;mask:var(--v-sky) right bottom/contain no-repeat;pointer-events:none}
+.app-shell>.app-header:first-child::after{content:'';position:absolute;right:18px;bottom:0;max-height:calc(100% - 6px);width:290px;height:150px;background:#00214f;opacity:.55;-webkit-mask:var(--v-sky) right bottom/contain no-repeat;mask:var(--v-sky) right bottom/contain no-repeat;pointer-events:none}
 .app-shell>.app-header:first-child>*{position:relative;z-index:1}
+.app-shell>.app-header:first-child:has(.pe-pop.on),.app-shell>.app-header:first-child:focus-within{z-index:900}
 .app-shell>.app-header:first-child h1,:root[data-theme=dark] .app-shell>.app-header:first-child h1{color:#fff!important;font-family:var(--v-display);font-size:34px;font-weight:800;letter-spacing:.01em;text-transform:uppercase;line-height:1.05;padding-bottom:12px;background:linear-gradient(var(--v-orange),var(--v-orange)) 0 100%/64px 5px no-repeat!important}
 .app-shell>.app-header:first-child h1 small{color:rgba(255,255,255,.8)!important;text-transform:none;font-family:var(--v-font)}
 .app-shell>.app-header:first-child p{color:rgba(255,255,255,.85)!important}
@@ -2112,6 +2113,18 @@ html .thw-lock .link{color:var(--v-blue)}
 }
 @media(max-width:480px){.global-nav .nav-center{display:none}.global-nav .nav-right button[data-app="log"]{display:none}.global-nav{grid-template-columns:auto 1fr}.global-nav .nav-right{gap:4px}.global-nav .nav-right button:not(.nav-logo){padding:7px 9px;font-size:12px}}
 @media (prefers-reduced-motion: reduce){.v41-gear,.v41-wedge,.v41-load span{animation:none}}
+}
+/* v43: Papierbögen nachtragen */
+@media screen{
+.fb-top{display:flex;flex-wrap:wrap;gap:8px}
+.fbp-bar{display:flex;flex-wrap:wrap;gap:4px 24px;align-items:flex-start;position:sticky;top:-24px;z-index:2;background:var(--bg-surface,#fff);padding:6px 0 2px;border-bottom:1px solid var(--j-line,#e2e8f0);margin-bottom:6px}
+.fbp-bar .form-group{margin-bottom:6px}.fbp-bar input[type=date]{max-width:180px}
+.fbp-q{border-radius:10px;padding-left:6px;padding-right:6px;transition:background .12s}
+.fbp-q.fbp-cur{background:rgba(242,159,0,.13);box-shadow:inset 3px 0 0 #F29F00}
+.fbp-count{font-weight:700;font-size:13px;margin:8px 0 0;color:var(--tx-2,#475569)}
+.pill.fb-paper{background:rgba(242,159,0,.16);color:#9a5b00}
+:root[data-theme=dark] .pill.fb-paper{color:#ffc35a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pill.fb-paper{color:#ffc35a}}
 }
 </style>
 <script>/* Farbthema (UI-Einstellung im localStorage): light | dark | system – Standard hell */
@@ -2772,7 +2785,7 @@ ap();try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',ap
 <!-- VERPFLEGUNGSRESERVE (MHD) -->
 <div id="suppliesApp" class="app-shell">
   <div class="app-header"><h1 data-tile-h="supplies">🥫 Verpflegungsreserve (MHD)</h1><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"><label style="margin:0;font-size:12px;font-weight:600;">Vorwarnung <input type="number" min="1" max="365" id="supWarn" style="width:64px;display:inline-block;margin:0 4px;padding:5px 6px;" onchange="supplyWarnDays=Math.max(1,+this.value||30);lsSave('supplyWarnDays',supplyWarnDays);renderSupplies()"> Tage</label><button type="button" class="btn-success btn-sm u-w-auto" onclick="openSupplyModal()">➕ Artikel erfassen</button></div></div>
-  <p class="q-hint">Haltbarkeit der Notfallverpflegung und Getränke im Jugendraum. Abgelaufenes erscheint rot und bei den offenen Punkten auf der Startseite.</p>
+  <p class="q-hint">Notfallverpflegung und Getränke im Jugendraum. Abgelaufenes wird rot markiert und auf der Startseite gemeldet.</p>
   <div class="cl-kpis" id="supKpis"></div>
   <div class="card"><div id="supList"></div></div>
 </div>
@@ -2780,14 +2793,14 @@ ap();try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',ap
 <!-- ELTERN-FÄHIGKEITEN -->
 <div id="parentsApp" class="app-shell">
   <div class="app-header"><h1 data-tile-h="parents">🙌 Helfende Hände</h1><div style="display:flex;gap:8px;flex-wrap:wrap;"><button type="button" class="btn-success btn-sm u-w-auto" onclick="openParentSkillModal('')">➕ Weitere Person eintragen</button></div></div>
-  <p class="q-hint">Wer kann was? Alle Notfallkontakte der Junghelfer (Stammdaten) erscheinen automatisch. Zusätzlich können weitere Personen aus dem Umfeld eingetragen werden (z.B. Tante, Onkel, Lebensgefährte, Nachbarn) – diese werden <b>nicht</b> zu Notfallkontakten. Alle Angaben sind freiwillig und nur mit Einwilligung.</p>
+  <p class="q-hint">Die Notfallkontakte der Junghelfer erscheinen automatisch. Weitere Personen (z. B. Großeltern, Bekannte) lassen sich ergänzen – sie werden <b>keine</b> Notfallkontakte. Alle Angaben sind freiwillig.</p>
   <div class="card"><input type="search" placeholder="🔍 Suchen (Name, Fähigkeit, Kind …)" oninput="psSearch=this.value;renderParentSkills()" style="max-width:360px;"><div class="svc-filter-bar" id="psChips" style="margin-top:10px;"></div><div class="ps-list" id="psList"></div></div>
 </div>
 
 <!-- ZELTLAGER -->
 <div id="campApp" class="app-shell">
   <div class="app-header"><h1 data-tile-h="camp">⛺ Zeltlager / LaJuLa</h1></div>
-  <p class="q-hint">Zeltlager anlegen (erscheint automatisch im Kalender), Packliste und Einverständniserklärung bearbeiten und drucken, zurückgegebene Unterlagen je Teilnehmer ablegen. Fehlen kurz vor dem Lager noch Rückmeldungen, erscheint ein Hinweis auf der Startseite.</p>
+  <p class="q-hint">Zeltlager anlegen (steht dann im Kalender), Packliste und Einverständniserklärung drucken, Rückläufe je Teilnehmer abhaken. Fehlende Rückmeldungen meldet die Startseite.</p>
   <div id="campBody"></div>
 </div>
 
@@ -2805,7 +2818,7 @@ ap();try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',ap
 <!-- ÜBERGABE-MAPPE -->
 <div id="handoverApp" class="app-shell">
   <div class="app-header"><h1 data-tile-h="handover">🗂️ Übergabe-Mappe</h1></div>
-  <p class="q-hint">„Alles, was mein Nachfolger wissen muss“: Abläufe, Ansprechpartner, Fristen im Jahr, Zugänge und Schlüssel. Viele Jugendgruppen verlieren beim Betreuerwechsel ihr Wissen – hier bleibt es erhalten. Der Ausdruck ergänzt automatisch Team, Ämter, Termine und Fristen aus der App.</p>
+  <p class="q-hint">Alles, was die Nachfolge wissen muss: Abläufe, Ansprechpartner, Fristen, Zugänge und Schlüssel. Der Ausdruck ergänzt Team, Ämter und Termine automatisch.</p>
   <div class="finance-subtabs" id="hoTabs">
     <button type="button" class="finance-subtab active" data-tab="procs">📋 Abläufe</button>
     <button type="button" class="finance-subtab" data-tab="contacts">📇 Ansprechpartner</button>
@@ -2830,15 +2843,15 @@ ap();try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',ap
 <!-- BRIEF -->
 <div id="letterApp" class="app-shell">
   <div class="app-header"><h1 data-tile-h="letter">✉️ Brief</h1></div>
-  <p class="q-hint">Text einfügen, Gestaltung wählen und als THW-Jugend-Brief zum Unterschreiben drucken. Absätze (Leerzeile) und Zeilenumbrüche werden übernommen; Anlagen aus anderen Anwendungen und aus „Dokumente“ lassen sich anhängen.</p>
+  <p class="q-hint">Text einfügen, Gestaltung wählen, als THW-Jugend-Brief drucken. Absätze bleiben erhalten; Anlagen aus der App und aus „Dokumente“ lassen sich anhängen.</p>
   <div id="letterEditor"></div>
 </div>
 
 <!-- FEEDBACK -->
 <div id="feedbackApp" class="app-shell">
   <div class="app-header"><h1 data-tile-h="feedback">💬 Feedback &amp; Verbesserung</h1></div>
-  <p class="q-hint">Anonymes Feedback von Junghelfern, Eltern und Helfern – am besten einmal im Halbjahr ausgeben und direkt ausfüllen lassen (hier am Gerät oder auf Papier). Vor dem Abschicken wird eine Vorschau gezeigt; abgeschickte Bögen können nicht mehr geändert werden. Es werden keine Namen gespeichert.</p>
-  <div class="fb-top"><button type="button" class="btn-success" onclick="openFeedbackForm()">✍️ Feedbackbogen ausfüllen</button></div>
+  <p class="q-hint">Anonym und ohne Namen – am besten einmal im Halbjahr. Direkt hier ausfüllen lassen oder ausgefüllte Papierbögen nachtragen. Gespeicherte Bögen sind nicht mehr änderbar.</p>
+  <div class="fb-top"><button type="button" class="btn-success" onclick="openFeedbackForm()">✍️ Feedbackbogen ausfüllen</button><button type="button" class="btn-secondary" onclick="openFeedbackPaper()">📄 Papierbögen nachtragen</button></div>
   <div class="card"><div class="fb-eval-head"><h2 class="u-m0">📊 Auswertung</h2><div class="fb-eval-ctl"><label>Zeitraum <select id="fbPeriodSel" onchange="fbSel=this.value;renderFeedback()"></select></label></div></div>
     <div class="fb-count" id="fbCount"></div><h3 class="fb-h3">Durchschnittsnoten</h3><div id="fbSummary"></div>
     <h3 class="fb-h3">💬 Freitext-Antworten <small>(gesammelt, neueste zuerst)</small></h3><div class="fb-texts" id="fbTexts"></div>
@@ -3190,7 +3203,7 @@ function openAdminPanel(){
   const row=id=>{const d=TILE_DEFAULTS[id],o=nameOverrides.tiles[id]||{};return `<tr data-id="${esc(id)}"><td><input type="text" class="an-icon" maxlength="4" value="${esc(o.icon||'')}" placeholder="${esc(d.icon)}"></td><td><input type="text" class="an-title" maxlength="40" value="${esc(o.title||'')}" placeholder="${esc(d.title)}"></td><td><input type="text" class="an-desc" maxlength="60" value="${esc(o.desc||'')}" placeholder="${esc(d.desc)}"></td><td>${placeSel(id)}</td></tr>`;};
   const m=document.createElement('div');m.className='modal-overlay';m.onclick=ev=>{if(ev.target===m)m.remove();};
   m.innerHTML=`<div class="modal-content admin-panel" style="max-width:820px;" onclick="event.stopPropagation();"><h2>🔓 Admin-Modus</h2>
-    <p class="modal-subtitle">Leere Felder = Standardname (grau angezeigt). Die Änderungen wirken sofort in Seitenleiste, Überschriften und Hinweisen – alle Funktionen bleiben unverändert erhalten.</p>
+    <p class="modal-subtitle">Leeres Feld = Standardname. Änderungen wirken sofort in Menü und Überschriften.</p>
     <h3 class="an-h">📂 Bereiche der Seitenleiste <small>(umbenennen)</small></h3>
     <div class="an-grid">${HOME_GROUPS.map(([n])=>`<label>${esc(n)}<input type="text" class="an-grp" data-grp="${esc(n)}" maxlength="24" value="${esc(nameOverrides.groups[n]||'')}" placeholder="${esc(n)}"></label>`).join('')}</div>
     <h3 class="an-h">🧩 Anwendungen <small>(Name, Symbol, Beschreibung und Bereich in der Seitenleiste)</small></h3>
@@ -3919,7 +3932,7 @@ function openSpecialFunctionsManager(){
   m.onclick=ev=>{if(ev.target===m)m.remove();};
   m.innerHTML=`<div class="modal-content" style="max-width:620px;" onclick="event.stopPropagation();">
     <h2>⭐ Sonderfunktionen</h2>
-    <p class="modal-subtitle">Sonderfunktionen lassen sich Junghelfern und Erwachsenen gleichermaßen zuweisen – z.B. Jugendsprecher, Materialwart, Sanitäter etc.</p>
+    <p class="modal-subtitle">Für Junghelfer und Erwachsene – z. B. Jugendsprecher, Materialwart, Sanitäter.</p>
     <div id="sfList"></div>
     <h3>Neue Sonderfunktion</h3>
     <div class="form-group"><label>Bezeichnung *</label><input type="text" id="sfNewName" placeholder="z.B. Jugendsprecher"></div>
@@ -7680,7 +7693,7 @@ function openServiceTemplatesModal(){
   const old=$('serviceTemplatesModal');if(old)old.remove();
   const m=document.createElement('div');m.className='modal-overlay';m.id='serviceTemplatesModal';
   m.onclick=e=>{if(e.target===m)closeServiceTemplatesModal();};
-  m.innerHTML=`<div class="modal-content" style="max-width:780px;" onclick="event.stopPropagation();"><h2>📋 Dienstvorlagen</h2><p class="modal-subtitle">Einmal anlegen, künftig wiederverwenden. Beim Anlegen eines Dienstes füllt die Vorlage Dienstart, Zeiten, Zielgruppe, Verantwortliche und Verpflegung vor und übernimmt Dienstinhalte und Notizen.</p><div id="serviceTemplatesList"></div><div class="modal-actions"><button type="button" class="btn-secondary" onclick="closeServiceTemplatesModal()">Fertig</button><button type="button" class="btn-success" onclick="openTemplateEditor()">➕ Neue Vorlage</button></div></div>`;
+  m.innerHTML=`<div class="modal-content" style="max-width:780px;" onclick="event.stopPropagation();"><h2>📋 Dienstvorlagen</h2><p class="modal-subtitle">Einmal anlegen, immer wieder nutzen: füllt Dienstart, Zeiten, Zielgruppe, Verantwortliche, Verpflegung, Inhalte und Notizen vor.</p><div id="serviceTemplatesList"></div><div class="modal-actions"><button type="button" class="btn-secondary" onclick="closeServiceTemplatesModal()">Fertig</button><button type="button" class="btn-success" onclick="openTemplateEditor()">➕ Neue Vorlage</button></div></div>`;
   document.body.appendChild(m);renderServiceTemplatesList();
 }
 function closeServiceTemplatesModal(){const m=$('serviceTemplatesModal');if(m)m.remove();fillQsTemplateSelect();}
@@ -8505,7 +8518,7 @@ function openParentSkillModal(key){
   const x=key?parentDirectory().find(y=>y.key===key):{key:'',name:'',relation:'',phone:'',childIds:[],manual:true,data:null};if(!x)return;const d=x.data||{skills:[],other:'',note:'',email:'',consent:false};
   const jh=employees.filter(e=>isJHCat(e.category)).sort((a,b)=>empName(a.id).localeCompare(empName(b.id),'de'));
   const m=document.createElement('div');m.className='modal-overlay';m.onclick=ev=>{if(ev.target===m)m.remove();};
-  m.innerHTML=`<div class="modal-content" style="max-width:640px;" onclick="event.stopPropagation();"><h2>🙌 ${key?'Fähigkeiten: '+esc(x.name):'Weitere Person eintragen'}</h2>${x.manual?`<p class="modal-subtitle"><small>Weitere Personen (z.B. Tante, Onkel, Lebensgefährte, Nachbarn) werden nur hier gespeichert und <b>nicht</b> als Notfallkontakt übernommen.</small></p>
+  m.innerHTML=`<div class="modal-content" style="max-width:640px;" onclick="event.stopPropagation();"><h2>🙌 ${key?'Fähigkeiten: '+esc(x.name):'Weitere Person eintragen'}</h2>${x.manual?`<p class="modal-subtitle"><small>Wird nur hier gespeichert, <b>nicht</b> als Notfallkontakt.</small></p>
     <div class="form-row"><div class="form-group"><label>Name *</label><input type="text" id="psName" value="${esc(x.name)}"></div><div class="form-group"><label>Beziehung</label><input type="text" id="psRel" list="psRelList" value="${esc(x.relation)}" placeholder="z.B. Onkel, Lebensgefährtin"><datalist id="psRelList">${PS_RELATIONS.map(r=>`<option value="${esc(r)}">`).join('')}</datalist></div></div>
     <div class="form-group"><label>Telefon</label><input type="tel" id="psPhone" value="${esc(x.phone)}"></div>
     <div class="form-group"><label>Bezug zu Junghelfer(n) (optional)</label><div class="target-pick">${jh.length?jh.map(e=>`<label><input type="checkbox" class="ps-ch" value="${esc(e.id)}" ${x.childIds.includes(e.id)?'checked':''}> ${esc(empName(e.id))}</label>`).join(''):'<small>Keine Junghelfer vorhanden</small>'}</div></div>`
@@ -8654,7 +8667,7 @@ function renderFeedback(){
   const tx=$('fbTexts');
   if(tx){const gs=fbTextGroups(list);tx.innerHTML=gs.some(g=>g.items.length)?gs.map(g=>{const cl=fbClusters(g.items);return `<div class="fb-tg"><h3>${esc(g.t)} <small>(${g.items.length} Antwort${g.items.length===1?'':'en'}${cl.length<g.items.length?` · ${cl.length} ${cl.length===1?'Thema':'Themen'}`:''})</small></h3>${g.items.length?`<ul>${cl.map(c=>`<li${c.items.length>1?' class="multi"':''}><p>${c.items.length>1?`<span class="fb-cnt" title="${c.items.length}× ähnlich genannt">${c.items.length}×</span> `:''}„${esc(c.rep).replace(/\n/g,'<br>')}“</p><small>${esc(c.roles)} · ${esc(formatDate(c.latest))}</small>${c.items.length>1?`<details><summary>Alle ${c.items.length} Antworten anzeigen</summary><ul>${c.items.map(i=>`<li><p>„${esc(i.text).replace(/\n/g,'<br>')}“</p><small>${esc(FB_ROLES[i.role]||'ohne Angabe')} · ${esc(formatDate(i.date))}</small></li>`).join('')}</ul></details>`:''}</li>`).join('')}</ul>`:'<p class="empty-hint">Keine Antworten.</p>'}</div>`;}).join(''):'<p class="empty-hint">Noch keine Freitext-Antworten.</p>';}
   box.innerHTML=[...list].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(e=>{const g=FB_QUESTIONS.map(q=>+e.ratings[q[1]]).filter(x=>x>=1);const avg=g.length?(g.reduce((a,b)=>a+b,0)/g.length):null;const txt=FB_TEXTS.map(([k])=>e.texts[k]).filter(Boolean);
-    return `<div class="fb-card"><div class="fb-card-head"><span class="pill">${esc(FB_ROLES[e.role]||'ohne Angabe')}</span><small>${esc(formatDate(e.date))}</small><span class="fb-lock" title="Abgeschickt – nicht mehr änderbar">🔒</span>${avg!=null?`<span class="fb-avg ${fbGradeCls(avg)}">Ø ${fbNum(avg)}</span>`:''}</div>${txt.length?`<div class="fb-txt">${txt.map(t=>`<p>„${esc(t)}“</p>`).join('')}</div>`:''}<div class="fb-actions"><button type="button" class="btn-secondary btn-sm" onclick="openFeedbackForm('${e.id}')">👁️ Ansehen</button><button type="button" class="btn-secondary btn-sm" onclick="printFeedbackForm('${e.id}')">🖨️ Drucken</button>${adminMode?`<button type="button" class="btn-danger btn-sm" onclick="deleteFeedback('${e.id}')" title="Löschen (nur Admin)">🗑️</button>`:''}</div></div>`;}).join('')||'<p class="empty-hint">Keine Rückmeldungen in diesem Zeitraum.</p>';
+    return `<div class="fb-card"><div class="fb-card-head"><span class="pill">${esc(FB_ROLES[e.role]||'ohne Angabe')}</span>${e.source==='papier'?'<span class="pill fb-paper" title="vom Papierbogen nachgetragen">📄 Papier</span>':''}<small>${esc(formatDate(e.date))}</small><span class="fb-lock" title="Abgeschickt – nicht mehr änderbar">🔒</span>${avg!=null?`<span class="fb-avg ${fbGradeCls(avg)}">Ø ${fbNum(avg)}</span>`:''}</div>${txt.length?`<div class="fb-txt">${txt.map(t=>`<p>„${esc(t)}“</p>`).join('')}</div>`:''}<div class="fb-actions"><button type="button" class="btn-secondary btn-sm" onclick="openFeedbackForm('${e.id}')">👁️ Ansehen</button><button type="button" class="btn-secondary btn-sm" onclick="printFeedbackForm('${e.id}')">🖨️ Drucken</button>${adminMode?`<button type="button" class="btn-danger btn-sm" onclick="deleteFeedback('${e.id}')" title="Löschen (nur Admin)">🗑️</button>`:''}</div></div>`;}).join('')||'<p class="empty-hint">Keine Rückmeldungen in diesem Zeitraum.</p>';
 }
 /* Formular: neu = ausfüllen → Vorschau → bestätigen; vorhandene Bögen sind abgeschickt und nur noch lesbar */
 function openFeedbackForm(id){
@@ -8662,7 +8675,7 @@ function openFeedbackForm(id){
   const m=document.createElement('div');m.className='modal-overlay';m.onclick=ev=>{if(ev.target===m&&(ro||confirm('Formular schließen? Eingaben gehen verloren.')))m.remove();};
   let lastGroup='';
   const rows=FB_QUESTIONS.map(([g,k,t])=>{const head=g!==lastGroup?`<div class="fb-group">${esc(g)}</div>`:'';lastGroup=g;return `${head}<div class="fb-q"><span>${esc(t)}</span><div class="fb-grades">${[1,2,3,4,5,6].map(n=>`<label class="fb-grade g${n}"><input type="radio" name="fb_${k}" value="${n}" ${+d.ratings[k]===n?'checked':''} ${dis}><span>${n}</span></label>`).join('')}<label class="fb-grade na"><input type="radio" name="fb_${k}" value="" ${!d.ratings[k]?'checked':''} ${dis}><span>k.A.</span></label></div></div>`;}).join('');
-  m.innerHTML=`<div class="modal-content${ro?' fb-ro':''}" style="max-width:760px;" onclick="event.stopPropagation();"><div class="fb-form"><h2>💬 Feedback zur Jugendarbeit${ro?' <span class="fb-lock-t">🔒 abgeschickt</span>':''}</h2><p class="modal-subtitle">${ro?'Dieser Bogen wurde abgeschickt und kann nicht mehr geändert werden.':'Anonym – es werden keine Namen gespeichert. Bewertung wie Schulnoten: 1 = sehr gut … 6 = ungenügend, „k.A.“ = keine Angabe.'}</p>
+  m.innerHTML=`<div class="modal-content${ro?' fb-ro':''}" style="max-width:760px;" onclick="event.stopPropagation();"><div class="fb-form"><h2>💬 Feedback zur Jugendarbeit${ro?' <span class="fb-lock-t">🔒 abgeschickt</span>':''}</h2><p class="modal-subtitle">${ro?'Dieser Bogen wurde abgeschickt und kann nicht mehr geändert werden.':'Anonym. Noten wie in der Schule: 1 = sehr gut … 6 = ungenügend, k.A. = keine Angabe.'}</p>
     <div class="form-group" style="max-width:240px;"><label>Datum des Ausfüllens</label><input type="date" id="fbDate" value="${esc(d.date||localISO())}" ${dis}></div>
     <div class="form-group"><label>Ich bin …</label><div class="fb-roles">${Object.entries(FB_ROLES).map(([k,v])=>`<label><input type="radio" name="fbRole" value="${k}" ${d.role===k?'checked':''} ${dis}> ${esc(v)}</label>`).join('')}</div></div>
     ${rows}
@@ -9541,7 +9554,7 @@ function toggleHandschuheArt(selId,grpId){const s=$(selId),g=$(grpId);if(!s||!g)
 function openClothingTypesModal(){
   const old=$('clothingTypesModal');if(old)old.remove();
   const m=document.createElement('div');m.className='modal-overlay';m.id='clothingTypesModal';m.onclick=e=>{if(e.target===m)m.remove();};
-  m.innerHTML=`<div class="modal-content" style="max-width:860px;" onclick="event.stopPropagation();"><h2>⚙️ Kleidungsarten verwalten</h2><p class="modal-subtitle"><strong>PSA</strong> (persönliche Schutzausstattung) muss beim Wechsel zu den Aktiven immer zurückgegeben werden. <strong>Zusatzausstattung</strong> darf die Person behalten, wenn sie danach als Betreuer oder Helfer mit EFZ geführt wird. „Max. je Person“ legt fest, wie viele Stück einer Person gleichzeitig ausgegeben werden dürfen (1 = nicht mehrfach ausgebbar).</p><div id="clothingTypesList"></div>
+  m.innerHTML=`<div class="modal-content" style="max-width:860px;" onclick="event.stopPropagation();"><h2>⚙️ Kleidungsarten verwalten</h2><p class="modal-subtitle"><strong>PSA</strong> wird beim Wechsel zu den Aktiven zurückgegeben. <strong>Zusatzausstattung</strong> darf behalten, wer danach als Betreuer oder Helfer mit EFZ weitermacht. „Max. je Person“ = wie viele Stück jemand gleichzeitig haben darf.</p><div id="clothingTypesList"></div>
   <div class="st-new"><h4 style="margin:0 0 8px;">➕ Neue Kleidungsart</h4><div class="ct-row ct-new"><input type="text" id="ctNewName" placeholder="z.B. Warnweste"><select id="ctNewKind"><option value="psa">PSA</option><option value="zusatz">Zusatzausstattung</option></select><label class="ct-inline"><input type="checkbox" id="ctNewMulti" onchange="document.getElementById('ctNewMax').disabled=!this.checked;if(!this.checked)document.getElementById('ctNewMax').value=1;"> mehrfach</label><input type="number" id="ctNewMax" min="1" max="50" value="1" disabled title="Max. je Person"><label class="ct-inline"><input type="checkbox" id="ctNewVariants"> mit Art/Variante</label><button type="button" class="btn-success btn-sm" style="width:auto;" onclick="addClothingType()">Anlegen</button></div></div>
   <div class="modal-actions"><button type="button" class="btn-secondary" onclick="this.closest('.modal-overlay').remove()">Fertig</button></div></div>`;
   document.body.appendChild(m);renderClothingTypesList();
@@ -10977,7 +10990,7 @@ printFix=function(h){h=_printFixOrg(h);if(!orgChanged())return h;let o=String(h)
 setTimeout(orgWatch,0);
 function renderOrgCard(){
   const b=$('orgCard');if(!b)return;const c=orgCfg;const ro=adminMode?'':'disabled';
-  b.innerHTML=`<h2 style="margin-top:0;">🏢 Ortsverband &amp; Einstellungen</h2><p class="q-hint">Diese Angaben stehen in Briefköpfen, Bescheinigungen und Ausdrucken. Andere Jugendgruppen können die App so ohne Programmänderung nutzen.${adminMode?'':' Ändern nur im Admin-Modus (🔑).'}</p>
+  b.innerHTML=`<h2 style="margin-top:0;">🏢 Ortsverband &amp; Einstellungen</h2><p class="q-hint">Diese Angaben stehen in Briefköpfen, Bescheinigungen und Ausdrucken.${adminMode?'':' Ändern nur im Admin-Modus (🔑).'}</p>
     <div class="org-grid"><label>Ortsverband<input type="text" data-o="ov" value="${esc(c.ov)}" ${ro} placeholder="z.B. Döbeln"></label><label>Name der Jugendgruppe<input type="text" data-o="org" value="${esc(c.org)}" ${ro}></label><label>Einheit (Absender)<input type="text" data-o="unit" value="${esc(c.unit)}" ${ro}></label><label>Funktion der Leitung<input type="text" data-o="leaderTitle" value="${esc(c.leaderTitle)}" ${ro}></label>
       <label>Straße<input type="text" data-o="street" value="${esc(c.street)}" ${ro}></label><label>PLZ<input type="text" data-o="zip" value="${esc(c.zip)}" ${ro} maxlength="5"></label><label>Ort<input type="text" data-o="city" value="${esc(c.city)}" ${ro}></label>
       <label>Bundesland<select data-o="state" ${ro}>${BUNDESLAENDER.map(s=>`<option ${s===c.state?'selected':''}>${s}</option>`).join('')}</select></label><label>Landesjugend<input type="text" data-o="stateYouth" value="${esc(c.stateYouth)}" ${ro}></label>
@@ -11717,7 +11730,7 @@ setTimeout(peInstall,0);
 /* Export-Zentrale im Logbuch (Reiter Datensicherung): alle Listen an einem Ort */
 const PE_APP_NAMES={master:'👥 Stammdaten',clothing:'👕 Bekleidung',finance:'💰 Finanzen',helferverein:'🤝 Helferverein',service:'🧰 Dienste',awards:'🏆 Leistungsabzeichen',calendar:'📆 Kalender',supplies:'🥫 Verpflegung',parents:'🙌 Helfende Hände',boards:'🏛️ Gremien',camp:'⛺ Zeltlager',emergency:'🚨 Notfall',documents:'📁 Dokumente',useful:'📝 Notizbuch',letter:'✉️ Briefe',log:'📓 Logbuch'};
 function renderExportCenter(){const b=$('xcCard');if(!b)return;const groups={};Object.entries(EXPORTS).forEach(([k,x])=>{(groups[x.app]=groups[x.app]||[]).push([k,x]);});
-  b.innerHTML=`<h2 style="margin-top:0;">📊 Export-Zentrale</h2><p class="q-hint" style="margin-top:0;">Jede Liste als Excel-Datei (.xlsx, mit Filter und fester Kopfzeile) oder als CSV – zum Weiterverarbeiten ohne Abtippen. Dieselben Exporte gibt es in jeder Anwendung oben rechts unter „⤓ Drucken &amp; Export“.</p>`+
+  b.innerHTML=`<h2 style="margin-top:0;">📊 Export-Zentrale</h2><p class="q-hint" style="margin-top:0;">Jede Liste als Excel-Datei (.xlsx) oder CSV. Dieselben Exporte gibt es in jedem Bereich oben rechts unter „⤓ Drucken &amp; Export“.</p>`+
   Object.entries(groups).map(([app,list])=>`<h3 class="pe-h" style="padding-left:0;">${esc(PE_APP_NAMES[app]||app)}</h3><div class="xc-grid">${list.map(([k,x])=>{let l;try{l=x.label();}catch(e){l=k;}return `<div class="pe-ex"><span>${esc(l)}</span><button type="button" class="pe-f xl" onclick="runExport('${k}','xlsx')">Excel</button><button type="button" class="pe-f csv" onclick="runExport('${k}','csv')">CSV</button></div>`;}).join('')}</div>`).join('');}
 
 /* ================= 100. „WER MACHTS?“ – NUR ANWESENDE, FAIR GEWICHTET ================= */
@@ -11907,7 +11920,7 @@ function pmReqCheck(m,cat,gender,parentContacts,status){if(pmIsArchived(m)||['au
   if(jh&&reqOn('emgContact')&&!parentContacts.length)return'Bitte mindestens einen Notfallkontakt mit Telefonnummer eintragen (Pflichtfeld).';
   if(!jh&&reqOn('blPhone')&&!(m.querySelector('#pmPhone')?.value||'').trim())return'Bitte die Handynummer eintragen (Pflichtfeld).';return'';}
 function renderReqCard(){const b=$('reqCard');if(!b)return;const ro=adminMode?'':'disabled';
-  b.innerHTML=`<h2 style="margin-top:0;">✳️ Pflichtfelder bei Personen</h2><p class="q-hint" style="margin-top:0;">Was muss beim Speichern einer Person ausgefüllt sein? Je nachdem, was eure Jugendgruppe wirklich braucht. Telefonnummern bei Notfallkontakten sind immer nötig.${adminMode?'':' Ändern nur im Admin-Modus (🔑).'}</p>
+  b.innerHTML=`<h2 style="margin-top:0;">✳️ Pflichtfelder bei Personen</h2><p class="q-hint" style="margin-top:0;">Was muss beim Speichern einer Person ausgefüllt sein? Telefonnummern bei Notfallkontakten sind immer Pflicht.${adminMode?'':' Ändern nur im Admin-Modus (🔑).'}</p>
     <div class="req-grid">${REQ_FIELDS.map(([k,l])=>`<label class="bf-check"><input type="checkbox" data-req="${k}" ${reqOn(k)?'checked':''} ${ro}> ${esc(l)}</label>`).join('')}</div>`;
   b.querySelectorAll('[data-req]').forEach(i=>i.onchange=()=>{if(!adminMode)return;reqCfg[i.dataset.req]=i.checked;lsSave('reqFields',reqCfg);addLogEntry(`Pflichtfeld „${REQ_FIELDS.find(x=>x[0]===i.dataset.req)[1]}“ ${i.checked?'eingeschaltet':'ausgeschaltet'}`,'system');});}
 
@@ -12674,7 +12687,7 @@ async function printCampDiary(cid){const c=campById(cid);if(!c)return;const D=ca
 };}
 
 /* ================= v40: VERSION ================= */
-const APP_VERSION='41';
+const APP_VERSION='43';
 
 /* ================= v40: BRIEF – Vorlagen, Platzhalter-Leiste, {Datum} und {Termin} ================= */
 const BF_TPL_BUILTIN=[
@@ -12935,6 +12948,105 @@ openScreenSaver=function(){
   setTimeout(()=>evs.forEach(t=>window.addEventListener(t,close,{capture:true,passive:false})),400);
 };
 setTimeout(()=>{try{v41UpdateNew();}catch(e){/* still */}},0);
+
+/* ================= v43: LEERES STAMMDATENBLATT (zum Ausfüllen durch die Eltern) ================= */
+function printBlankDataSheet(){
+  const bx=l=>`<span class="sd-o"><i class="sd-b"></i>${l}</span>`;
+  const f=(l,w)=>`<div class="sd-f"${w?` style="grid-column:span ${w}"`:''}><span class="sd-l">${l}</span><span class="sd-line"></span></div>`;
+  const guardian=n=>`<div class="sd-g"><div class="sd-gh">Sorgeberechtigte/r ${n}</div>
+  <div class="sd-grid2">${f('Name, Vorname',2)}</div>
+  <div class="sd-opts"><b>Beziehung:</b>${bx('Mutter')}${bx('Vater')}${bx('andere')}</div>
+  <div class="sd-opts"><b>Sorgerecht:</b>${bx('ja')}${bx('nein')}<span class="sd-sep"></span>${bx('Post hierhin')}</div>
+  ${n>1?`<div class="sd-opts"><b>Anschrift:</b>${bx('wie bei 1')}${bx('eigene:')}</div>`:''}
+  <div class="sd-grid2">${f('Straße, Nr.')}${f('PLZ, Ort')}</div>
+  <div class="sd-grid2">${f('Telefon')}${f('Handy')}</div>
+  <div class="sd-grid2">${f('E-Mail',2)}</div></div>`;
+  const cons=CONSENT_TYPES.map(t=>[t.label||t.key,(CONSENT_DESC_SHORT[t.key]||'')]);
+  const body=`<h3 class="sd-h">1 · Angaben zur Junghelferin / zum Junghelfer</h3>
+<div class="sd-grid4">${f('Name',2)}${f('Vorname',2)}${f('Geburtsdatum')}<div class="sd-f sd-fo" style="grid-column:span 3"><span class="sd-l">Geschlecht</span><span class="sd-opts in">${bx('männlich')}${bx('weiblich')}${bx('divers')}${bx('keine Angabe')}</span></div>${f('Handy des Kindes (freiwillig)',2)}${f('E-Mail des Kindes (freiwillig)',2)}</div>
+<h3 class="sd-h">2 · Sorgeberechtigte</h3>
+<p class="sd-sub">Das Kind wohnt bei den Sorgeberechtigten. Leben die Eltern getrennt, bitte beide Anschriften eintragen.</p>
+<div class="sd-gwrap">${guardian(1)}${guardian(2)}</div>
+<h3 class="sd-h">3 · Ansprechpersonen im Notfall</h3>
+<div class="sd-opts sd-big keep">${bx('<span><b>Im Notfall bitte die oben genannten Sorgeberechtigten anrufen.</b></span>')}</div>
+<div class="keep"><p class="sd-sub">Und/oder weitere Ansprechpersonen (z. B. Großeltern) – in der Reihenfolge, in der wir anrufen sollen:</p>
+<table class="sd-t"><colgroup><col style="width:5%"><col style="width:27%"><col style="width:16%"><col style="width:17%"><col style="width:17%"><col></colgroup><thead><tr><th>Nr.</th><th>Name</th><th>Beziehung</th><th>Telefon 1</th><th>Telefon 2</th><th>Hinweis</th></tr></thead><tbody>${[1,2,3].map(i=>`<tr><td>${i}</td><td></td><td></td><td></td><td></td><td></td></tr>`).join('')}</tbody></table></div>
+<div class="lh-pagebreak"></div><h3 class="sd-h">4 · Gesundheit &amp; Ernährung <small>vertraulich – nur für Betreuer:innen im Dienst und im Notfall</small></h3>
+<div class="sd-grid2 keep" style="margin-top:0">${f('Allergien / Unverträglichkeiten',2)}${f('Sonstige gesundheitliche Hinweise (z. B. Asthma, Diabetes)',2)}</div>
+<div class="sd-opts keep"><b>Ernährung:</b>${bx('keine Besonderheiten')}${bx('vegetarisch')}${bx('vegan')}${bx('Sonstiges: ______________________')}</div>
+<table class="sd-t keep"><colgroup><col style="width:40%"><col style="width:30%"><col></colgroup><thead><tr><th>Medikament (regelmäßig)</th><th>Wann / Dosierung</th><th>Nimmt es selbstständig?</th></tr></thead><tbody>${[1,2].map(()=>`<tr><td></td><td></td><td><span class="sd-opts in2">${bx('ja')}${bx('nein')}</span></td></tr>`).join('')}</tbody></table>
+<div class="sd-opts keep"><b>Schwimmen:</b>${SWIM_LEVELS.filter(s=>s[0]).map(s=>bx(esc(({nicht:'Nichtschwimmer',seepferdchen:'Seepferdchen',sicher:'sicher (o. Abz.)'})[s[0]]||s[2]||s[1]))).join('')}</div>
+<h3 class="sd-h">5 · Einwilligungen <small>freiwillig · jederzeit für die Zukunft widerrufbar</small></h3>
+<table class="sd-t sd-c"><colgroup><col style="width:56%"><col style="width:6%"><col style="width:6%"><col></colgroup><thead><tr><th>Einwilligung</th><th class="c">ja</th><th class="c">nein</th><th>Bemerkung / Einschränkung</th></tr></thead><tbody>${cons.map(([t,d])=>`<tr><td><b>${esc(t)}</b>${d?`<small>${esc(d)}</small>`:''}</td><td class="c"><i class="sd-b"></i></td><td class="c"><i class="sd-b"></i></td><td></td></tr>`).join('')}</tbody></table>
+<p class="sd-fine keep">Die Angaben werden nur für die Jugendarbeit der ${esc(CONTACT.org)} verwendet, verschlüsselt gespeichert und nach dem Austritt gelöscht (Name, Zeitraum und Abzeichen bleiben für die Statistik). Einwilligungen können jederzeit formlos widerrufen werden.</p>
+<div class="sd-sig keep"><div><span class="sd-line"></span>Ort, Datum</div><div><span class="sd-line"></span>Unterschrift Sorgeberechtigte/r 1</div><div><span class="sd-line"></span>Unterschrift Sorgeberechtigte/r 2 <small>(bei gemeinsamem Sorgerecht)</small></div></div>
+<div class="sd-rcv keep"><div class="sd-rcv-h">Wird durch die Ortsjugend ausgefüllt</div><div class="sd-rcv-b"><div class="sd-f"><span class="sd-l">Entgegengenommen am</span><span class="sd-line"></span></div><div class="sd-f"><span class="sd-l">von (Name / Funktion)</span><span class="sd-line"></span></div></div></div>`;
+  const css=`.sub:empty{display:none}
+.sd-h{font-size:11pt;color:#003E91;margin:2.6mm 0 1.3mm;padding-bottom:.6mm;border-bottom:.4mm solid #003E91}.sd-h small{font-size:8.5pt;font-weight:normal;color:#475569;margin-left:2mm}
+.sd-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:1.8mm 5mm}.sd-grid2{display:grid;grid-template-columns:1fr 1fr;gap:2mm 4mm;margin-top:1.5mm}
+.sd-f{display:flex;flex-direction:column;justify-content:flex-end}.sd-l{font-size:7.8pt;color:#334155}.sd-line{display:block;border-bottom:.3mm solid #1e293b;height:5.2mm}
+.sd-fo .sd-opts.in{margin:1.2mm 0 0;border-bottom:.3mm solid #1e293b;padding-bottom:1mm}
+.sd-opts{display:flex;flex-wrap:wrap;gap:1mm 3.2mm;align-items:center;font-size:8.8pt;margin:1.4mm 0 0}.sd-opts b{margin-right:1mm}.sd-sep{width:1mm}.sd-opts.in2{margin:0}
+.sd-o{display:inline-flex;align-items:center;gap:1.5mm}.sd-b{display:inline-block;width:3.4mm;height:3.4mm;border:.35mm solid #1e293b;border-radius:.4mm;flex-shrink:0}
+.sd-gwrap{display:grid;grid-template-columns:1fr 1fr;gap:5mm;break-inside:avoid}.sd-g{border:.3mm solid #94a3b8;border-radius:1.5mm;padding:2mm 2.6mm}.sd-gh{font-weight:bold;color:#003E91;font-size:10pt;margin-bottom:.5mm}
+.sd-big{font-size:9.5pt;padding:1.6mm 3mm;border:.4mm solid #003E91;border-radius:1.5mm;background:#f1f5fb}.sd-sub{font-size:8.8pt;margin:1.6mm 0 1.6mm;color:#1e293b}
+.sd-t td{height:6.8mm}.sd-t.sd-c td{height:7.4mm;vertical-align:middle;padding:1px 6px}.sd-t small{display:block;font-size:7.4pt;color:#475569;line-height:1.2}.sd-t .c{text-align:center;vertical-align:middle}
+.sd-fine{font-size:7.6pt;color:#475569;margin:2mm 0 0;line-height:1.3}
+.sd-sig{display:grid;grid-template-columns:.8fr 1fr 1fr;gap:6mm;margin-top:8mm;font-size:8.5pt}.sd-sig .sd-line{height:9mm;margin-bottom:1mm}.sd-sig small{display:block;color:#475569}
+.sd-rcv{margin:7mm 0 0 auto;width:105mm}.sd-rcv-h{font-size:7.8pt;color:#475569;margin-bottom:1mm}.sd-rcv-b{border:.3mm solid #475569;border-radius:1.5mm;padding:1.5mm 3mm 2.5mm;display:grid;grid-template-columns:.8fr 1.2fr;gap:4mm}`;
+  printLetterDoc('Stammdatenblatt Junghelfer:in','',body,css,{date:false,compact:true});
+  addLogEntry('Stammdaten: leeres Stammdatenblatt gedruckt','stammdaten');
+}
+/* kurze Erklärungen je Einwilligung für das leere Blatt (Schlüssel wie CONSENT_TYPES) */
+const CONSENT_DESC_SHORT={foto_intern:'Nutzung innerhalb der THW-Jugend (Aushang, Fotobuch, Eltern-Chat).',website:'Internetseite des OV / der THW-Jugend, ohne vollständigen Namen.',social:'Instagram, Facebook o. Ä. des OV / der THW-Jugend.',presse:'Weitergabe an die Presse für Berichte über unsere Jugendarbeit.',schwimmen:'Baden und Schwimmen unter Aufsicht (z. B. im Zeltlager).',heimweg:'Heimweg nach Diensten allein (zu Fuß, Rad, ÖPNV).'};
+PE_PRINT.master.splice(1,0,['📄','Stammdatenblatt (leer, zum Ausfüllen)','printBlankDataSheet()']);
+
+/* ================= v43: FEEDBACK – PAPIERBÖGEN NACHTRAGEN ================= */
+/* Schnellerfassung ohne Vorschau: Datum und „Ich bin …“ bleiben für den nächsten Bogen stehen,
+   Noten per Klick oder Tastatur (1–6, 0 = k.A.), der zuletzt gespeicherte Bogen lässt sich zurückholen */
+function openFeedbackPaper(){
+  const m=document.createElement('div');m.className='modal-overlay';const st={cur:0,saved:[]};
+  const dirty=()=>!!m.querySelector('.fbp-q input:checked:not([value=""])')||[...m.querySelectorAll('.fbp-t textarea')].some(t=>t.value.trim());
+  const close=()=>{if(dirty()&&!confirm('Der aktuelle Bogen ist noch nicht gespeichert. Trotzdem schließen?'))return;m.remove();};
+  m.onclick=ev=>{if(ev.target===m)close();};
+  let lastGroup='';
+  const rows=FB_QUESTIONS.map(([g,k,t],i)=>{const head=g!==lastGroup?`<div class="fb-group">${esc(g)}</div>`:'';lastGroup=g;return `${head}<div class="fb-q fbp-q" data-i="${i}"><span>${esc(t)}</span><div class="fb-grades">${[1,2,3,4,5,6].map(n=>`<label class="fb-grade g${n}"><input type="radio" name="fbp_${k}" value="${n}"><span>${n}</span></label>`).join('')}<label class="fb-grade na"><input type="radio" name="fbp_${k}" value="" checked><span>k.A.</span></label></div></div>`;}).join('');
+  m.innerHTML=`<div class="modal-content fbp" style="max-width:760px;" onclick="event.stopPropagation();"><h2>📄 Papierbögen nachtragen</h2>
+    <p class="modal-subtitle">Ohne Vorschau, Bogen für Bogen. Tastatur: <b>1–6</b> = Note der markierten Frage, <b>0</b> = k.A., <b>Strg + Enter</b> = speichern.</p>
+    <div class="fbp-bar"><div class="form-group"><label>Ausgefüllt am</label><input type="date" id="fbpDate" value="${esc(localISO())}"></div>
+    <div class="form-group"><label>Ich bin …</label><div class="fb-roles">${Object.entries(FB_ROLES).map(([k,v])=>`<label><input type="radio" name="fbpRole" value="${k}"> ${esc(v)}</label>`).join('')}</div></div></div>
+    ${rows}
+    ${FB_TEXTS.map(([k,t])=>`<div class="form-group fbp-t"><label>${esc(t)}</label><textarea id="fbpT_${k}" rows="2"></textarea></div>`).join('')}
+    <div class="fbp-count" id="fbpCount">Noch kein Bogen nachgetragen.</div>
+    <div class="modal-actions"><button type="button" class="btn-secondary" data-x>Schließen</button><button type="button" class="btn-secondary" id="fbpUndo" style="display:none;" title="Den zuletzt gespeicherten Bogen wieder ins Formular holen, um ihn zu korrigieren">↩️ Letzten Bogen zurückholen</button><button type="button" class="btn-success" id="fbpSave">💾 Speichern &amp; nächster Bogen</button></div></div>`;
+  document.body.appendChild(m);
+  const qs=[...m.querySelectorAll('.fbp-q')];
+  const mark=i=>{st.cur=Math.max(0,Math.min(qs.length-1,i));qs.forEach((q,j)=>q.classList.toggle('fbp-cur',j===st.cur));};
+  const scrollCur=()=>{const q=qs[st.cur];if(q&&q.scrollIntoView)q.scrollIntoView({block:'nearest'});};
+  const read=()=>{const date=m.querySelector('#fbpDate').value||localISO();const role=(m.querySelector('[name=fbpRole]:checked')||{}).value||'';const ratings={},texts={};
+    FB_QUESTIONS.forEach(([,k])=>{const v=(m.querySelector(`[name=fbp_${k}]:checked`)||{}).value;if(v)ratings[k]=+v;});FB_TEXTS.forEach(([k])=>{const v=m.querySelector('#fbpT_'+k).value.trim();if(v)texts[k]=v;});return{date,role,ratings,texts};};
+  const fill=d=>{FB_QUESTIONS.forEach(([,k])=>{const r=m.querySelector(`[name=fbp_${k}][value="${d&&d.ratings[k]?d.ratings[k]:''}"]`);if(r)r.checked=true;});FB_TEXTS.forEach(([k])=>{m.querySelector('#fbpT_'+k).value=d&&d.texts[k]||'';});};
+  const info=()=>{const n=st.saved.length;m.querySelector('#fbpCount').textContent=n?`✅ ${n} ${n===1?'Bogen':'Bögen'} nachgetragen – weiter mit dem nächsten.`:'Noch kein Bogen nachgetragen.';m.querySelector('#fbpUndo').style.display=n?'':'none';};
+  const save=()=>{const d=read();const err=fbValidate(d);if(err)return toast(err,'fehler');
+    const e={id:uidOf('fb'),...d,submittedAt:Date.now(),locked:true,source:'papier'};feedbackEntries.push(e);
+    if(!saveFeedback()){feedbackEntries.pop();return;}
+    st.saved.push(e);addLogEntry(`Feedback: Papierbogen nachgetragen (${FB_ROLES[d.role]}, ausgefüllt am ${formatDate(d.date)})`,'feedback');renderFeedback();
+    fill(null);info();mark(0);m.querySelector('.modal-content').scrollTop=0;m.scrollTop=0;toast('Bogen gespeichert – der nächste kann folgen.','erfolg');};
+  const undo=()=>{const e=st.saved.pop();if(!e)return;const i=feedbackEntries.findIndex(x=>x.id===e.id);if(i<0)return info();
+    feedbackEntries.splice(i,1);if(!saveFeedback()){feedbackEntries.splice(i,0,e);st.saved.push(e);return;}
+    addLogEntry(`Feedback: nachgetragenen Papierbogen zur Korrektur zurückgeholt (${FB_ROLES[e.role]})`,'feedback');renderFeedback();
+    fill(e);m.querySelector('#fbpDate').value=e.date;const r=m.querySelector(`[name=fbpRole][value="${e.role}"]`);if(r)r.checked=true;info();mark(0);};
+  m.querySelector('[data-x]').onclick=close;m.querySelector('#fbpSave').onclick=save;m.querySelector('#fbpUndo').onclick=undo;
+  qs.forEach((q,i)=>q.addEventListener('change',()=>{mark(i+1);}));qs.forEach((q,i)=>q.addEventListener('mousedown',()=>mark(i)));
+  /* Tastatur auf Dokumentebene (die Noten-Knöpfe selbst nehmen keinen Fokus an); endet mit dem Fenster */
+  const onKey=ev=>{if(!m.isConnected)return document.removeEventListener('keydown',onKey);if(topModal()!==m)return;
+    if((ev.ctrlKey||ev.metaKey)&&ev.key==='Enter'){ev.preventDefault();return save();}
+    if(ev.ctrlKey||ev.metaKey||ev.altKey)return;const t=ev.target;if(t&&(t.tagName==='TEXTAREA'||t.tagName==='SELECT'||(t.tagName==='INPUT'&&t.type!=='radio')))return;
+    if(/^[0-6]$/.test(ev.key)){ev.preventDefault();const k=FB_QUESTIONS[st.cur]&&FB_QUESTIONS[st.cur][1];const r=k&&m.querySelector(`[name=fbp_${k}][value="${ev.key==='0'?'':ev.key}"]`);if(r){r.checked=true;mark(st.cur+1);scrollCur();}}
+    else if(ev.key==='ArrowDown'){ev.preventDefault();mark(st.cur+1);scrollCur();}else if(ev.key==='ArrowUp'){ev.preventDefault();mark(st.cur-1);scrollCur();}};
+  document.addEventListener('keydown',onKey);
+  mark(0);setTimeout(()=>{const r=m.querySelector('[name=fbpRole]');if(r)r.focus();},50);
+}
 
 /* ================= INIT ================= */
 ensureClothingTypesFromData();
