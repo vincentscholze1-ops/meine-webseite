@@ -71,6 +71,14 @@ Leiste, erscheint das Panel wie bisher.
 Am Symbol zeigt ein kleiner Zähler den Zustand: grüne Zahl = läuft (aktive Einsätze), gelbes „II“ = pausiert,
 rotes „!“ = Bot ist an, aber die Hauptseite des Spiels ist nicht geöffnet.
 
+## Reihenfolge
+
+Alle passenden Einsätze aus allen gewählten Listen (auch geplante) werden nach Credits sortiert – die lukrativsten
+zuerst. Grundlage ist der Durchschnittswert aus `einsaetze.json`, **inklusive Einsatz-Varianten** (z.B. „mit
+Verletzten“), die oft deutlich mehr bringen. Für Einsätze ohne Durchschnittswert (häufig geplante Einsätze) zählen
+die Credits, die gleichnamige Einsätze laut Credits-Übersicht tatsächlich gebracht haben. Die Diagnose zeigt die
+aktuelle Reihenfolge mit Credits an.
+
 ## Auswertung
 
 Über **📊 Auswertung** im Panel oder im Popup der Erweiterung öffnet sich die Auswertung als **eigene Seite**
