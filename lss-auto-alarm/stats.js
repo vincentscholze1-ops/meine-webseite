@@ -7,21 +7,23 @@
 // Ablauf:
 //  1. Der Bot meldet jede Alarmierung (recordDispatch).
 //  2. Solange die Spielseite offen ist, wird laufend beobachtet, ob der Einsatz noch in der Liste steht
-//     (observe). Verschwindet er, ist er beendet – der Zeitpunkt ist auf Sekunden genau, auch wenn der
-//     Bot gerade gestoppt ist.
-//  3. Kurz danach wird die Credits-Übersicht gelesen und die Buchung zugeordnet: gleicher Einsatzname,
+//     (observe). Verschwindet er, ist er beendet – auch wenn der Bot gerade gestoppt ist.
+//  3. Danach wird die Credits-Übersicht gelesen und die Buchung zugeordnet: gleicher Einsatzname,
 //     gebucht zwischen "zuletzt noch gesehen" und kurz nach dem Ende. Laufende Einsätze bekommen nie
 //     eine Buchung – sonst würden sie Gutschriften anderer Einsätze gleichen Namens übernehmen.
+//  4. Weichen die Zeitangaben der Credits-Übersicht um ganze Stunden ab (z.B. UTC statt Ortszeit),
+//     wird der Versatz aus eindeutigen Paaren erkannt und ausgeglichen.
 //
 // Läuft im Spiel-Tab (Abruf von /credits braucht die Spiel-Anmeldung); die Anzeige übernimmt
 // die eigene Seite stats.html (stats-page.js), die nur liest.
 const LssStats = (() => {
   const KEEP_DAYS = 60;
-  const BEFORE_LAST_SEEN_MS = 3 * 60 * 1000; // Buchung darf kurz vor "zuletzt gesehen" liegen (Uhren, Verzögerung)
-  const AFTER_END_MS = 20 * 60 * 1000; // ... und bis 20 min nach dem erkannten Ende
-  const GIVE_UP_MS = 45 * 60 * 1000; // danach ohne Buchung: "ohne Credits"
+  const BEFORE_LAST_SEEN_MS = 5 * 60 * 1000; // Buchung darf kurz vor "zuletzt gesehen" liegen
+  const AFTER_END_MS = 30 * 60 * 1000; // ... und bis 30 min nach dem erkannten Ende
+  const GIVE_UP_MS = 60 * 60 * 1000; // danach ohne Buchung: "ohne Credits"
   const SEEN_WRITE_MS = 60 * 1000; // "zuletzt gesehen" höchstens einmal pro Minute speichern
-  const MAX_PAGES = 60;
+  const MAX_PAGES = 150;
+  const OVERLAP_MS = 5 * 60 * 1000; // so weit hinter die neueste gespeicherte Buchung wird erneut gelesen
 
   let syncing = null;
   let syncTimer = null;
@@ -149,7 +151,6 @@ const LssStats = (() => {
     if (/sign_in/.test(res.url)) throw new Error("Nicht eingeloggt");
     const doc = new DOMParser().parseFromString(await res.text(), "text/html");
     const entries = [];
-    const seen = new Map();
     for (const tr of doc.querySelectorAll("table tbody tr")) {
       const cells = tr.children;
       if (cells.length < 3) continue;
@@ -157,35 +158,43 @@ const LssStats = (() => {
       const desc = cells[1].textContent.replace(/\s+/g, " ").trim();
       const at = parseTime(cells[2]);
       if (amount === null || !at || !desc) continue;
-      // Gleiche Buchung (Zeit, Betrag, Text) mehrfach in derselben Sekunde: durchnummerieren
-      const base = `${at}|${amount}|${desc}`;
-      const n = (seen.get(base) || 0) + 1;
-      seen.set(base, n);
-      entries.push({ key: n > 1 ? `${base}#${n}` : base, amount, desc, at });
+      entries.push({ base: `${at}|${amount}|${desc}`, amount, desc, at });
     }
     return entries;
   }
 
-  // Neue Buchungen holen: ab Seite 1, bis bekannte oder zu alte Buchungen kommen
-  async function fetchNewCredits(knownKeys, oldestNeeded) {
-    const added = [];
+  // Neue Buchungen lesen. Die Liste ist neueste-zuerst; gelesen wird bis kurz hinter die neueste
+  // bereits gespeicherte Buchung (bzw. beim ersten Mal bis "oldestNeeded"). Doppelte Buchungen
+  // (gleiche Zeit, Betrag, Text) werden gezählt statt über ihre Position erkannt – so verschieben
+  // neue Buchungen zwischen zwei Abrufen nichts.
+  async function fetchFrom(newestStored, oldestNeeded) {
+    const stopAt = newestStored ? newestStored - OVERLAP_MS : oldestNeeded;
+    const fetched = [];
     let pages = 0;
     for (let page = 1; page <= MAX_PAGES; page++) {
       const entries = await fetchCreditsPage(page);
       pages++;
       if (!entries.length) break;
-      let reachedKnown = false;
-      for (const e of entries) {
-        if (knownKeys.has(e.key)) reachedKnown = true;
-        else {
-          knownKeys.add(e.key);
-          added.push(e);
-        }
-      }
-      if (reachedKnown || Math.min(...entries.map((e) => e.at)) < oldestNeeded) break;
-      await new Promise((r) => setTimeout(r, 400)); // Server schonen
+      fetched.push(...entries.filter((e) => e.at >= stopAt));
+      if (Math.min(...entries.map((e) => e.at)) < stopAt) break;
+      await new Promise((r) => setTimeout(r, 300)); // Server schonen
     }
-    return { added, pages };
+    return { fetched, stopAt, pages };
+  }
+
+  function mergeCredits(stored, fetched, stopAt) {
+    const have = new Map();
+    for (const c of stored) if (c.at >= stopAt) have.set(c.base || c.key, (have.get(c.base || c.key) || 0) + 1);
+    const seen = new Map();
+    const added = [];
+    for (const e of fetched) {
+      const n = (seen.get(e.base) || 0) + 1;
+      seen.set(e.base, n);
+      if (n > (have.get(e.base) || 0)) {
+        added.push({ key: n > 1 ? `${e.base}#${n}` : e.base, base: e.base, amount: e.amount, desc: e.desc, at: e.at });
+      }
+    }
+    return added;
   }
 
   // ---------- Zuordnung Buchung <-> Einsatz ----------
@@ -211,8 +220,28 @@ const LssStats = (() => {
   const isEvent = (c) => /Belohnung für das Verbands-Event/i.test(c.desc);
   const isCancelled = (c) => /abgebrochen\s*$/i.test(c.desc);
 
+  // Zeitversatz zwischen Credits-Übersicht und Browser-Uhr erkennen (z.B. UTC statt Ortszeit):
+  // Paare aus genau beobachtetem Einsatzende und der einzigen gleichnamigen Buchung im Umkreis von 14 h.
+  function detectOffset(data) {
+    const deltas = [];
+    for (const m of Object.values(data.missions)) {
+      if (!m.endedAt || !m.endedPrecise) continue;
+      const near = data.credits.filter((c) => Math.abs(c.at - m.endedAt) < 14 * 3600000 && sameName(m.caption, c.desc));
+      if (near.length === 1) deltas.push(near[0].at - m.endedAt);
+    }
+    if (deltas.length < 3) return { offset: data.meta.clockOffset || 0, samples: deltas.length };
+    deltas.sort((a, b) => a - b);
+    const median = deltas[Math.floor(deltas.length / 2)];
+    // Nur ganze Viertelstunden ab 30 min ausgleichen – kleinere Abweichungen fängt das Zeitfenster ab
+    const rounded = Math.round(median / 900000) * 900000;
+    return { offset: Math.abs(rounded) >= 1800000 ? rounded : 0, samples: deltas.length };
+  }
+
   function match(data) {
     const now = Date.now();
+    const { offset, samples } = detectOffset(data);
+    data.meta.clockOffset = offset;
+    data.meta.offsetSamples = samples;
     const used = new Set(
       Object.values(data.missions)
         .map((m) => m.creditKey)
@@ -223,21 +252,20 @@ const LssStats = (() => {
       .filter((m) => m.endedAt && !m.creditKey)
       .sort((a, b) => a.endedAt - b.endedAt);
     for (const m of open) {
-      const lo = Math.max(m.sentAt, (m.lastSeenAt || m.sentAt) - BEFORE_LAST_SEEN_MS);
+      const lo = Math.max(m.sentAt - 60000, (m.lastSeenAt || m.sentAt) - BEFORE_LAST_SEEN_MS);
       const hi = m.endedAt + AFTER_END_MS;
-      const candidates = data.credits.filter(
-        (c) => !used.has(c.key) && c.at >= lo && c.at <= hi && sameName(m.caption, c.desc)
-      );
+      const at = (c) => c.at - offset; // Buchungszeit auf Browser-Uhr umgerechnet
+      const candidates = data.credits.filter((c) => !used.has(c.key) && at(c) >= lo && at(c) <= hi && sameName(m.caption, c.desc));
       // Genau erkanntes Ende: Buchung, die am nächsten am Ende liegt; sonst die früheste im Zeitfenster
       candidates.sort((a, b) =>
-        m.endedPrecise ? Math.abs(a.at - m.endedAt) - Math.abs(b.at - m.endedAt) : a.at - b.at
+        m.endedPrecise ? Math.abs(at(a) - m.endedAt) - Math.abs(at(b) - m.endedAt) : at(a) - at(b)
       );
       const hit = candidates[0];
       if (hit) {
         used.add(hit.key);
         m.creditKey = hit.key;
         m.credits = hit.amount;
-        m.creditAt = hit.at;
+        m.creditAt = at(hit);
         m.status = isCancelled(hit) ? "abgebrochen" : hit.amount > 0 ? "erfolgreich" : "ohne Credits";
       } else if (now - m.endedAt > GIVE_UP_MS) {
         m.status = "ohne Credits";
@@ -245,34 +273,34 @@ const LssStats = (() => {
     }
   }
 
+  function clearMatches(data) {
+    for (const m of Object.values(data.missions)) {
+      m.creditKey = null;
+      m.credits = null;
+      m.creditAt = null;
+      m.status = m.endedAt ? "wartet auf Credits" : "läuft";
+      m.dispatches = m.dispatches || 1;
+    }
+  }
+
   // Alle Zuordnungen verwerfen und neu berechnen (z.B. nach einem Update)
   function rematch() {
     return exclusive(async () => {
       const data = await load();
-      for (const m of Object.values(data.missions)) {
-        m.creditKey = null;
-        m.credits = null;
-        m.creditAt = null;
-        m.status = m.endedAt ? "wartet auf Credits" : "läuft";
-      }
+      clearMatches(data);
       match(data);
       await store(data);
     });
   }
 
-  // Einmalig nach dem Update: alte (fehlerhafte) Zuordnungen verwerfen und neu berechnen
-  const SCHEMA = 2;
+  // Einmalig nach dem Update: alte Zuordnungen verwerfen und mit der neuen Logik neu berechnen
+  const SCHEMA = 3;
   function migrate() {
     return exclusive(async () => {
       const data = await load();
       if (data.meta.schema === SCHEMA) return false;
-      for (const m of Object.values(data.missions)) {
-        m.creditKey = null;
-        m.credits = null;
-        m.creditAt = null;
-        m.status = m.endedAt ? "wartet auf Credits" : "läuft";
-        m.dispatches = m.dispatches || 1;
-      }
+      for (const c of data.credits) if (!c.base) c.base = c.key.replace(/#\d+$/, "");
+      clearMatches(data);
       match(data);
       data.meta.schema = SCHEMA;
       await store(data);
@@ -289,15 +317,18 @@ const LssStats = (() => {
     syncing = (async () => {
       // Abrufen außerhalb der Sperre (dauert), Zusammenführen innerhalb
       const snapshot = await load();
-      const oldestNeeded = Math.min(
-        Date.now() - 7 * 86400000,
-        ...Object.values(snapshot.missions).map((m) => m.sentAt)
-      );
-      const { added, pages } = await fetchNewCredits(new Set(snapshot.credits.map((c) => c.key)), oldestNeeded);
+      const newest = snapshot.credits.length ? Math.max(...snapshot.credits.map((c) => c.at)) : null;
+      // Erstes Lesen: mindestens ab gestern 0 Uhr und ab der ältesten noch offenen Alarmierung
+      const startYesterday = new Date().setHours(0, 0, 0, 0) - 86400000;
+      const openSince = Object.values(snapshot.missions)
+        .filter((m) => !m.creditKey)
+        .map((m) => m.sentAt);
+      const oldestNeeded = Math.min(startYesterday, ...openSince);
+      const { fetched, stopAt, pages } = await fetchFrom(newest, oldestNeeded);
       return exclusive(async () => {
         const data = await load();
-        const known = new Set(data.credits.map((c) => c.key));
-        data.credits = [...added.filter((c) => !known.has(c.key)), ...data.credits].sort((a, b) => b.at - a.at);
+        const added = mergeCredits(data.credits, fetched, stopAt);
+        data.credits = [...added, ...data.credits].sort((a, b) => b.at - a.at);
         match(data);
         data.meta.lastSync = Date.now();
         data.meta.lastPages = pages;
@@ -317,12 +348,37 @@ const LssStats = (() => {
     syncTimer = setTimeout(() => sync().catch((e) => console.warn("[LSS Verbands-Bot] Credits", e)), delay);
   }
 
-  // Regelmäßig aufgerufen: abfragen, solange noch Gutschriften erwartet werden
+  // Regelmäßig aufgerufen: abfragen, solange noch Gutschriften erwartet werden (oder lange nicht gelesen)
   async function maybeSync() {
     const data = await load();
     const waiting = Object.values(data.missions).some((m) => m.status === "wartet auf Credits");
-    const stale = !data.meta.lastSync || Date.now() - data.meta.lastSync > 5 * 60 * 1000;
-    if (waiting && stale) await sync();
+    const age = Date.now() - (data.meta.lastSync || 0);
+    if ((waiting && age > 3 * 60 * 1000) || age > 15 * 60 * 1000) await sync();
+  }
+
+  // Durchschnittlich erhaltene Credits je Einsatzname (aus erfolgreichen Bot-Einsätzen) –
+  // als Schätzung für Einsätze ohne bekannten Durchschnittswert (z.B. geplante Einsätze)
+  async function learnedCredits() {
+    const data = await load();
+    const sums = new Map();
+    for (const m of Object.values(data.missions)) {
+      if (m.status !== "erfolgreich" || !m.credits) continue;
+      const k = norm(m.caption);
+      const e = sums.get(k) || [0, 0];
+      sums.set(k, [e[0] + m.credits, e[1] + 1]);
+    }
+    for (const c of data.credits) {
+      if (!isAlliance(c) || c.amount <= 0 || isCancelled(c)) continue;
+      const k = norm(c.desc);
+      if (sums.has(k)) continue; // eigene Bot-Werte haben Vorrang
+      const e = sums.get("~" + k) || [0, 0];
+      sums.set("~" + k, [e[0] + c.amount, e[1] + 1]);
+    }
+    return (caption) => {
+      const k = norm(caption);
+      const e = sums.get(k) || sums.get("~" + k);
+      return e ? Math.round(e[0] / e[1]) : null;
+    };
   }
 
   // ---------- Auswertung berechnen ----------
@@ -337,7 +393,9 @@ const LssStats = (() => {
 
   // Zeitraum [from, to): Alarmierungen zählen nach Alarmierungszeit, Credits nach Gutschriftzeit
   function evaluate(data, from, to = Infinity) {
+    const offset = data.meta.clockOffset || 0;
     const inRange = (t) => t >= from && t < to;
+    const creditIn = (c) => inRange(c.at - offset);
     const all = Object.values(data.missions);
     const mine = all.filter((m) => inRange(m.sentAt)).sort((a, b) => b.sentAt - a.sentAt);
     const finished = mine.filter((m) => ["erfolgreich", "ohne Credits", "abgebrochen"].includes(m.status));
@@ -345,9 +403,11 @@ const LssStats = (() => {
     const credited = all.filter((m) => m.status === "erfolgreich" && m.creditAt && inRange(m.creditAt));
     const botCredits = credited.reduce((sum, m) => sum + m.credits, 0);
     const claimed = new Set(all.map((m) => m.creditKey).filter(Boolean));
-    const allianceAll = data.credits.filter((c) => inRange(c.at) && isAlliance(c) && c.amount > 0 && !isCancelled(c));
-    const events = data.credits.filter((c) => inRange(c.at) && isEvent(c));
-    const oldestCredit = data.credits.length ? data.credits[data.credits.length - 1].at : null;
+    const inPeriod = data.credits.filter(creditIn);
+    const income = inPeriod.filter((c) => c.amount > 0);
+    const allianceAll = income.filter((c) => isAlliance(c) && !isCancelled(c));
+    const events = income.filter(isEvent);
+    const sorted = data.credits.length ? data.credits.map((c) => c.at - offset).sort((a, b) => a - b) : [];
     return {
       mine,
       sent: mine.length,
@@ -361,14 +421,20 @@ const LssStats = (() => {
       waiting: mine.filter((m) => m.status === "wartet auf Credits").length,
       without: mine.filter((m) => m.status === "ohne Credits").length,
       cancelled: mine.filter((m) => m.status === "abgebrochen").length,
+      // Gesamteinnahmen laut Credits-Übersicht (alles, was positiv gebucht wurde)
+      incomeTotal: income.reduce((s, c) => s + c.amount, 0),
+      incomeCount: income.length,
+      expensesTotal: inPeriod.filter((c) => c.amount < 0).reduce((s, c) => s + c.amount, 0),
       allianceCount: allianceAll.length,
       allianceCredits: allianceAll.reduce((s, c) => s + c.amount, 0),
       manualCount: allianceAll.filter((c) => !claimed.has(c.key)).length,
       manualCredits: allianceAll.filter((c) => !claimed.has(c.key)).reduce((s, c) => s + c.amount, 0),
       eventCredits: events.reduce((s, c) => s + c.amount, 0),
       unclaimed: allianceAll.filter((c) => !claimed.has(c.key)).slice(0, 50),
-      coverageFrom: oldestCredit,
+      coverageFrom: sorted.length ? sorted[0] : null,
+      coversPeriod: sorted.length > 0 && sorted[0] <= Math.max(from, 0) + 60000,
       creditCount: data.credits.length,
+      clockOffset: offset,
       days: perDay(credited)
     };
   }
@@ -391,5 +457,18 @@ const LssStats = (() => {
     return [...days.values()].sort((a, b) => b.t - a.t);
   }
 
-  return { load, recordDispatch, observe, sync, maybeSync, rematch, migrate, reset, evaluate, PERIODS, _test: { sameName, parseTime, match } };
+  return {
+    load,
+    recordDispatch,
+    observe,
+    sync,
+    maybeSync,
+    rematch,
+    migrate,
+    reset,
+    evaluate,
+    learnedCredits,
+    PERIODS,
+    _test: { sameName, parseTime, match, mergeCredits, detectOffset }
+  };
 })();

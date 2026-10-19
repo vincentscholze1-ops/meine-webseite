@@ -67,6 +67,14 @@
     .pill.run { background: var(--blue-soft); color: var(--blue); }
     .pill.wait { background: var(--yellow-soft); color: var(--yellow); }
 
+    .income { gap: 0; padding: 4px 16px; }
+    .income-row { display: grid; grid-template-columns: 1fr auto; gap: 0 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .income-row:last-of-type { border-bottom: 0; }
+    .income-row b { font-size: 18px; font-variant-numeric: tabular-nums; text-align: right; }
+    .income-row small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+    .income-row.bot b { color: var(--gold); }
+    .income-row.bot span { font-weight: 650; }
+    .income .warn { padding: 10px 0; color: var(--yellow); font-size: 13px; }
     details.check { margin-top: 26px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
     details.check summary { cursor: pointer; font-weight: 650; }
     details.check table { margin-top: 6px; }

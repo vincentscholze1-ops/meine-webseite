@@ -96,6 +96,8 @@
           list: key,
           planned,
           typeId: el.getAttribute("mission_type_id"),
+          overlay: el.getAttribute("data-overlay-index"),
+          additive: el.getAttribute("data-additive-overlays"),
           caption: (caption ? caption.textContent : "Einsatz " + id).replace(/\s+/g, " ").trim(),
           participating: !!marker && !marker.classList.contains("hidden"),
           state: /green/.test(cls) ? "vor Ort" : /yellow/.test(cls) ? "Anfahrt" : "offen"
@@ -264,7 +266,10 @@
             budget--;
             persist();
             refreshView(); // sofort anzeigen, nicht erst nach dem Durchgang
-            panel.log(`✔ ${mission.planned ? "[geplant] " : ""}${mission.caption} ← ${result.vehicles}, ${result.km} km`);
+            panel.log(
+              `✔ ${mission.planned ? "[geplant] " : ""}${mission.caption}` +
+                `${mission.credits != null ? ` (~${mission.credits.toLocaleString("de-DE")} Cr)` : ""} ← ${result.vehicles}, ${result.km} km`
+            );
           } else {
             skipped.set(mission.id, Date.now() + 10 * 60 * 1000);
             panel.log(`– ${mission.caption}: ${result.reason}`);
@@ -293,15 +298,37 @@
     schedule(jitter(settings.intervalSec * 1000));
   }
 
+  // Durchschnitts-Credits eines Einsatzes. Varianten (Overlays, z.B. mit Verletzten) haben eigene
+  // Einträge in einsaetze.json ("123-1", "123-1/A") und bringen oft deutlich mehr als der Grundtyp.
+  const known = (v) => v !== null && v !== undefined && v !== "" && v !== "null";
+  function averageCredits(m, byId) {
+    if (!known(m.typeId)) return null;
+    const keys = [];
+    if (known(m.overlay) && known(m.additive)) keys.push(`${m.typeId}-${m.overlay}/${m.additive}`);
+    if (known(m.overlay)) keys.push(`${m.typeId}-${m.overlay}`);
+    if (known(m.additive)) keys.push(`${m.typeId}/${m.additive}`);
+    keys.push(String(m.typeId));
+    for (const k of keys) if (byId[k] != null) return byId[k];
+    return null;
+  }
+
+  // Kandidaten nach Credits sortiert – über alle Listen hinweg, geplante Einsätze eingeschlossen.
+  // Ohne Durchschnittswert (häufig bei geplanten Einsätzen) zählen die Credits, die gleichnamige
+  // Einsätze laut Credits-Übersicht tatsächlich gebracht haben.
   async function findCandidates(missions) {
-    const credits = await loadCredits();
+    const byId = await loadCredits();
+    const learned = await LssStats.learnedCredits().catch(() => () => null);
     const words = (settings.excludeWords || []).map((w) => w.toLowerCase()).filter(Boolean);
     return missions
       .filter((m) => !m.participating && !sent[m.id] && !skipped.has(m.id))
       .filter((m) => !words.some((w) => m.caption.toLowerCase().includes(w)))
-      .map((m) => ({ ...m, credits: credits[m.typeId] ?? null }))
+      .map((m) => {
+        const avg = averageCredits(m, byId);
+        const est = avg ?? learned(m.caption);
+        return { ...m, credits: est, creditsSource: avg != null ? "Ø" : est != null ? "erfahren" : null };
+      })
       .filter((m) => (m.credits === null ? settings.allowUnknownCredits : m.credits >= settings.minCredits))
-      .sort((a, b) => (b.credits ?? -1) - (a.credits ?? -1)); // lukrativste zuerst
+      .sort((a, b) => (b.credits ?? -1) - (a.credits ?? -1)); // lukrativste zuerst, unbekannte zuletzt
   }
 
   // Gleiche Statusmeldung nicht jede Runde neu ins Protokoll schreiben
@@ -324,7 +351,16 @@
         .join(", ");
       out(`Diagnose: ${perList || "keine Liste gewählt"} · Lock: ${haveLock ? "ja" : "nein"} · Bot ${settings.running ? "läuft" : "gestoppt"}`);
       const candidates = await findCandidates(missions);
-      out(`Diagnose: ${candidates.length} Kandidaten nach Filtern.`);
+      out(
+        `Diagnose: ${candidates.length} Kandidaten nach Filtern` +
+          (candidates.length
+            ? ` – Reihenfolge: ` +
+              candidates
+                .slice(0, 5)
+                .map((c) => `${c.planned ? "📅 " : ""}${c.caption} (${c.credits != null ? c.credits.toLocaleString("de-DE") + " Cr" : "? Cr"})`)
+                .join(" › ")
+            : ".")
+      );
       const target = candidates[0] || missions[0];
       if (target) {
         const result = await dispatch(target, true);
@@ -371,6 +407,7 @@
   let fleetError = null;
   let fleetAt = 0;
   let creditsToday = null;
+  let incomeToday = null; // { total, alliance } laut Credits-Übersicht
 
   const FMS_GROUP = { 1: "free", 2: "free", 3: "drive", 4: "scene", 5: "scene", 7: "transport", 8: "transport" };
 
@@ -416,14 +453,17 @@
   async function loadCreditsToday() {
     try {
       const data = await LssStats.load();
-      creditsToday = LssStats.evaluate(data, LssStats.PERIODS.today[1]()).botCredits;
+      const r = LssStats.evaluate(data, LssStats.PERIODS.today[1]());
+      creditsToday = r.botCredits;
+      incomeToday = r.creditCount ? { total: r.incomeTotal, alliance: r.allianceCredits } : null;
     } catch (e) {
       creditsToday = null;
+      incomeToday = null;
     }
     refreshView();
   }
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "local" && changes.statsMissions) loadCreditsToday();
+    if (area === "local" && (changes.statsMissions || changes.statsCredits)) loadCreditsToday();
   });
 
   // Einsatzende für die Auswertung erkennen – laufend, auch wenn der Bot gestoppt ist.
@@ -468,6 +508,7 @@
           nextRoundAt,
           roundRunning,
           creditsToday: d.creditsToday,
+          incomeToday,
           fleet: d.fleet
             ? {
                 busyPct: d.fleet.busyPct,
@@ -560,7 +601,7 @@
             <div class="lssaa-kpis">
               <div class="lssaa-kpi"><span class="ico">🚨</span><b class="k-active">0</b><span>Einsätze aktiv</span></div>
               <div class="lssaa-kpi"><span class="ico">📤</span><b class="k-hour">0</b><span>alarmiert (60 min)</span></div>
-              <div class="lssaa-kpi"><span class="ico">💰</span><b class="k-credits">–</b><span>Credits heute</span></div>
+              <div class="lssaa-kpi"><span class="ico">💰</span><b class="k-credits">–</b><span>Credits heute (Bot)</span></div>
               <div class="lssaa-kpi"><span class="ico">⏱</span><b class="k-next">–</b><span>nächste Prüfung</span></div>
             </div>
 
@@ -617,38 +658,49 @@
     const fmt = (n) => (n ?? 0).toLocaleString("de-DE");
     const clock = (t) => new Date(t).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
-    // ---- Knöpfe ----
-    $(".lssaa-toggle").addEventListener("click", () => {
-      // Pausiert: Klick setzt fort; sonst Start/Stopp
-      if (settings.running && isPaused()) chrome.storage.sync.set({ pausedUntil: 0 });
-      else chrome.storage.sync.set({ running: !settings.running, pausedUntil: 0 });
-    });
+    // ---- Aktionen (von Panel und Leisten-Menü gemeinsam genutzt) ----
+    const actions = {
+      toggle() {
+        // Pausiert: Klick setzt fort; sonst Start/Stopp
+        if (settings.running && isPaused()) chrome.storage.sync.set({ pausedUntil: 0 });
+        else chrome.storage.sync.set({ running: !settings.running, pausedUntil: 0 });
+      },
+      pause(minutes) {
+        const until = Date.now() + minutes * 60000;
+        chrome.storage.sync.set({ running: true, pausedUntil: until });
+        api.log(`Pause bis ${clock(until)} Uhr.`);
+      },
+      speed(key) {
+        chrome.storage.sync.set(lssSpeedValues(key));
+        api.log(`Tempo: ${LSS_SPEEDS[key].label} (${LSS_SPEEDS[key].hint})`);
+      },
+      now() {
+        if (!settings.running) return api.log("Erst „Starten“ drücken.");
+        if (isPaused()) return api.log("Bot ist pausiert – zum Fortsetzen auf „Fortsetzen“ klicken.");
+        if (!roundRunning) schedule(0);
+      },
+      diagnose() {
+        setHidden(false);
+        $(".lssaa-logbox").open = true;
+        diagnose();
+      },
+      stats: () => window.open(chrome.runtime.getURL("stats.html"), "_blank"),
+      settings: () => window.open(chrome.runtime.getURL("options.html"), "_blank")
+    };
+
+    $(".lssaa-toggle").addEventListener("click", actions.toggle);
     $(".lssaa-pausebtn").addEventListener("click", () => ($(".lssaa-pausemenu").hidden = !$(".lssaa-pausemenu").hidden));
     for (const b of box.querySelectorAll("[data-pause]")) {
       b.addEventListener("click", () => {
-        const until = Date.now() + Number(b.dataset.pause) * 60000;
-        chrome.storage.sync.set({ running: true, pausedUntil: until });
+        actions.pause(Number(b.dataset.pause));
         $(".lssaa-pausemenu").hidden = true;
-        api.log(`Pause bis ${clock(until)} Uhr.`);
       });
     }
-    for (const b of box.querySelectorAll("[data-speed]")) {
-      b.addEventListener("click", () => {
-        chrome.storage.sync.set(lssSpeedValues(b.dataset.speed));
-        api.log(`Tempo: ${LSS_SPEEDS[b.dataset.speed].label} (${LSS_SPEEDS[b.dataset.speed].hint})`);
-      });
-    }
-    $(".lssaa-stats-btn").addEventListener("click", () => window.open(chrome.runtime.getURL("stats.html"), "_blank"));
-    $(".lssaa-diag").addEventListener("click", () => {
-      $(".lssaa-logbox").open = true;
-      diagnose();
-    });
-    $(".lssaa-now").addEventListener("click", () => {
-      if (!settings.running) return api.log("Erst „Starten“ drücken.");
-      if (isPaused()) return api.log("Bot ist pausiert – zum Fortsetzen auf „Fortsetzen“ klicken.");
-      if (!roundRunning) schedule(0);
-    });
-    $(".lssaa-settings").addEventListener("click", () => window.open(chrome.runtime.getURL("options.html"), "_blank"));
+    for (const b of box.querySelectorAll("[data-speed]")) b.addEventListener("click", () => actions.speed(b.dataset.speed));
+    $(".lssaa-stats-btn").addEventListener("click", actions.stats);
+    $(".lssaa-diag").addEventListener("click", actions.diagnose);
+    $(".lssaa-now").addEventListener("click", actions.now);
+    $(".lssaa-settings").addEventListener("click", actions.settings);
 
     // ---- Verschieben (am Kopf ziehen) ----
     const place = (left, top) => {
@@ -656,13 +708,22 @@
       box.style.top = top + "px";
       box.style.bottom = "auto";
     };
+    // Panel immer vollständig im Fenster halten: Größe begrenzen, dann Position nachschieben.
+    // Greift beim Laden, bei Fenstergrößen-Änderung, beim Aus-/Einklappen und wenn der Inhalt wächst.
+    const MARGIN = 8;
     function keepInView() {
-      if (!box.style.top) return;
+      if (box.classList.contains("lssaa-hidden")) return;
+      const maxW = window.innerWidth - 2 * MARGIN;
+      const maxH = window.innerHeight - 2 * MARGIN;
+      if (box.style.width && parseFloat(box.style.width) > maxW) box.style.width = maxW + "px";
+      if (box.style.height && parseFloat(box.style.height) > maxH) box.style.height = maxH + "px";
+      if (!box.style.top) return; // Standardplatz unten links: CSS begrenzt die Höhe
       const r = box.getBoundingClientRect();
-      place(
-        Math.min(Math.max(0, r.left), window.innerWidth - Math.min(r.width, 120)),
-        Math.min(Math.max(0, r.top), window.innerHeight - 48)
-      );
+      const left = Math.min(Math.max(MARGIN, r.left), window.innerWidth - r.width - MARGIN);
+      const top = Math.min(Math.max(MARGIN, r.top), window.innerHeight - r.height - MARGIN);
+      if (Math.round(left) !== Math.round(r.left) || Math.round(top) !== Math.round(r.top)) {
+        place(Math.max(MARGIN, left), Math.max(MARGIN, top));
+      }
     }
     const head = $(".lssaa-head");
     head.addEventListener("pointerdown", (e) => {
@@ -741,6 +802,82 @@
     } catch (e) {}
     setCollapsed(!!load("lssaa-collapsed"));
     keepInView();
+    new ResizeObserver(() => keepInView()).observe(box);
+
+    // ---- Einbindung in die Leiste oben (wie andere Erweiterungen) ----
+    const navbar =
+      document.querySelector("#main_navbar .navbar-right") ||
+      document.querySelector(".navbar-default .navbar-right") ||
+      document.querySelector("#navbar-main-collapse > ul");
+    let nav = null;
+    // Panel ein-/ausblenden; mit Leiste standardmäßig ausgeblendet (alles Wichtige ist im Menü)
+    function setHidden(h) {
+      box.classList.toggle("lssaa-hidden", h);
+      store("lssaa-hidden", h ? "1" : "0");
+      if (nav) nav.querySelector(".n-panel").textContent = h ? "🗔  Großes Panel anzeigen" : "🗔  Großes Panel ausblenden";
+      if (!h) keepInView();
+    }
+    if (navbar) {
+      nav = document.createElement("li");
+      nav.id = "lssaa-nav";
+      nav.className = "dropdown";
+      nav.innerHTML = `
+        <a href="#" class="dropdown-toggle lssaa-nav-toggle" role="button" title="Verbands-Bot">
+          <span class="lssaa-nav-dot"></span>🚒 <span class="lssaa-nav-label">Bot</span>
+          <span class="lssaa-nav-count"></span> <span class="caret"></span>
+        </a>
+        <div class="dropdown-menu lssaa-nav-menu">
+          <div class="n-head"><b>Verbands-Bot</b> <span class="n-version">v${chrome.runtime.getManifest().version}</span><span class="n-state"></span></div>
+          <div class="n-row">
+            <button type="button" class="n-toggle"></button>
+            <button type="button" class="n-now" title="Jetzt prüfen">⟳</button>
+          </div>
+          <div class="n-chips"><span>❚❚ Pause</span>
+            <button type="button" data-npause="15">15 min</button><button type="button" data-npause="30">30 min</button>
+            <button type="button" data-npause="60">1 h</button><button type="button" data-npause="180">3 h</button>
+          </div>
+          <div class="n-speed">${Object.entries(LSS_SPEEDS)
+            .map(([k, v]) => `<button type="button" data-nspeed="${k}" title="${v.hint}">${v.icon} ${v.label}</button>`)
+            .join("")}</div>
+          <div class="n-kpis">
+            <div><b class="n-active">0</b><span>aktiv</span></div>
+            <div><b class="n-next">–</b><span>nächste Prüfung</span></div>
+            <div><b class="n-credits">–</b><span>Credits heute (Bot)</span></div>
+            <div><b class="n-load">–</b><span>Auslastung</span></div>
+          </div>
+          <div class="n-links">
+            <button type="button" class="n-panel"></button>
+            <button type="button" class="n-stats">📊  Auswertung</button>
+            <button type="button" class="n-diag">🔍  Diagnose</button>
+            <button type="button" class="n-settings">⚙  Einstellungen</button>
+          </div>
+        </div>`;
+      navbar.insertBefore(nav, navbar.firstChild);
+      const n = (sel) => nav.querySelector(sel);
+      const close = () => nav.classList.remove("open");
+      n(".lssaa-nav-toggle").addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        nav.classList.toggle("open");
+      });
+      n(".lssaa-nav-menu").addEventListener("click", (e) => e.stopPropagation());
+      document.addEventListener("click", close);
+      document.addEventListener("keydown", (e) => e.key === "Escape" && close());
+      n(".n-toggle").addEventListener("click", actions.toggle);
+      n(".n-now").addEventListener("click", actions.now);
+      for (const b of nav.querySelectorAll("[data-npause]")) b.addEventListener("click", () => actions.pause(Number(b.dataset.npause)));
+      for (const b of nav.querySelectorAll("[data-nspeed]")) b.addEventListener("click", () => actions.speed(b.dataset.nspeed));
+      n(".n-panel").addEventListener("click", () => {
+        setHidden(!box.classList.contains("lssaa-hidden"));
+        close();
+      });
+      n(".n-stats").addEventListener("click", () => (actions.stats(), close()));
+      n(".n-diag").addEventListener("click", () => (actions.diagnose(), close()));
+      n(".n-settings").addEventListener("click", () => (actions.settings(), close()));
+      setHidden(load("lssaa-hidden") !== "0");
+    } else {
+      setHidden(false);
+    }
 
     // ---- Tooltip für Diagramme ----
     const tip = $(".lssaa-tip");
@@ -772,6 +909,7 @@
             : "–";
       $(".k-next").textContent = text;
       $(".m-next").textContent = text;
+      if (nav) nav.querySelector(".n-next").textContent = text;
       const pct = roundRunning ? 100 : nextRoundAt ? ((Date.now() - cycleStart) / Math.max(1, nextRoundAt - cycleStart)) * 100 : 0;
       $(".lssaa-progress i").style.width = Math.min(100, Math.max(0, pct)) + "%";
       box.classList.toggle("busy", roundRunning);
@@ -877,12 +1015,28 @@
           speed in LSS_SPEEDS
             ? LSS_SPEEDS[speed].hint
             : `eigenes Tempo: alle ${settings.intervalSec} s, ${settings.maxPerRound || "beliebig viele"} je Prüfung`;
+        if (nav) {
+          nav.classList.toggle("running", settings.running && !waiting && !paused);
+          nav.classList.toggle("paused", paused);
+          nav.querySelector(".n-state").textContent = state.textContent;
+          nav.querySelector(".n-toggle").textContent = $(".lssaa-toggle").textContent;
+          for (const b of nav.querySelectorAll("[data-nspeed]")) b.classList.toggle("on", b.dataset.nspeed === speed);
+        }
       },
       view({ active, lastHour, mine, total, bins, fleet, fleetError, fleetAt, creditsToday }) {
         $(".k-active").textContent = fmt(active);
         $(".m-active").textContent = fmt(active);
         $(".k-hour").textContent = fmt(lastHour);
         $(".k-credits").textContent = creditsToday == null ? "–" : fmt(creditsToday);
+        $(".k-credits").parentElement.dataset.tip = incomeToday
+          ? `Heute laut Credits-Übersicht: ${fmt(incomeToday.total)} Credits gesamt, davon ${fmt(incomeToday.alliance)} aus Verbandseinsätzen, ${fmt(creditsToday)} durch den Bot`
+          : "Credits, die heute für vom Bot alarmierte Einsätze gutgeschrieben wurden";
+        if (nav) {
+          nav.querySelector(".n-active").textContent = fmt(active);
+          nav.querySelector(".lssaa-nav-count").textContent = settings.running ? fmt(active) : "";
+          nav.querySelector(".n-credits").textContent = creditsToday == null ? "–" : fmt(creditsToday);
+          nav.querySelector(".n-load").textContent = fleet ? fleet.busyPct + " %" : "–";
+        }
         renderFleet(fleet, fleetError, fleetAt);
         renderBins(bins);
 

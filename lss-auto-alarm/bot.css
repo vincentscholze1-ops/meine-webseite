@@ -212,3 +212,49 @@
 
 #lss-verbands-bot ::-webkit-scrollbar { width: 6px; height: 6px; }
 #lss-verbands-bot ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 3px; }
+
+/* Ausgeblendet (über das Menü in der Leiste wieder einblendbar) */
+#lss-verbands-bot.lssaa-hidden { display: none !important; }
+
+/* ---------- Eintrag in der LSS-Leiste oben ---------- */
+#lssaa-nav { position: relative; }
+#lssaa-nav > .lssaa-nav-toggle { display: flex !important; align-items: center; gap: 6px; white-space: nowrap; }
+#lssaa-nav .lssaa-nav-dot { width: 8px; height: 8px; border-radius: 50%; background: #8a929c; box-shadow: 0 0 0 2px rgba(0,0,0,.15); }
+#lssaa-nav.running .lssaa-nav-dot { background: #3ddc6b; animation: lssaa-pulse 1.8s infinite; }
+#lssaa-nav.paused .lssaa-nav-dot { background: #fab219; }
+#lssaa-nav .lssaa-nav-count:not(:empty) {
+  min-width: 18px; padding: 0 6px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+  background: linear-gradient(120deg, #ff5a4e, #ff9f43); color: #1b0b05;
+}
+#lssaa-nav .lssaa-nav-menu {
+  right: 0; left: auto; width: 320px; padding: 12px; margin-top: 4px;
+  background: rgba(16,19,25,.97); color: #f1f3f6; border: 1px solid rgba(255,255,255,.08); border-radius: 16px;
+  box-shadow: 0 18px 44px rgba(0,0,0,.45); font: 12.5px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  z-index: 2147483647;
+}
+#lssaa-nav.open > .lssaa-nav-menu { display: block; }
+#lssaa-nav .lssaa-nav-menu button { border: 0; cursor: pointer; font: inherit; color: #f1f3f6; background: rgba(255,255,255,.05); border-radius: 10px; transition: background .15s; }
+#lssaa-nav .lssaa-nav-menu button:hover { background: rgba(255,255,255,.1); }
+#lssaa-nav .n-head { display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px; }
+#lssaa-nav .n-head b { font-size: 14px; }
+#lssaa-nav .n-version { color: #9aa3ae; font-size: 10.5px; }
+#lssaa-nav .n-state { margin-left: auto; color: #9aa3ae; font-size: 11.5px; }
+#lssaa-nav.running .n-state { color: #8ff0aa; }
+#lssaa-nav.paused .n-state { color: #ffd36b; }
+#lssaa-nav .n-row { display: grid; grid-template-columns: 1fr 42px; gap: 8px; }
+#lssaa-nav .n-toggle { padding: 9px 0; font-weight: 700; background: linear-gradient(120deg, #22c55e, #16a34a) !important; color: #04210f !important; border-radius: 12px !important; }
+#lssaa-nav.running .n-toggle { background: rgba(255,90,78,.12) !important; color: #ff8a80 !important; box-shadow: inset 0 0 0 1px rgba(255,90,78,.35); }
+#lssaa-nav.paused .n-toggle { background: linear-gradient(120deg, #fbbf24, #f59e0b) !important; color: #2b1a00 !important; }
+#lssaa-nav .n-now { border-radius: 12px !important; font-size: 15px; }
+#lssaa-nav .n-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 10px 0; color: #9aa3ae; font-size: 11.5px; }
+#lssaa-nav .n-chips button { padding: 3px 9px; border-radius: 999px !important; background: rgba(250,178,25,.12) !important; color: #ffd36b !important; font-weight: 600; font-size: 11.5px; }
+#lssaa-nav .n-speed { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: rgba(0,0,0,.3); border-radius: 12px; }
+#lssaa-nav .n-speed button { padding: 6px 2px; background: transparent !important; color: #9aa3ae !important; font-weight: 600; white-space: nowrap; }
+#lssaa-nav .n-speed button.on { background: linear-gradient(120deg, #4f7cff, #7c5cff) !important; color: #fff !important; }
+#lssaa-nav .n-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0; }
+#lssaa-nav .n-kpis div { background: rgba(255,255,255,.045); border-radius: 10px; padding: 7px 9px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); }
+#lssaa-nav .n-kpis b { display: block; font-size: 17px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+#lssaa-nav .n-kpis span { color: #9aa3ae; font-size: 10.5px; }
+#lssaa-nav .n-links { display: grid; gap: 4px; }
+#lssaa-nav .n-links button { text-align: left; padding: 7px 10px; background: transparent !important; }
+#lssaa-nav .n-links button:hover { background: rgba(255,255,255,.07) !important; }

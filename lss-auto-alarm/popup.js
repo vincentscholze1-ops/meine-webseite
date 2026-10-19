@@ -53,7 +53,8 @@ function render() {
   const l = liveFresh() ? live : null;
   $("k-active").textContent = l ? fmt(l.active) : "–";
   $("k-credits").textContent = l && l.creditsToday != null ? fmt(l.creditsToday) : "–";
-  $("k-credits-sub").textContent = l ? `Credits heute · ${fmt(l.lastHour)} alarmiert (60 min)` : "Credits heute";
+  $("k-credits-sub").textContent =
+    l && l.incomeToday ? `Credits heute durch Bot · ${fmt(l.incomeToday.total)} gesamt` : "Credits heute durch Bot";
   if (l && l.fleet) {
     $("k-load").textContent = l.fleet.busyPct + " %";
     $("k-load-sub").textContent = `Auslastung · ${fmt(l.fleet.presetFree)} deiner Auswahl frei`;

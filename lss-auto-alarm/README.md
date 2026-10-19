@@ -15,11 +15,23 @@ Die lukrativsten Einsätze kommen zuerst.
 4. **Entpackte Erweiterung laden** → diesen Ordner wählen.
 5. `https://www.leitstellenspiel.de/` mit F5 neu laden.
 
-Im Popup der Erweiterung steht oben die Version (aktuell **v5.0.0**, steht auch im Kopf des Panels).
+Im Popup der Erweiterung steht oben die Version (aktuell **v5.1.0**, steht auch im Kopf des Panels).
+
+## In der LSS-Leiste oben
+
+Der Bot hängt sich wie andere Erweiterungen als Menüpunkt **🚒 Bot** rechts in die Leiste des Spiels.
+Der Punkt davor zeigt den Zustand (grün = läuft, gelb = Pause, grau = gestoppt), die Zahl die aktiven Einsätze.
+Ein Klick öffnet das Menü mit Starten/Stoppen, Jetzt prüfen, Pause, Tempo, Kennzahlen sowie
+„Großes Panel anzeigen/ausblenden“, Auswertung, Diagnose und Einstellungen.
+
+Mit Leiste ist das große Panel standardmäßig ausgeblendet; die Wahl wird gemerkt. Findet der Bot keine
+Leiste, erscheint das Panel wie bisher.
 
 ## Das Panel (auf der Hauptseite)
 
-- **Verschieben**: am roten Kopf ziehen. **Größe ändern**: am Griff unten rechts ziehen. Ab etwa 600 px
+- Das Panel bleibt immer vollständig im Browserfenster – auch nach dem Vergrößern, Ausklappen oder wenn das
+  Fenster kleiner wird.
+- **Verschieben**: am Kopf ziehen. **Größe ändern**: am Griff unten rechts ziehen. Ab etwa 600 px
   Breite wird das Panel zweispaltig. Position und Größe werden gemerkt; **Doppelklick auf den Kopf**
   setzt beides zurück. **▾** klappt das Panel ein.
 - **📊** öffnet die Auswertung, **⚙** die Einstellungen.
@@ -70,6 +82,11 @@ in einem neuen Tab. Sie zeigt:
   sowie Verbands-Event-Belohnungen
 - Credits pro Tag und eine Liste der Einsätze mit Status und tatsächlich erhaltenen Credits
 - Zeitraum wählbar: Heute, 7 Tage, 30 Tage, Alles
+
+**Einnahmen-Übersicht:** Einnahmen gesamt laut Credits-Übersicht (alle Quellen) → davon Verbandseinsätze →
+davon durch den Bot alarmiert → Verbandseinsätze ohne Bot. So ist sofort sichtbar, welchen Anteil der Bot hat.
+Weichen die Zeitangaben der Credits-Übersicht um ganze Stunden von deiner Uhr ab (z.B. UTC), wird das erkannt und
+ausgeglichen (steht unter „Zahlen nachprüfen“).
 
 **So wird gezählt:** Credits nach dem Zeitpunkt der Gutschrift, Alarmierungen nach dem Zeitpunkt der
 Alarmierung. Die Erfolgsquote bezieht sich nur auf bereits beendete Einsätze. Unter **🔎 Zahlen nachprüfen**

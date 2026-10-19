@@ -87,13 +87,17 @@ async function render(message) {
   );
   body.appendChild(states);
 
-  const note = el("div", "note");
-  note.innerHTML =
-    `<div><b>Alle Verbandseinsätze mit deiner Beteiligung</b> laut Credits-Übersicht: ` +
-    `<b>${fmt(r.allianceCount)}</b> Einsätze · <b>${fmt(r.allianceCredits)}</b> Credits</div>` +
-    `<div class="muted">davon vom Bot: ${fmt(r.allianceCount - r.manualCount)} · ohne Bot (z.B. von Hand): ${fmt(r.manualCount)} Einsätze, ${fmt(r.manualCredits)} Credits` +
-    (r.eventCredits ? ` · Verbands-Event-Belohnungen: ${fmt(r.eventCredits)} Credits` : "") +
-    `</div>`;
+  // Einnahmen laut Spiel: gesamt → Verbandseinsätze → davon durch den Bot
+  const einsaetze = (n) => `${fmt(n)} ${n === 1 ? "Einsatz" : "Einsätze"}`;
+  const share = (part, whole) => (whole > 0 ? Math.round((part / whole) * 100) + " %" : "–");
+  const note = el("div", "note income");
+  note.innerHTML = `
+    <div class="income-row"><span>Einnahmen gesamt laut Credits-Übersicht</span><b>${fmt(r.incomeTotal)}</b><small>${fmt(r.incomeCount)} Buchungen · alle Quellen (eigene Einsätze, Patienten, Verband, Boni …)</small></div>
+    <div class="income-row"><span>davon Verbandseinsätze</span><b>${fmt(r.allianceCredits)}</b><small>${einsaetze(r.allianceCount)} · ${share(r.allianceCredits, r.incomeTotal)} der Einnahmen</small></div>
+    <div class="income-row bot"><span>davon durch den Bot alarmiert</span><b>${fmt(r.botCredits)}</b><small>${einsaetze(r.credited)} · ${share(r.botCredits, r.allianceCredits)} der Verbands-Credits</small></div>
+    <div class="income-row"><span>Verbandseinsätze ohne Bot (z.B. von Hand)</span><b>${fmt(r.manualCredits)}</b><small>${einsaetze(r.manualCount)}</small></div>
+    ${r.eventCredits ? `<div class="income-row"><span>Verbands-Event-Belohnungen</span><b>${fmt(r.eventCredits)}</b><small></small></div>` : ""}
+    ${!r.coversPeriod && r.creditCount ? `<div class="warn">⚠ Für diesen Zeitraum sind erst Buchungen ab ${time(r.coverageFrom)} gespeichert – ältere Einnahmen fehlen in diesen Summen.</div>` : ""}`;
   body.appendChild(note);
 
   if (r.days.length > 1) {
@@ -135,6 +139,9 @@ async function render(message) {
     `${fmt(r.creditCount)} Buchungen aus der Credits-Übersicht gespeichert` +
     (r.coverageFrom ? ` (seit ${time(r.coverageFrom)})` : "") +
     (data.meta.lastSync ? ` · zuletzt gelesen ${ago(data.meta.lastSync)}` : "") +
+    (r.clockOffset
+      ? ` · Zeitversatz der Credits-Übersicht erkannt: ${r.clockOffset > 0 ? "+" : ""}${Math.round(r.clockOffset / 60000)} min (wird ausgeglichen)`
+      : "") +
     ". Ältere Zeiträume können nur ausgewertet werden, soweit Buchungen gespeichert sind.";
   check.appendChild(info);
   check.appendChild(el("h3", "", "Verbands-Buchungen ohne Bot-Einsatz in diesem Zeitraum"));
